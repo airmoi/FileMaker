@@ -1,4 +1,6 @@
 <?php
+namespace airmoi\FileMaker\Command;
+use airmoi\FileMaker\FileMaker;
 /**
  * FileMaker API for PHP
  *
@@ -13,12 +15,6 @@
  * by implication, by FileMaker.
  */
 
-/**
- * @ignore Include parent and delegate classes.
- */
-require_once dirname(__FILE__) . '/../Command.php';
-require_once dirname(__FILE__) . '/../Implementation/Command/DuplicateImpl.php';
-
 
 /**
  * Command class that duplicates a single record.
@@ -26,15 +22,9 @@ require_once dirname(__FILE__) . '/../Implementation/Command/DuplicateImpl.php';
  *
  * @package FileMaker
  */
-class FileMaker_Command_Duplicate extends FileMaker_Command
+class Duplicate extends Command
 {
-    /**
-     * Implementation
-     *
-     * @var FileMaker_Command_Duplicate_Implementation
-     * @access private
-     */
-    var $_impl;
+    private $_recordId;
 
     /**
      * Duplicate command constructor.
@@ -45,9 +35,24 @@ class FileMaker_Command_Duplicate extends FileMaker_Command
      * @param string $layout Layout the record to duplicate is in.
      * @param string $recordId ID of the record to duplicate.
      */
-    function FileMaker_Command_Duplicate($fm, $layout, $recordId)
+    public function __construct($fm, $layout, $recordId)
     {
-        $this->_impl = new FileMaker_Command_Duplicate_Implementation($fm, $layout, $recordId);
+        parent::__construct($fm, $layout);
+        $this->_recordId = $recordId;
     }
-
+    
+    function execute() {
+        if (empty($this->_recordId)) {
+            $error = new FileMaker_Error($this->_fm, 'Duplicate commands require a record id.');
+            return $error;
+        }
+        $params = $this->_getCommandParams();
+        $params['-dup'] = true;
+        $params['-recid'] = $this->_recordId;
+        $result = $this->_fm->_execute($params);
+        if (FileMaker::isError($result)) {
+            return $result;
+        }
+        return $this->_getResult($result);
+    }
 }

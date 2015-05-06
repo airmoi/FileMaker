@@ -1,6 +1,6 @@
 <?php
-namespace airmoi\FileMaker;
-use airmoi\FileMaker\Implementation;
+namespace airmoi\FileMaker\Object;
+use airmoi\FileMaker\FileMaker;
 /**
  * FileMaker API for PHP
  *
@@ -27,26 +27,18 @@ use airmoi\FileMaker\Implementation;
  *
  * @package FileMaker
  */
-class FileMaker_RelatedSet
+class RelatedSet
 {
-    /**
-     * Implementation. This is the object that actually implements the
-     * portal functionality.
-     *
-     * @var FileMaker_RelatedSet_Implementation
-     * @access private
-     */
-    private $_impl;
-
     /**
      * Portal constructor.
      *
-     * @param FileMaker_Layout &$layout FileMaker_Layout object that this 
+     * @param Layout &$layout Layout object that this 
      * portal is on.
      */
-    public function __construct(&$layout)
+    public function __construct($layout)
     {
-        $this->_impl = new FileMaker_RelatedSet_Implementation($layout);
+        $this->_layout = $layout;
+        $this->_fm = $layout->_impl->_fm;
     }
 
     /**
@@ -57,7 +49,7 @@ class FileMaker_RelatedSet
      */
     public function getName()
     {
-        return $this->_impl->getName();
+        return $this->_name;
     }
 
     /**
@@ -67,7 +59,7 @@ class FileMaker_RelatedSet
      */
     public function listFields()
     {
-        return $this->_impl->listFields();
+        return array_keys($this->_fields);
     }
 
     /**
@@ -80,7 +72,10 @@ class FileMaker_RelatedSet
      */
     public function getField($fieldName)
     {
-        return $this->_impl->getField($fieldName);
+        if (isset($this->_fields[$fieldName])) {
+            return $this->_fields[$fieldName];
+        }
+        return new FileMaker_Error($this->_fm, 'Field Not Found');
     }
 
     /**
@@ -91,7 +86,7 @@ class FileMaker_RelatedSet
      */
     public function getFields()
     {
-        return $this->_impl->getFields();
+        return $this->_fields;
     }
 
     /**
@@ -104,7 +99,7 @@ class FileMaker_RelatedSet
      */
     public function loadExtendedInfo()
     {
-        return $this->_impl->loadExtendedInfo();
+        return new FileMaker_Error($this->_fm, 'Related sets do not support extended information.');
     }
 
 }

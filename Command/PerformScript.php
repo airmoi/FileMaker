@@ -1,4 +1,5 @@
 <?php
+namespace airmoi\FileMaker\Command;
 /**
  * FileMaker API PHP
  *
@@ -14,27 +15,15 @@
  */
 
 /**
- * @ignore Include parent and delegate classes.
- */
-require_once dirname(__FILE__) . '/../Command.php';
-require_once dirname(__FILE__) . '/../Implementation/Command/PerformScriptImpl.php';
-
-
-/**
  * Command class that performs a ScriptMaker script.
  * Create this command with {@link FileMaker::newPerformScriptCommand()}.
  *
  * @package FileMaker
  */
-class FileMaker_Command_PerformScript extends FileMaker_Command
+class PerformScript extends Command
 {
-    /**
-     * Implementation
-     *
-     * @var FileMaker_Command_PerformScript_Implementation
-     * @access private
-     */
-    var $_impl;
+    private $_script;
+    private $_scriptParams;
 
     /**
      * PerformScript command constructor.
@@ -46,9 +35,21 @@ class FileMaker_Command_PerformScript extends FileMaker_Command
      * @param string $scriptName Name of the script to run.
      * @param string $scriptParameters Any parameters to pass to the script.
      */
-    function FileMaker_Command_PerformScript($fm, $layout, $scriptName, $scriptParameters = null)
+    function __construct($fm, $layout, $scriptName, $scriptParameters = null)
     {
-        $this->_impl = new FileMaker_Command_PerformScript_Implementation($fm, $layout, $scriptName, $scriptParameters);
+        parent::__construct($fm, $layout);
+        $this->_script = $scriptName;
+        $this->_scriptParams = $scriptParameters;
+    }
+    
+    function execute() {
+        $params = $this->_getCommandParams();
+        $params['-findany'] = true;
+        $result = $this->_fm->_execute($params);
+        if (FileMaker::isError($result)) {
+            return $result;
+        }
+        return $this->_getResult($result);
     }
 
 }

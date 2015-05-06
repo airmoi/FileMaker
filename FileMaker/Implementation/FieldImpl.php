@@ -275,9 +275,9 @@ class FileMaker_Field_Implementation {
         return $field & $this->_validationMask;
     }
 
-    public function describeValidationRule($rule) {
-        if (is_array($this->_validationRules[$rule])) {
-            return $this->_validationRules[$rule];
+    public function describeValidationRule($validationRule) {
+        if (is_array($this->_validationRules[$validationRule])) {
+            return $this->_validationRules[$validationRule];
         }
         return null;
     }

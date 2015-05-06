@@ -1,4 +1,6 @@
 <?php
+namespace airmoi\FileMaker\Command;
+use airmoi\FileMaker\FileMaker;
 /**
  * FileMaker API for PHP
  *
@@ -14,27 +16,22 @@
  */
 
 /**
- * @ignore Include parent and delegate classes.
- */
-require_once dirname(__FILE__) . '/../Command.php';
-require_once dirname(__FILE__) . '/../Implementation/Command/DeleteImpl.php';
-
-
-/**
  * Command class that deletes a single record.
  * Create this command with {@link FileMaker::newDeleteCommand()}.
  *
  * @package FileMaker
  */
-class FileMaker_Command_Delete extends FileMaker_Command
+class Delete extends Command
 {
     /**
      * Implementation
      *
-     * @var FileMaker_Command_Delete_Implementation
+     * @var FileMaker
      * @access private
      */
-    var $_impl;
+    private $_fm;
+    
+    private $_recordId;
 
     /**
      * Delete command constructor.
@@ -45,9 +42,24 @@ class FileMaker_Command_Delete extends FileMaker_Command
      * @param string $layout Layout to delete record from.
      * @param string $recordId ID of the record to delete.
      */
-    function FileMaker_Command_Delete($fm, $layout, $recordId)
+    public function __construct($fm, $layout, $recordId)
     {
-        $this->_impl = new FileMaker_Command_Delete_Implementation($fm, $layout, $recordId);
+        parent::__construct($fm, $layout);
+        $this->_recordId = $recordId;
     }
-
+    
+    function execute() {
+        if (empty($this->_recordId)) {
+            $error = new FileMaker_Error($this->_fm, 'Delete commands require a record id.');
+            return $error;
+        }
+        $params = $this->_getCommandParams();
+        $params['-delete'] = true;
+        $params['-recid'] = $this->_recordId;
+        $result = $this->_fm->execute($params);
+        if (FileMaker::isError($result)) {
+            return $result;
+        }
+        return $this->_getResult($result);
+    }
 }

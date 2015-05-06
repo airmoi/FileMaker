@@ -1,4 +1,5 @@
 <?php
+namespace airmoi\FileMaker\Command;
 /**
  * FileMaker API for PHP
  *
@@ -13,11 +14,6 @@
  * by implication, by FileMaker.
  */
 
-/**
- * @ignore Include parent and delegate classes.
- */
-require_once dirname(__FILE__) . '/../Command.php';
-require_once dirname(__FILE__) . '/../Implementation/Command/FindRequestImpl.php';
 
 
 /**
@@ -27,15 +23,11 @@ require_once dirname(__FILE__) . '/../Implementation/Command/FindRequestImpl.php
  *
  * @package FileMaker
  */
-class FileMaker_Command_FindRequest
+class FindRequest
 {
-    /**
-     * Implementation
-     *
-     * @var FileMaker_Command_Find_Implementation
-     * @access private
-     */
-    var $_impl;
+    
+    private $_findCriteria = array();
+    private $_omit;
 
     /**
      * Find request constructor.
@@ -45,9 +37,9 @@ class FileMaker_Command_FindRequest
      *        request was created by.
      * @param string $layout Layout to find records in.
      */
-    function FileMaker_Command_FindRequest($fm, $layout)
+    function __construct($fm, $layout)
     {
-        $this->_impl = new FileMaker_Command_FindRequest_Implementation($fm, $layout);
+        $this->_omit = false;
     }
 
     /**
@@ -59,7 +51,7 @@ class FileMaker_Command_FindRequest
      */
     function setOmit($value)
     {
-        $this->_impl->setOmit($value);
+        $this->_omit = $value;
     }
 
     /**
@@ -70,7 +62,7 @@ class FileMaker_Command_FindRequest
      */
     function addFindCriterion($fieldname, $testvalue)
     {
-        $this->_impl->addFindCriterion($fieldname, $testvalue);
+        $$this->_findCriteria[$fieldname] = $testvalue;
     }
     
     /**
@@ -78,7 +70,7 @@ class FileMaker_Command_FindRequest
      */
     function clearFindCriteria()
     {
-        $this->_impl->clearFindCriteria();
+        $this->_findCriteria = array();
     }
 
 	   

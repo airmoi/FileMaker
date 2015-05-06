@@ -2,7 +2,12 @@
 
 namespace airmoi\FileMaker\Implementation;
 
-use airmoi\FileMaker\Parser;
+use airmoi\FileMaker\FileMaker;
+use airmoi\FileMaker\Parser\FileMaker_Parser_FMResultSet;
+use airmoi\FileMaker\Parser\FileMaker_Parser_FMPXMLLAYOUT;
+
+require_once(dirname(__FILE__).'/parser/FMPXMLLAYOUT.php');
+require_once(dirname(__FILE__).'/parser/FMResultSet.php');
 
 class FileMaker_Implementation {
 
@@ -69,13 +74,13 @@ class FileMaker_Implementation {
             return;
         }
         switch ($level) {
-            case FILEMAKER_LOG_DEBUG:
+            case FileMaker::LOG_DEBUG:
                 $this->_logger->log($message, PEAR_LOG_DEBUG);
                 break;
-            case FILEMAKER_LOG_INFO:
+            case FileMaker::LOG_INFO:
                 $this->_logger->log($message, PEAR_LOG_INFO);
                 break;
-            case FILEMAKER_LOG_ERR:
+            case FileMaker::LOG_ERR:
                 $this->_logger->log($message, PEAR_LOG_ERR);
                 break;
         }
@@ -188,7 +193,7 @@ class FileMaker_Implementation {
         if (FileMaker::isError($request)) {
             return $request;
         }
-        $parser = new Parser\FileMaker_Parser_FMResultSet($this);
+        $parser = new FileMaker_Parser_FMResultSet($this);
         $result = $parser->parse($request);
         if (FileMaker::isError($result)) {
             return $result;
@@ -299,7 +304,7 @@ class FileMaker_Implementation {
         if ($isHeadersSent) {
             $curlResponse = $this->_eliminateContainerHeader($curlResponse);
         }
-        $this->log($curlResponse, FILEMAKER_LOG_DEBUG);
+        $this->log($curlResponse, FileMaker::LOG_DEBUG);
         if ($curlError = curl_errno($curl)) {
             return new FileMaker_Error($this, 'Communication Error: (' . $curlError . ') ' . curl_error($curl));
         }
@@ -323,7 +328,7 @@ class FileMaker_Implementation {
             $host .= '/';
         }
         $host .= 'fmi/xml/' . $grammar . '.xml';
-        $this->log('Request for ' . $host, FILEMAKER_LOG_INFO);
+        $this->log('Request for ' . $host, FileMaker::LOG_INFO);
         $curl = curl_init($host);
         curl_setopt($curl, CURLOPT_POST, true);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
@@ -354,7 +359,7 @@ class FileMaker_Implementation {
         if ($curlHeadersSent) {
             $curlResponse = $this->_eliminateXMLHeader($curlResponse);
         }
-        $this->log($curlResponse, FILEMAKER_LOG_DEBUG);
+        $this->log($curlResponse, FileMaker::LOG_DEBUG);
         if ($curlError = curl_errno($curl)) {
 
             if ($curlError == 52) {

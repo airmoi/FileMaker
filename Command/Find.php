@@ -1,4 +1,5 @@
 <?php
+namespace airmoi\FileMaker\Command;
 /**
  * FileMaker API for PHP
  *
@@ -13,12 +14,6 @@
  * by implication, by FileMaker.
  */
 
-/**
- * @ignore Include parent and delegate classes.
- */
-require_once dirname(__FILE__) . '/../Command.php';
-require_once dirname(__FILE__) . '/../Implementation/Command/FindImpl.php';
-
 
 /**
  * Command class that finds records using the specified criteria.
@@ -26,15 +21,17 @@ require_once dirname(__FILE__) . '/../Implementation/Command/FindImpl.php';
  *
  * @package FileMaker
  */
-class FileMaker_Command_Find extends FileMaker_Command
+class Find extends Command
 {
-    /**
-     * Implementation
-     *
-     * @var FileMaker_Command_Find_Implementation
-     * @access private
-     */
-    var $_impl;
+    
+    private $_findCriteria = array();
+    private $_sortRules = array();
+    private $_sortOrders = array();
+    private $_operator;
+    private $_skip;
+    private $_max;
+    private $_relatedsetsfilter;
+    private $_relatedsetsmax;
 
     /**
      * Find command constructor.
@@ -44,9 +41,9 @@ class FileMaker_Command_Find extends FileMaker_Command
      *        command was created by.
      * @param string $layout Layout to find records in.
      */
-    function FileMaker_Command_Find($fm, $layout)
+    public function __construct($fm, $layout)
     {
-        $this->_impl = new FileMaker_Command_Find_Implementation($fm, $layout);
+        parent::__construct($fm, $layout);
     }
 
     /**
@@ -55,17 +52,17 @@ class FileMaker_Command_Find extends FileMaker_Command
      * @param string $fieldname Name of the field being tested.
      * @param string $testvalue Value of field to test against.
      */
-    function addFindCriterion($fieldname, $testvalue)
+    public function addFindCriterion($fieldname, $testvalue)
     {
-        $this->_impl->addFindCriterion($fieldname, $testvalue);
+        $this->_findCriteria[$fieldname] = $testvalue;
     }
 
     /**
      * Clears all existing criteria from this Find command.
      */
-    function clearFindCriteria()
+    public function clearFindCriteria()
     {
-        $this->_impl->clearFindCriteria();
+        $this->_findCriteria = [];
     }
 
     /**
@@ -81,17 +78,47 @@ class FileMaker_Command_Find extends FileMaker_Command
      *        FILEMAKER_SORT_ASCEND constant, the FILEMAKER_SORT_DESCEND 
      *        constant, or the name of a value list specified as a string.
      */
-    function addSortRule($fieldname, $precedence, $order = null)
+    public function addSortRule($fieldname, $precedence, $order = null)
     {
-        $this->_impl->addSortRule($fieldname, $precedence, $order);
+         $this->_sortRules[$precedence] = $fieldname;
+        if ($order !== null) {
+            $this->_sortOrders[$precedence] = $order;
+        }
     }
 
     /**
      * Clears all existing sorting rules from this Find command.
      */
-    function clearSortRules()
+    public function clearSortRules()
     {
-        $this->_impl->clearSortRules();
+         $this->_sortRules = array();
+        $this->_sortOrders = array();
+    }
+    
+    public function execute() {
+        $params = $this->_getCommandParams();
+        $this->_setSortParams($params);
+        $this->_setRangeParams($params);
+        $this->_setRelatedSetsFilters($params);
+        if (count($this->_findCriteria) || $this->_recordId) {
+            $params['-find'] = true;
+        } else {
+            $params['-findall'] = true;
+        }
+        if ($this->_recordId) {
+            $params['-recid'] = $this->_recordId;
+        }
+        if ($this->_operator) {
+            $params['-lop'] = $this->_operator;
+        }
+        foreach ($this->_findCriteria as $field => $value) {
+            $params[$field] = $value;
+        }
+        $result = $this->_fm->_execute($params);
+        if (FileMaker::isError($result)) {
+            return $result;
+        }
+        return $this->_getResult($result);
     }
 
     /**
@@ -103,9 +130,14 @@ class FileMaker_Command_Find extends FileMaker_Command
      * @param integer $operator Specify the FILEMAKER_FIND_AND or 
      *        FILEMAKER_FIND_OR constant.
      */
-    function setLogicalOperator($operator)
+    public function setLogicalOperator($operator)
     {
-        $this->_impl->setLogicalOperator($operator);
+         switch ($operator) {
+            case FILEMAKER_FIND_AND:
+            case FILEMAKER_FIND_OR:
+                $this->_operator = $operator;
+                break;
+        }
     }
 
     /**
@@ -115,9 +147,10 @@ class FileMaker_Command_Find extends FileMaker_Command
      * @param integer $max Maximum number of records to return. 
      *        Default is all.
      */
-    function setRange($skip = 0, $max = null)
+    public function setRange($skip = 0, $max = null)
     {
-        $this->_impl->setRange($skip, $max);
+         $this->_skip = $skip;
+        $this->_max = $max;
     }
 
     /**
@@ -128,9 +161,10 @@ class FileMaker_Command_Find extends FileMaker_Command
      * number of records. If either key does not have a value, the 
      * returned value for that key is NULL.
      */
-    function getRange()
+    public function getRange()
     {
-        return $this->_impl->getRange();
+        return array('skip' => $this->_skip,
+            'max' => $this->_max);
     }
     
     /**
@@ -160,9 +194,10 @@ class FileMaker_Command_Find extends FileMaker_Command
      *                 Setup dialog box's "Number of rows" setting determines 
      *                 the maximum number of related records to return. 
      */
-    function setRelatedSetsFilters($relatedsetsfilter, $relatedsetsmax = null)
+    public function setRelatedSetsFilters($relatedsetsfilter, $relatedsetsmax = null)
     {
-    	return $this->_impl->setRelatedSetsFilters($relatedsetsfilter, $relatedsetsmax);
+    	$this->_relatedsetsfilter = $relatedsetsfilter;
+        $this->_relatedsetsmax = $relatedsetsmax;
     }
     
     /**
@@ -174,9 +209,37 @@ class FileMaker_Command_Find extends FileMaker_Command
      * number of records. If either key does not have a value, the returned 
      * for that key is NULL.
      */
-    function getRelatedSetsFilters()
+    public function getRelatedSetsFilters()
     {
-    	return $this->_impl->getRelatedSetsFilters();
+    	return array('relatedsetsfilter' => $this->_relatedsetsfilter,
+            'relatedsetsmax' => $this->_relatedsetsmax);
+    }
+    
+    private function _setRelatedSetsFilters(&$params) {
+        if ($this->_relatedsetsfilter) {
+            $params['-relatedsets.filter'] = $this->_relatedsetsfilter;
+        }
+        if ($this->_relatedsetsmax) {
+            $params['-relatedsets.max'] = $this->_relatedsetsmax;
+        }
+    }
+
+    private function _setSortParams(&$params) {
+        foreach ($this->_sortRules as $precedence => $fieldname) {
+            $params['-sortfield.' . $precedence] = $fieldname;
+        }
+        foreach ($this->_sortOrders as $precedence => $order) {
+            $params['-sortorder.' . $precedence] = $order;
+        }
+    }
+
+    private function _setRangeParams(&$params) {
+        if ($this->_skip) {
+            $params['-skip'] = $this->_skip;
+        }
+        if ($this->_max) {
+            $params['-max'] = $this->_max;
+        }
     }
 
 }

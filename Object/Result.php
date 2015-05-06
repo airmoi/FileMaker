@@ -1,6 +1,6 @@
 <?php
-namespace airmoi\FileMaker;
-use airmoi\FileMaker\Implementation;
+namespace airmoi\FileMaker\Object;
+use airmoi\FileMaker\FileMaker;
 /**
  * FileMaker API for PHP
  *
@@ -27,36 +27,35 @@ use airmoi\FileMaker\Implementation;
  *
  * @package FileMaker
  */
-class FileMaker_Result
+class Result
 {
-    /**
-     * The delegate that implements this response.
-     *
-     * @var Implementation\FileMaker_Result_Implementation
-     * @access private
-     */
-    private $_impl;
+    private $_fm;
+    private $_layout;
+    private $_records;
+    private $_tableCount;
+    private $_foundSetCount;
+    private $_fetchCount;
 
     /**
      * Result object constructor.
      *
-     * @param FileMaker_Implementation $fm FileMaker_Implementation object 
+     * @param FileMaker $fm FileMaker object 
      *        that this result came from.
      */
     public function __construct($fm)
     {
-        $this->_impl = new Implementation\FileMaker_Result_Implementation($fm);
+        $this->_fm = $fm;
     }
 
     /**
      * Returns a FileMaker_Layout object that describes the layout of this 
      * result set.
      *
-     * @return FileMaker_Layout Layout object.
+     * @return Layout Layout object.
      */
     public function getLayout()
     {
-        return $this->_impl->getLayout();
+        return $this->_layout;
     }
 
     /**
@@ -71,7 +70,7 @@ class FileMaker_Result
      */
     public function getRecords()
     {
-        return $this->_impl->getRecords();
+        return $this->_records;
     }
 
     /**
@@ -86,7 +85,7 @@ class FileMaker_Result
      */
     public function getFields()
     {
-        return $this->_impl->getFields();
+        return $this->_layout->listFields();
     }
 
     /**
@@ -97,7 +96,7 @@ class FileMaker_Result
      */
     public function getRelatedSets()
     {
-        return $this->_impl->getRelatedSets();
+        return $this->_layout->listRelatedSets();
     }
 
     /**
@@ -107,7 +106,7 @@ class FileMaker_Result
      */
     public function getTableRecordCount()
     {
-        return $this->_impl->getTableRecordCount();
+        return $this->_tableCount;
     }
 
     /**
@@ -117,7 +116,7 @@ class FileMaker_Result
      */
     public function getFoundSetCount()
     {
-        return $this->_impl->getFoundSetCount();
+        return $this->_foundSetCount;
     }
 
     /**
@@ -132,7 +131,7 @@ class FileMaker_Result
      */
     public function getFetchCount()
     {
-        return $this->_impl->getFetchCount();
+        return $this->_fetchCount;
     }
     
     /**
@@ -142,7 +141,7 @@ class FileMaker_Result
      */
     public function getFirstRecord()
     {
-    	return $this->_impl->getFirstRecord();
+    	return $this->_records[0];
     }
     
     /**
@@ -150,9 +149,9 @@ class FileMaker_Result
      *
      * @return FileMaker_Record Last record.
      */
-   	public function getLastRecord()
+    public function getLastRecord()
     {
-    	return $this->_impl->getLastRecord();
+    	return $this->_records[sizeof($this->_records) - 1];
     }
 
 }

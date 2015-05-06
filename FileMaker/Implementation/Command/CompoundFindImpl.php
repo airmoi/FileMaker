@@ -1,133 +1,134 @@
 <?php
-  require_once dirname(__FILE__) . '/../CommandImpl.php';
- class FileMaker_Command_CompoundFind_Implementation extends FileMaker_Command_Implementation
-{
-	 var $_findCriteria = array();
- var $Vd65662c5 = array();
- var $Va9136a07 = array();
- var $V83f28691;
- var $V85fd701e;
- var $V6da136ea;
- var $V568aa2ec;
- var $Vad2bfd5a = array();
- function FileMaker_Command_CompoundFind_Implementation($V0ab34ca9, $Vc6140495)
-	{
- FileMaker_Command_Implementation::FileMaker_Command_Implementation($V0ab34ca9, $Vc6140495);
-}
- function &execute()
-	{ 
- $V090cbceb= null;
 
- $V8ac10dab = 0; 
- $V31c3c8cf = 0;
-$V40677621 = 1; 
- $Ve2942a04 = 1; 
- $V21ffce5b = $this->_getCommandParams(); 
- $this->_setSortParams($V21ffce5b);
-$this->_setRangeParams($V21ffce5b);
-$this->_setRelatedSetsFilters($V21ffce5b); 
- ksort($this->Vad2bfd5a); 
- $V31c3c8cf=count($this->Vad2bfd5a);  
- foreach ($this->Vad2bfd5a as $V70a17ffa =>	$V9a7aa128)
- {  
- $V15c46c6e = $V9a7aa128->_impl->_findCriteria;
-$V8ac10dab = count($V15c46c6e);
+require_once dirname(__FILE__) . '/../CommandImpl.php';
 
- $V090cbceb = $V090cbceb.'(';
+class FileMaker_Command_CompoundFind_Implementation extends FileMaker_Command_Implementation {
 
- $V4111477f = 0;
-foreach ($V15c46c6e as $Vd1148ee8 => $Ve9de89b0) { 
- $V21ffce5b['-q'.$Ve2942a04] = $Vd1148ee8;
-$V21ffce5b['-q'.$Ve2942a04.'.'."value"] = $Ve9de89b0; 
- $V090cbceb=$V090cbceb.'q'.$Ve2942a04; 
- $Ve2942a04++;
-$V4111477f++; 
- 
- if($V4111477f < $V8ac10dab){
- $V090cbceb = $V090cbceb.',';
-}
-}
-$V090cbceb=$V090cbceb.")"; 
- $V40677621++; 
- if($V40677621 <= $V31c3c8cf){ 
- $V4b22ce92 = $this->Vad2bfd5a[$V40677621];
-if($V4b22ce92->_impl->_omit == true){
- $V090cbceb = $V090cbceb.';!';
-}else{
- $V090cbceb = $V090cbceb.';';
-}
-}
-} 
- $V21ffce5b['-query'] = $V090cbceb; 
- $V21ffce5b['-findquery'] = true; 
- $V0f635d0e = $this->_fm->_execute($V21ffce5b);
-if (FileMaker::isError($V0f635d0e)) {
- return $V0f635d0e;
-} 
- return $this->_getResult($V0f635d0e);
-}
- function add($Vffbd028a, $Vd0dff0df)
-	{
- $this->Vad2bfd5a[$Vffbd028a] = $Vd0dff0df;
-}
- function addSortRule($Vd1148ee8, $Vffbd028a, $V70a17ffa = null)
-	{
- $this->Vd65662c5[$Vffbd028a] = $Vd1148ee8;
-if ($V70a17ffa !== null) {
- $this->Va9136a07[$Vffbd028a] = $V70a17ffa;
-}
-}
- function clearSortRules()
-	{
- $this->Vd65662c5= array();
-$this->Va9136a07= array();
-}
- function setRange($V08b43519 = 0, $V2ffe4e77 = null)
-	{
- $this->V83f28691= $V08b43519;
-$this->V85fd701e= $V2ffe4e77;
-}
- function getRange()
-	{
- return array('skip' => $this->V83f28691,
- 'max' => $this->V85fd701e);
-}
+    private $_findCriteria = array();
+    private $_sortFields = array();
+    private $_sortOrders = array();
+    private $_skip;
+    private $_max;
+    private $_relatedsetsfilter;
+    private $_relatedsetsmax;
+    private $_requests = array();
 
-  function setRelatedSetsFilters($Vdba51d08, $V01a8ebbf = null)
- {
- $this->V6da136ea= $Vdba51d08;
-$this->V568aa2ec= $V01a8ebbf;
-}
- function getRelatedSetsFilters()
- {
- return array('relatedsetsfilter' => $this->V6da136ea,
- 'relatedsetsmax' => $this->V568aa2ec);
-}
- function _setRelatedSetsFilters(&$V21ffce5b)
- {
- if ($this->V6da136ea) {
- $V21ffce5b['-relatedsets.filter'] = $this->V6da136ea;
-}
-if ($this->V568aa2ec) {
- $V21ffce5b['-relatedsets.max'] = $this->V568aa2ec;
-}
-}
- function _setSortParams(&$V21ffce5b)
-	{
- foreach ($this->Vd65662c5 as $Vffbd028a => $Vd1148ee8) {
- $V21ffce5b['-sortfield.' . $Vffbd028a] = $Vd1148ee8;
-}
-foreach ($this->Va9136a07 as $Vffbd028a => $V70a17ffa) {
- $V21ffce5b['-sortorder.' . $Vffbd028a] = $V70a17ffa;
-}
-}
- function _setRangeParams(&$V21ffce5b)
-	{
- if ($this->V83f28691) {
- $V21ffce5b['-skip'] = $this->V83f28691;
-}
-if ($this->V85fd701e) {
- $V21ffce5b['-max'] = $this->V85fd701e;
-}
-}
+    function FileMaker_Command_CompoundFind_Implementation($fm, $layout) {
+        FileMaker_Command_Implementation::FileMaker_Command_Implementation($fm, $layout);
+    }
+
+    function &execute() {
+        $query = null;
+
+        $critCount = 0;
+        $totalRequestCount = 0;
+        $requestCount = 1;
+        $totalCritCount = 1;
+        $params = $this->_getCommandParams();
+        $this->_setSortParams($params);
+        $this->_setRangeParams($params);
+        $this->_setRelatedSetsFilters($params);
+        ksort($this->_requests);
+        $totalRequestCount = count($this->_requests);
+        foreach ($this->_requests as $precedence => $request) {
+            $findCriterias = $request->_impl->_findCriteria;
+            $critCount = count($findCriterias);
+
+            $query = $query . '(';
+
+            $i = 0;
+            foreach ($findCriterias as $fieldname => $testvalue) {
+                $params['-q' . $totalCritCount] = $fieldname;
+                $params['-q' . $totalCritCount . '.' . "value"] = $testvalue;
+                $query = $query . 'q' . $totalCritCount;
+                $totalCritCount++;
+                $i++;
+
+                if ($i < $critCount) {
+                    $query = $query . ',';
+                }
+            }
+            $query = $query . ")";
+            $requestCount++;
+            if ($requestCount <= $totalRequestCount) {
+                $nextRequest = $this->_requests[$requestCount];
+                if ($nextRequest->_impl->_omit == true) {
+                    $query = $query . ';!';
+                } else {
+                    $query = $query . ';';
+                }
+            }
+        }
+        $params['-query'] = $query;
+        $params['-findquery'] = true;
+        $result = $this->_fm->_execute($params);
+        if (FileMaker::isError($result)) {
+            return $result;
+        }
+        return $this->_getResult($result);
+    }
+
+    function add($precedence, $findrequest) {
+        $this->_requests[$precedence] = $findrequest;
+    }
+
+    function addSortRule($fieldname, $precedence, $order = null) {
+        $this->_sortFields[$precedence] = $fieldname;
+        if ($order !== null) {
+            $this->_sortOrders[$precedence] = $order;
+        }
+    }
+
+    function clearSortRules() {
+        $this->_sortFields = array();
+        $this->_sortOrders = array();
+    }
+
+    function setRange($skip = 0, $max = null) {
+        $this->_skip = $skip;
+        $this->_max = $max;
+    }
+
+    function getRange() {
+        return array('skip' => $this->_skip,
+            'max' => $this->_max);
+    }
+
+    function setRelatedSetsFilters($relatedsetsfilter, $relatedsetsmax = null) {
+        $this->_relatedsetsfilter = $relatedsetsfilter;
+        $this->_relatedsetsmax = $relatedsetsmax;
+    }
+
+    function getRelatedSetsFilters() {
+        return array('relatedsetsfilter' => $this->_relatedsetsfilter,
+            'relatedsetsmax' => $this->_relatedsetsmax);
+    }
+
+    function _setRelatedSetsFilters(&$params) {
+        if ($this->_relatedsetsfilter) {
+            $params['-relatedsets.filter'] = $this->_relatedsetsfilter;
+        }
+        if ($this->_relatedsetsmax) {
+            $params['-relatedsets.max'] = $this->_relatedsetsmax;
+        }
+    }
+
+    function _setSortParams(&$params) {
+        foreach ($this->_sortFields as $precedence => $fieldname) {
+            $params['-sortfield.' . $precedence] = $fieldname;
+        }
+        foreach ($this->_sortOrders as $precedence => $order) {
+            $params['-sortorder.' . $precedence] = $order;
+        }
+    }
+
+    function _setRangeParams(&$params) {
+        if ($this->_skip) {
+            $params['-skip'] = $this->_skip;
+        }
+        if ($this->_max) {
+            $params['-max'] = $this->_max;
+        }
+    }
+
 }

@@ -3,9 +3,8 @@
 namespace airmoi\FileMaker\Parser;
 
 use airmoi\FileMaker\FileMaker;
-use airmoi\FileMaker\Implementation as Impl;
 
-class FileMaker_Parser_FMResultSet {
+class FMResultSet {
 
     private $_errorCode;
     private $_serverVersion;
@@ -25,7 +24,7 @@ class FileMaker_Parser_FMResultSet {
     private $_result;
     private $_layout;
 
-    public function __construct(Impl\FileMaker_Implementation $fm) {
+    public function __construct(FileMaker $fm) {
         $this->_fm = $fm;
     }
 

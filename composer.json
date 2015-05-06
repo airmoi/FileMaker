@@ -1,0 +1,11 @@
+{
+    "name": "vendor/f-m-a-p-i-for-p-h-p-standalone",
+    "description": "Description of project FM_API_for_PHP_Standalone.",
+    "authors": [
+        {
+            "name": "romain",
+            "email": "romain_pro@dunand.me"
+        }
+    ],
+    "require": {}
+}

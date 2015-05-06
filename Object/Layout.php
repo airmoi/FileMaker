@@ -1,6 +1,6 @@
 <?php
-namespace airmoi\FileMaker;
-use airmoi\FileMaker\Implementation as Impl;
+namespace airmoi\FileMaker\Object;
+use airmoi\FileMaker\FileMaker;
 /**
  * FileMaker API for PHP
  *
@@ -30,26 +30,29 @@ use airmoi\FileMaker\Implementation as Impl;
  *
  * @package FileMaker
  */
-class FileMaker_Layout
+class Layout
 {
     /**
-     * Implementation. This is the object that actually implements the
-     * layout functionality.
      *
-     * @private Impl\FileMaker_Layout_Implementation
-     * @access private
+     * @var FileMaker 
      */
-    private $_impl;
-
+    private $_fm;
+    private $_name;
+    private $_fields = array();
+    private $_relatedSets = array();
+    private $_valueLists = array();
+    private $_valueListTwoFields = array();
+    private $_database;
+    private $_extended = false;
     /**
      * Layout object constructor.
      *
      * @param FileMaker_Implementation &$fm FileMaker_Implementation object 
      *        that this layout was created through.
      */
-    public function FileMaker_Layout(FileMaker_Implementation $fm)
+    public function __construct(FileMaker $fm)
     {
-        $this->_impl = new Impl\FileMaker_Layout_Implementation($fm);
+        $this->_fm = $fm;
     }
 
     /**
@@ -59,7 +62,7 @@ class FileMaker_Layout
      */
     public function getName()
     {
-        return $this->_impl->getName();
+        return $this->_name;
     }
 
     /**
@@ -69,7 +72,7 @@ class FileMaker_Layout
      */
     public function getDatabase()
     {
-        return $this->_impl->getDatabase();
+        return $this->_database;
     }
 
     /**
@@ -79,7 +82,7 @@ class FileMaker_Layout
      */
     public function listFields()
     {
-        return $this->_impl->listFields();
+        return array_keys($this->_fields);
     }
 
     /**
@@ -92,7 +95,10 @@ class FileMaker_Layout
      */
     public function getField($fieldName)
     {
-        return $this->_impl->getField($fieldName);
+        if (isset($this->_fields[$fieldName])) {
+            return $this->_fields[$fieldName];
+        }
+        return new FileMaker_Error($this->_fm, 'Field Not Found');
     }
 
     /**
@@ -103,7 +109,7 @@ class FileMaker_Layout
      */
     public function getFields()
     {
-        return $this->_impl->getFields();
+        return $this->_fields;
     }
 
     /**
@@ -114,7 +120,7 @@ class FileMaker_Layout
      */
     public function listRelatedSets()
     {
-        return $this->_impl->listRelatedSets();
+        return array_keys($this->_relatedSets);
     }
 
     /**
@@ -128,7 +134,10 @@ class FileMaker_Layout
      */
     public function getRelatedSet($relatedSet)
     {
-        return $this->_impl->getRelatedSet($relatedSet);
+         if (isset($this->_relatedSets[$relatedSet])) {
+            return $this->_relatedSets[$relatedSet];
+        }
+        return new FileMaker_Error($this->_fm, 'RelatedSet Not Found');
     }
 
     /**
@@ -139,7 +148,7 @@ class FileMaker_Layout
      */
     public function getRelatedSets()
     {
-        return $this->_impl->getRelatedSets();
+        return $this->_relatedSets;
     }
 
     /**
@@ -150,7 +159,11 @@ class FileMaker_Layout
      */
     public function listValueLists()
     {
-        return $this->_impl->listValueLists();
+        $ExtendedInfos = $this->loadExtendedInfo();
+        if (FileMaker::isError($ExtendedInfos)) {
+            return $ExtendedInfos;
+        }
+        return array_keys($this->_valueLists);
     }
 
     /**
@@ -166,9 +179,14 @@ class FileMaker_Layout
 
      * @see getValueListTwoFields
      */
-    public function getValueList($valueList, $recid = null)
+    public function getValueList($listName, $recid = null)
     {
-        return $this->_impl->getValueList($valueList, $recid);
+        $ExtendedInfos = $this->loadExtendedInfo($recid);
+        if (FileMaker::isError($ExtendedInfos)) {
+            return $ExtendedInfos;
+        }
+        return isset($this->_valueLists[$listName]) ?
+                $this->_valueLists[$listName] : null;
     }
 
     
@@ -199,7 +217,12 @@ class FileMaker_Layout
 
     {
 
-        return $this->_impl->getValueListTwoFields($valueList, $recid);
+        $ExtendedInfos = $this->loadExtendedInfo($recid);
+        if (FileMaker::isError($ExtendedInfos)) {
+            return $ExtendedInfos;
+        }
+        return isset($this->_valueLists[$listName]) ?
+                $this->_valueListTwoFields[$listName] : null;
 
     }
 
@@ -220,7 +243,11 @@ class FileMaker_Layout
      */
     public function getValueLists($recid = null)
     {
-        return $this->_impl->getValueLists($recid);
+        $ExtendedInfos = $this->loadExtendedInfo($recid);
+        if (FileMaker::isError($ExtendedInfos)) {
+            return $ExtendedInfos;
+        }
+        return $this->_valueLists;
     }
 
     
@@ -251,7 +278,11 @@ class FileMaker_Layout
 
     {
 
-        return $this->_impl->getValueListsTwoFields($recid);
+        $ExtendedInfos = $this->loadExtendedInfo($recid);
+        if (FileMaker::isError($ExtendedInfos)) {
+            return $ExtendedInfos;
+        }
+        return $this->_valueListTwoFields;
 
     }
 
@@ -267,7 +298,26 @@ class FileMaker_Layout
      */
     public function loadExtendedInfo($recid = null)
     {
-        return $this->_impl->loadExtendedInfo($recid);
-    }
+        if (!$this->_extended) {
 
+            if ($recid != null) {
+                $result = $this->_fm->_execute(array('-db' => $this->_fm->getProperty('database'),
+                    '-lay' => $this->getName(),
+                    '-recid' => $recid,
+                    '-view' => null), 'FMPXMLLAYOUT');
+            } else {
+                $result = $this->_fm->_execute(array('-db' => $this->_fm->getProperty('database'),
+                    '-lay' => $this->getName(),
+                    '-view' => null), 'FMPXMLLAYOUT');
+            }
+            $parser = new Parser\FileMaker_Parser_FMPXMLLAYOUT($this->_fm);
+            $parseResult = $parser->parse($result);
+            if (FileMaker::isError($parseResult)) {
+                return $parseResult;
+            }
+            $parser->setExtendedInfo($this);
+            $this->_extended = true;
+        }
+        return $this->_extended;
+    }
 }

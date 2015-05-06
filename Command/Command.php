@@ -1,6 +1,8 @@
 <?php
-namespace airmoi\FileMaker;
-use airmoi\FileMaker\Implementation as Impl;
+namespace airmoi\FileMaker\Command;
+use airmoi\FileMaker\FileMaker;
+use airmoi\FileMaker\Parser\FMResultSet;
+use airmoi\FileMaker\Object\Result;
 /**
  * FileMaker API for PHP
  *
@@ -23,17 +25,33 @@ use airmoi\FileMaker\Implementation as Impl;
  *
  * @package FileMaker
  */
-class FileMaker_Command
+class Command
 {
     /**
      * Implementation. This is the object that actually implements the
      * command base.
      *
-     * @var Impl\FileMaker_Command_Implementation
+     * @var FileMaker
      * @access private
      */
-    private $_impl;
+    private $_fm;
+    
+    private $_layout;
+    private $_resultLayout;
+    private $_script;
+    private $_scriptParams;
+    private $_preReqScript;
+    private $_preReqScriptParams;
+    private $_preSortScript;
+    private $_preSortScriptParams;
+    private $_recordClass;
+    private $_recordId;
 
+    public function __construct(FileMaker $fm, $layout){
+        $this->_fm = $fm;
+        $this->_layout = $layout;
+        $this->_recordClass = $fm->getProperty('recordClass');
+    }
     /**
      * Requests that the command's result be returned in a layout different 
      * from the current layout.
@@ -42,7 +60,7 @@ class FileMaker_Command
      */
     public function setResultLayout($layout)
     {
-        $this->_impl->setResultLayout($layout);
+        $this->_resultLayout = $layout;
     }
 
     /**
@@ -54,7 +72,8 @@ class FileMaker_Command
      */
     public function setScript($scriptName, $scriptParameters = null)
     {
-        $this->_impl->setScript($scriptName, $scriptParameters);
+        $this->_script = $scriptName;
+        $this->_scriptParams = $scriptParams;
     }
 
     /**
@@ -65,7 +84,8 @@ class FileMaker_Command
      */
     public function setPreCommandScript($scriptName, $scriptParameters = null)
     {
-        $this->_impl->setPreCommandScript($scriptName, $scriptParameters);
+         $this->_preReqScript = $scriptName;
+        $this->_preReqScriptParams = $scriptParams;
     }
 
     /**
@@ -77,7 +97,8 @@ class FileMaker_Command
      */
     public function setPreSortScript($scriptName, $scriptParameters = null)
     {
-        $this->_impl->setPreSortScript($scriptName, $scriptParameters);
+         $this->_preSortScript = $scriptName;
+        $this->_preSortScriptParams = $scriptParams;
     }
 
     /**
@@ -94,7 +115,7 @@ class FileMaker_Command
      */
     public function setRecordClass($className)
     {
-        $this->_impl->setRecordClass($className);
+        $this->_recordClass = $className;
     }
 
     /**
@@ -121,7 +142,44 @@ class FileMaker_Command
      */
     public function validate($fieldName = null)
     {
-        return $this->_impl->validate($fieldName);
+        if (!is_a($this, 'Add') && !is_a($this, 'Edit')) {
+            return true;
+        }
+        $layout = $this->_fm->getLayout($this->_layout);
+        if (FileMaker :: isError($layout)) {
+            return $layout;
+        }
+        $validationErrors = new FileMaker_Error_Validation($this->_fm);
+        if ($field === null) {
+            foreach ($layout->getFields() as $field => $properties) {
+                if (!isset($this->_fields[$field]) || !count($this->_fields[$field])) {
+                    $errors = array(
+                        0 => null
+                    );
+                } else {
+                    $errors = $this->_fields[$field];
+                }
+                foreach ($errors as $error) {
+                    $validationErrors = $properties->validate($error, $validationErrors);
+                }
+            }
+        } else {
+            $properties = & $layout->getField($field);
+            if (FileMaker :: isError($properties)) {
+                return $properties;
+            }
+            if (!isset($this->_fields[$field]) || !count($this->_fields[$field])) {
+                $errors = array(
+                    0 => null
+                );
+            } else {
+                $errors = $this->_fields[$field];
+            }
+            foreach ($errors as $error) {
+                $validationErrors = $properties->validate($error, $validationErrors);
+            }
+        }
+        return $validationErrors->numErrors() ? $validationErrors : true;
     }
 
     /**
@@ -131,7 +189,7 @@ class FileMaker_Command
      */
     public function execute()
     {
-        return $this->_impl->execute();
+        return $this->execute();
     }
 
     /**
@@ -145,7 +203,51 @@ class FileMaker_Command
      */
     public function setRecordId($recordId)
     {
-        $this->_impl->setRecordId($recordId);
+        $this->_recordId = $recordId;
+    }
+
+    /**
+     * 
+     * @param string $xml
+     * @return Result
+     */
+    private function _getResult($xml) {
+        $parser = new FMResultSet($this->_fm);
+        $parseResult = $parser->parse($xml);
+        if (FileMaker :: isError($parseResult)) {
+            return $parseResult;
+        }
+        $result = new Result($this->_fm);
+        $parseResult = $parser->setResult($result, $this->_recordClass);
+        if (FileMaker :: isError($parseResult)) {
+            return $parseResult;
+        }
+        return $result;
+    }
+
+    function _getCommandParams() {
+        $queryParams = array(
+            '-db' => $this->_fm->getProperty('database'
+            ), '-lay' => $this->_layout);
+        
+        foreach (array(
+                '_script' => '-script',
+                '_preReqScript' => '-script.prefind',
+                '_preSortScript' => '-script.presort'
+                    ) as $varName => $paramName) 
+                {
+            if ($this->$varName) {
+                $queryParams[$paramName] = $this->$varName;
+                $varName .= 'Params';
+                if ($this->$varName !== null) {
+                    $queryParams[$paramName . '.param'] = $this->$varName;
+                }
+            }
+        }
+        if ($this->_resultLayout) {
+            $queryParams['-lay.response'] = $this->_resultLayout;
+        }
+        return $queryParams;
     }
 
 }

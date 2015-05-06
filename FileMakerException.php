@@ -14,30 +14,15 @@ namespace airmoi\FileMaker;
  * by implication, by FileMaker.
  */
 
-/**
- * @ignore Makes sure that the PEAR base class is loaded. Falls back to a
- * bundled version if it's not found in the include_path.
- */
-/*@include_once 'PEAR.php';
-if (!class_exists('PEAR_Error')) {
-    include_once 'FileMaker/PEAR.php';
-}*/
-
 
 /**
  * Extension of the PEAR_Error class for use in all FileMaker classes.
  *
  * @package FileMaker
  */
-class FileMaker_Error extends PEAR_Error
+class FileMakerException extends \Exception
 {
-    /**
-     * FileMaker object the error was generated from.
-     *
-     * @var FileMaker
-     */
     private $_fm;
-
     /**
      * Overloaded FileMaker_Error constructor.
      *
@@ -46,13 +31,10 @@ class FileMaker_Error extends PEAR_Error
      * @param string $message Error message.
      * @param integer $code Error code.
      */
-    public function __construct($fm, $message = null, $code = null)
+    public function __construct($fm, $message = null, $code = null, $previous=null)
     {
         $this->_fm = $fm;
-        parent::PEAR_Error($message, $code);
-
-        // Log the error.
-        $fm->log($this->getMessage(), FILEMAKER_LOG_ERR);
+        parent::__construct($message, $code, $previous);
     }
 
     /**
