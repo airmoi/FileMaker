@@ -1,5 +1,6 @@
 <?php
 namespace airmoi\FileMaker\Command;
+use airmoi\FileMaker\FileMaker;
 /**
  * FileMaker API for PHP
  *
@@ -75,7 +76,7 @@ class Find extends Command
      *        records have the same value after the first sorting rule is 
      *        applied, and so on.
      * @param mixed $order Direction of the sort. Specify the 
-     *        FILEMAKER_SORT_ASCEND constant, the FILEMAKER_SORT_DESCEND 
+     *        FileMaker::SORT_ASCEND constant, the FileMaker::SORT_DESCEND 
      *        constant, or the name of a value list specified as a string.
      */
     public function addSortRule($fieldname, $precedence, $order = null)
@@ -100,13 +101,13 @@ class Find extends Command
         $this->_setSortParams($params);
         $this->_setRangeParams($params);
         $this->_setRelatedSetsFilters($params);
-        if (count($this->_findCriteria) || $this->_recordId) {
+        if (count($this->_findCriteria) || $this->recordId) {
             $params['-find'] = true;
         } else {
             $params['-findall'] = true;
         }
-        if ($this->_recordId) {
-            $params['-recid'] = $this->_recordId;
+        if ($this->recordId) {
+            $params['-recid'] = $this->recordId;
         }
         if ($this->_operator) {
             $params['-lop'] = $this->_operator;
@@ -114,7 +115,7 @@ class Find extends Command
         foreach ($this->_findCriteria as $field => $value) {
             $params[$field] = $value;
         }
-        $result = $this->_fm->_execute($params);
+        $result = $this->fm->execute($params);
         if (FileMaker::isError($result)) {
             return $result;
         }
@@ -127,14 +128,14 @@ class Find extends Command
      *
      * If not specified, the default is a logical AND.
      *
-     * @param integer $operator Specify the FILEMAKER_FIND_AND or 
-     *        FILEMAKER_FIND_OR constant.
+     * @param integer $operator Specify the FileMaker::FIND_AND or 
+     *        FileMaker::FIND_OR constant.
      */
     public function setLogicalOperator($operator)
     {
          switch ($operator) {
-            case FILEMAKER_FIND_AND:
-            case FILEMAKER_FIND_OR:
+            case FileMaker::FIND_AND:
+            case FileMaker::FIND_OR:
                 $this->_operator = $operator;
                 break;
         }

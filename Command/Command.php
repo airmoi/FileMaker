@@ -32,23 +32,23 @@ class Command
      * command base.
      *
      * @var FileMaker
-     * @access private
+     * @access protected
      */
-    private $_fm;
+    public $fm;
     
-    private $_layout;
-    private $_resultLayout;
-    private $_script;
-    private $_scriptParams;
-    private $_preReqScript;
-    private $_preReqScriptParams;
-    private $_preSortScript;
-    private $_preSortScriptParams;
-    private $_recordClass;
-    private $_recordId;
+    protected $_layout;
+    protected $_resultLayout;
+    protected $_script;
+    protected $_scriptParams;
+    protected $_preReqScript;
+    protected $_preReqScriptParams;
+    protected $_preSortScript;
+    protected $_preSortScriptParams;
+    protected $_recordClass;
+    public $recordId;
 
     public function __construct(FileMaker $fm, $layout){
-        $this->_fm = $fm;
+        $this->fm = $fm;
         $this->_layout = $layout;
         $this->_recordClass = $fm->getProperty('recordClass');
     }
@@ -145,11 +145,11 @@ class Command
         if (!is_a($this, 'Add') && !is_a($this, 'Edit')) {
             return true;
         }
-        $layout = $this->_fm->getLayout($this->_layout);
+        $layout = $this->fm->getLayout($this->_layout);
         if (FileMaker :: isError($layout)) {
             return $layout;
         }
-        $validationErrors = new FileMaker_Error_Validation($this->_fm);
+        $validationErrors = new FileMaker_Error_Validation($this->fm);
         if ($field === null) {
             foreach ($layout->getFields() as $field => $properties) {
                 if (!isset($this->_fields[$field]) || !count($this->_fields[$field])) {
@@ -203,31 +203,27 @@ class Command
      */
     public function setRecordId($recordId)
     {
-        $this->_recordId = $recordId;
+        $this->recordId = $recordId;
     }
 
     /**
      * 
      * @param string $xml
      * @return Result
+     * @throws \airmoi\FileMaker\FileMakerException
      */
-    private function _getResult($xml) {
-        $parser = new FMResultSet($this->_fm);
+    protected function _getResult($xml) {
+        $parser = new FMResultSet($this->fm);
         $parseResult = $parser->parse($xml);
-        if (FileMaker :: isError($parseResult)) {
-            return $parseResult;
-        }
-        $result = new Result($this->_fm);
+        $result = new Result($this->fm);
         $parseResult = $parser->setResult($result, $this->_recordClass);
-        if (FileMaker :: isError($parseResult)) {
-            return $parseResult;
-        }
+        
         return $result;
     }
 
     function _getCommandParams() {
         $queryParams = array(
-            '-db' => $this->_fm->getProperty('database'
+            '-db' => $this->fm->getProperty('database'
             ), '-lay' => $this->_layout);
         
         foreach (array(

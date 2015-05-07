@@ -14,7 +14,7 @@ class FileMaker_Field_Implementation {
     private $_result;
     private $_type;
     private $_valueList = null;
-    private $_styleType;
+    private $styleType;
     private $_maxCharacters = 0;
 
     public function __construct($layoutName) {
@@ -45,7 +45,7 @@ class FileMaker_Field_Implementation {
         $isValid = true;
         if ($validationError === null) {
             $isValid = false;
-            $validationError = new FileMaker_Error_Validation($this->_layout->_impl->_fm);
+            $validationError = new FileMaker_Error_Validation($this->_layout->_impl->fm);
         }
         foreach ($this->getValidationRules() as $rule) {
             switch ($rule) {
@@ -340,7 +340,7 @@ class FileMaker_Field_Implementation {
         if (FileMaker::isError($extendedInfos)) {
             return $extendedInfos;
         }
-        return $this->_styleType;
+        return $this->styleType;
     }
 
 }

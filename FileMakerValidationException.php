@@ -1,6 +1,8 @@
 <?php
-namespace airmoi\FileMaker\Error;
-use airmoi\FileMaker;
+namespace airmoi\FileMaker;
+use airmoi\FileMaker\FileMaker;
+use airmoi\FileMaker\FileMakerException;
+use airmoi\FileMaker\Object\Field;
 /**
  * FileMaker API for PHP
  *
@@ -26,7 +28,7 @@ use airmoi\FileMaker;
  *
  * @package FileMaker
  */
-class FileMaker_Error_Validation extends FileMaker_Error
+class FileMakerValidationException extends FileMakerException
 {
     /**
      * Error array.
@@ -39,7 +41,7 @@ class FileMaker_Error_Validation extends FileMaker_Error
     /**
      * Adds an error.
      *
-     * @param FileMaker_Field $field Field object that failed pre-validation.
+     * @param Field $field Field object that failed pre-validation.
      * @param integer $rule Pre-validation rule that failed specified as one 
      *        of the FILEMAKER_RULE_* constants.
      * @param string $value Value that failed pre-validation.

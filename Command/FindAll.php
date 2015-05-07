@@ -44,7 +44,7 @@ class FindAll extends Find
         $params['-findall'] = true;
         $this->_setSortParams($params);
         $this->_setRangeParams($params);
-        $result = $this->_fm->_execute($params);
+        $result = $this->fm->_execute($params);
         if (FileMaker::isError($result)) {
             return $result;
         }

@@ -1,6 +1,7 @@
 <?php
 namespace airmoi\FileMaker\Object;
 use airmoi\FileMaker\FileMaker;
+use airmoi\FileMaker\FileMakerException;
 /**
  * FileMaker API for PHP
  *
@@ -30,6 +31,19 @@ use airmoi\FileMaker\FileMaker;
 class RelatedSet
 {
     /**
+     *
+     * @var FileMaker 
+     */
+    public $fm;
+    /**
+     *
+     * @var Layout 
+     */
+    public $layout;
+    public $name;
+    
+    public $fields;
+    /**
      * Portal constructor.
      *
      * @param Layout &$layout Layout object that this 
@@ -37,8 +51,8 @@ class RelatedSet
      */
     public function __construct($layout)
     {
-        $this->_layout = $layout;
-        $this->_fm = $layout->_impl->_fm;
+        $this->layout = $layout;
+        $this->fm = $layout->fm;
     }
 
     /**
@@ -49,7 +63,7 @@ class RelatedSet
      */
     public function getName()
     {
-        return $this->_name;
+        return $this->name;
     }
 
     /**
@@ -59,23 +73,23 @@ class RelatedSet
      */
     public function listFields()
     {
-        return array_keys($this->_fields);
+        return array_keys($this->fields);
     }
 
     /**
      * Returns a FileMaker_Field object that describes the specified field.
      *
      * @param string $fieldName Name of field.
-     *
-     * @return FileMaker_Field|FileMaker_Error Field object, if successful. 
-     *         Otherwise, an Error object.
+     * 
+     * @return FileMaker_Field Field object, if successful. 
+     * @throws FileMakerException
      */
     public function getField($fieldName)
     {
-        if (isset($this->_fields[$fieldName])) {
-            return $this->_fields[$fieldName];
+        if (isset($this->fields[$fieldName])) {
+            return $this->fields[$fieldName];
         }
-        return new FileMaker_Error($this->_fm, 'Field Not Found');
+        throw new FileMakerException($this->fm, 'Field Not Found');
     }
 
     /**
@@ -86,7 +100,7 @@ class RelatedSet
      */
     public function getFields()
     {
-        return $this->_fields;
+        return $this->fields;
     }
 
     /**
@@ -99,7 +113,7 @@ class RelatedSet
      */
     public function loadExtendedInfo()
     {
-        return new FileMaker_Error($this->_fm, 'Related sets do not support extended information.');
+        throw new FileMakerException($this->fm, 'Related sets do not support extended information.');
     }
 
 }

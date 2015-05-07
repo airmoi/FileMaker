@@ -15,7 +15,7 @@ class FileMaker_Record_Implementation {
 
     public function __construct($layout) {
         $this->_layout = $layout;
-        $this->_fm = $layout->_impl->_fm;
+        $this->_fm = $layout->_impl->fm;
     }
 
     public function getLayout() {
@@ -136,7 +136,7 @@ class FileMaker_Record_Implementation {
             return $relatedSetInfos;
         }
         $record = new FileMaker_Record($relatedSetInfos);
-        $record->_impl->_parent = $parentRecord;
+        $record->_impl->parent = $parentRecord;
         return $record;
     }
 
@@ -179,7 +179,7 @@ class FileMaker_Record_Implementation {
             return new FileMaker_Error($this->_fm, 'You cannot delete a record that does not exist on the server.');
         }
         if ($this->_parent) {
-            $editCommand = $this->_fm->newEditCommand($this->_parent->_impl->_layout->getName(), $this->_parent->_impl->_recordId, []);
+            $editCommand = $this->_fm->newEditCommand($this->_parent->_impl->layout->getName(), $this->_parent->_impl->recordId, []);
             $editCommand->_impl->_setdeleteRelated($this->_layout->getName() . "." . $this->_recordId);
 
             return $editCommand->execute();
@@ -223,7 +223,7 @@ class FileMaker_Record_Implementation {
         foreach ($this->_fields as $fieldName => $repetitions) {
             $childs[$fieldName . '.0'] = $repetitions;
         }
-        $command = $this->_fm->newEditCommand($this->_parent->_impl->_layout->getName(), $this->_parent->getRecordId(), $childs);
+        $command = $this->_fm->newEditCommand($this->_parent->_impl->layout->getName(), $this->_parent->getRecordId(), $childs);
         $result = $command->execute();
         if (FileMaker::isError($result)) {
             return $result;
@@ -243,7 +243,7 @@ class FileMaker_Record_Implementation {
                 }
             }
         }
-        $editCommand = $this->_fm->newEditCommand($this->_parent->_impl->_layout->getName(), $this->_parent->getRecordId(), $modifiedFields);
+        $editCommand = $this->_fm->newEditCommand($this->_parent->_impl->layout->getName(), $this->_parent->getRecordId(), $modifiedFields);
         $result = $editCommand->execute();
         if (FileMaker::isError($result)) {
             return $result;
@@ -263,9 +263,9 @@ class FileMaker_Record_Implementation {
     private function _updateFrom($record) {
         $this->_recordId = $record->getRecordId();
         $this->_modificationId = $record->getModificationId();
-        $this->_fields = $record->_impl->_fields;
-        $this->_layout = $record->_impl->_layout;
-        $this->_relatedSets = & $record->_impl->_relatedSets;
+        $this->_fields = $record->_impl->fields;
+        $this->_layout = $record->_impl->layout;
+        $this->_relatedSets = & $record->_impl->relatedSets;
         $this->_modifiedFields = array();
         return true;
     }

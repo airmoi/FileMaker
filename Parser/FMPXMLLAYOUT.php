@@ -1,6 +1,9 @@
 <?php
 
-namespace airmoi\FileMaker\Parsers;
+namespace airmoi\FileMaker\Parser;
+use airmoi\FileMaker\FileMaker;
+use airmoi\FileMaker\FileMakerException;
+use airmoi\FileMaker\Object\Layout;
 
 
 class FMPXMLLAYOUT {
@@ -15,13 +18,13 @@ class FMPXMLLAYOUT {
     private $_valueList;
     private $_displayValue;
 
-    public function __construct($fm) {
+    public function __construct(FileMaker $fm) {
         $this->_fm = $fm;
     }
 
     public function parse($xmlResponse) {
         if (empty($xmlResponse)) {
-            return new FileMaker_Error($this->_fm, 'Did not receive an XML document from the server.');
+             throw new FileMakerException($this->_fm, 'Did not receive an XML document from the server.');
         }
         $this->_xmlParser = xml_parser_create();
         xml_set_object($this->_xmlParser, $this);
@@ -30,26 +33,26 @@ class FMPXMLLAYOUT {
         xml_set_element_handler($this->_xmlParser, '_start', '_end');
         xml_set_character_data_handler($this->_xmlParser, '_cdata');
         if (!@xml_parse($this->_xmlParser, $xmlResponse)) {
-            return new FileMaker_Error(sprintf('XML error: %s at line %d', xml_error_string(xml_get_error_code($this->_xmlParser)), xml_get_current_line_number($this->_xmlParser)));
+             throw new FileMakerException(sprintf('XML error: %s at line %d', xml_error_string(xml_get_error_code($this->_xmlParser)), xml_get_current_line_number($this->_xmlParser)));
         }
         xml_parser_free($this->_xmlParser);
         if (!empty($this->errorCode)) {
-            return new FileMaker\FileMaker_Error($this->_fm, null, $this->errorCode);
+            throw new FileMakerException($this->_fm, null, $this->errorCode);
         }
         $this->_isParsed = true;
         return true;
     }
 
-    public function setExtendedInfo(Impl\FileMaker_Layout_Implementation $layout) {
+    public function setExtendedInfo(Layout &$layout) {
         if (!$this->_isParsed) {
-            return new FileMaker_Error($this->_fm, 'Attempt to set extended information before parsing data.');
+             throw new FileMakerException($this->_fm, 'Attempt to set extended information before parsing data.');
         }
-        $layout->_valueLists = $this->_valueLists;
-        $layout->_valueListTwoFields = $this->_valueListTwoFields;
+        $layout->valueLists = $this->_valueLists;
+        $layout->valueListTwoFields = $this->_valueListTwoFields;
         foreach ($this->_fields as $fieldName => $fieldInfos) {
             $field = $layout->getField($fieldName);
-            $field->_impl->_styleType = $fieldInfos['styleType'];
-            $field->_impl->_valueList = $fieldInfos['valueList'] ? $fieldInfos['valueList'] : null;
+            $field->styleType = $fieldInfos['styleType'];
+            $field->valueList = $fieldInfos['valueList'] ? $fieldInfos['valueList'] : null;
         }
     }
 
@@ -103,7 +106,7 @@ class FMPXMLLAYOUT {
         }
     }
 
-    public function associative_array_push($array, $values) {
+    public function associative_array_push(&$array, $values) {
         if (is_array($values)) {
             foreach ($values as $key => $value) {
                 $array[$key] = $value;

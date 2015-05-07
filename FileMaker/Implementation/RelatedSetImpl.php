@@ -11,7 +11,7 @@ class FileMaker_RelatedSet_Implementation {
 
     public function __construct(FileMaker_Layout_Implementation $layout) {
         $this->_layout = $layout;
-        $this->_fm = $layout->_impl->_fm;
+        $this->_fm = $layout->_impl->fm;
     }
 
     public function getName() {

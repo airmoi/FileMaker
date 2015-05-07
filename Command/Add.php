@@ -53,13 +53,13 @@ class Add extends Command {
     }
 
     public function execute() {
-        if ($this->_fm->getProperty('prevalidate')) {
+        if ($this->fm->getProperty('prevalidate')) {
             $validation = $this->validate();
             if (FileMaker::isError($validation)) {
                 return $validation;
             }
         }
-        $layout = & $this->_fm->getLayout($this->_layout);
+        $layout = & $this->fm->getLayout($this->_layout);
         if (FileMaker::isError($layout)) {
             return $layout;
         }
@@ -85,7 +85,7 @@ class Add extends Command {
                 $params[$fieldname . '(' . ($repetition + 1) . ')' . $fieldType] = $value;
             }
         }
-        $result = $this->_fm->_execute($params);
+        $result = $this->fm->_execute($params);
         if (FileMaker::isError($result)) {
             return $result;
         }
@@ -122,7 +122,7 @@ class Add extends Command {
      *        Defaults to the first repetition.
      */
     function setFieldFromTimestamp($field, $timestamp, $repetition = 0) {
-        $layout = & $this->_fm->getLayout($this->_layout);
+        $layout = & $this->fm->getLayout($this->_layout);
         if (FileMaker::isError($layout)) {
             return $layout;
         }
@@ -138,7 +138,7 @@ class Add extends Command {
             case 'timestamp':
                 return $this->setField($field, date('m/d/Y H:i:s', $timestamp), $repetition);
         }
-        return new FileMaker_Error($this->_fm, 'Only time, date, and timestamp fields can be set to the value of a timestamp.');
+        return new FileMaker_Error($this->fm, 'Only time, date, and timestamp fields can be set to the value of a timestamp.');
     }
 
 }

@@ -1,6 +1,8 @@
 <?php
 namespace airmoi\FileMaker\Command;
 use airmoi\FileMaker\FileMaker;
+use airmoi\FileMaker\FileMakerException;
+use airmoi\FileMaker\FileMakerValidationException;
 /**
  * FileMaker API for PHP
  *
@@ -41,12 +43,12 @@ class Edit extends Command
      *        the value of a field, with the numeric keys corresponding to the 
      *        repetition number to set.
      */
-    public function __construct($fm, $layout, $recordId, $updatedValues = array())
+    public function __construct($fm, $layout, $recordId, $updatedValues = [])
     {
         parent::__construct($fm, $layout);
-        $this->_recordId = $recordId;
+        $this->recordId = $recordId;
         $this->_deleteRelated = null;
-        foreach ($updateValues as $fieldname => $value) {
+        foreach ($updatedValues as $fieldname => $value) {
             if (!is_array($value)) {
                 $value = array(
                     $value
@@ -56,39 +58,38 @@ class Edit extends Command
         }
     }
     
+    /**
+     * 
+     * @return \airmoi\FileMaker\Command\FileMaker_Error
+     * @throws FileMakerException|FileMakerValidationException
+     */
     public function execute() {
         $params = $this->_getCommandParams();
-        if (empty($this->_recordId)) {
-            $error = new FileMaker_Error($this->_fm, 'Edit commands require a record id.');
+        if (empty($this->recordId)) {
+            throw new FileMakerException ($this->fm, 'Edit commands require a record id.');
             return $error;
         }
         if (!count($this->_fields)) {
             if ($this->_deleteRelated == null) {
-                $error = new FileMaker_Error($this->_fm, 'There are no changes to make.');
-                return $error;
+                throw new FileMakerException ($this->fm, 'There are no changes to make.');
             }
         }
 
-        if ($this->_fm->getProperty('prevalidate')) {
-            $layout = & $this->_fm->getLayout($this->_layout);
-            $validationError = new FileMaker_Error_Validation($this->_fm);
+        if ($this->fm->getProperty('prevalidate')) {
+            $layout = $this->fm->getLayout($this->_layout);
+            $validationError = new FileMakerValidationException($this->fm);
             foreach ($layout->getFields() as $field => $infos) {
                 if (isset($this->_fields[$field])) {
                     $infos = $this->_fields[$field];
                     foreach ($infos as $values) {
                         $validationError = $infos->validate($values);
-                        if (FileMaker :: isError($validationError)) {
-                            return $validationError;
-                        }
                     }
                 }
             }
         }
 
-        $layout = & $this->_fm->getLayout($this->_layout);
-        if (FileMaker :: isError($layout)) {
-            return $layout;
-        }
+        $layout = $this->fm->getLayout($this->_layout);
+       
         $params['-edit'] = true;
         if ($this->_deleteRelated == null) {
             foreach ($this->_fields as $fieldname => $values) {
@@ -98,9 +99,6 @@ class Edit extends Command
                 } else {
                     $fieldname = $fieldname;
                     $infos = $layout->getField($fieldname);
-                    if (FileMaker :: isError($infos)) {
-                        return $infos;
-                    }
                     if ($infos->isGlobal()) {
                         $infos = '.global';
                     } else {
@@ -115,14 +113,11 @@ class Edit extends Command
         if ($this->_deleteRelated != null) {
             $params['-delete.related'] = $this->_deleteRelated;
         }
-        $params['-recid'] = $this->_recordId;
+        $params['-recid'] = $this->recordId;
         if ($this->_modificationId) {
             $params['-modid'] = $this->_modificationId;
         }
-        $result = $this->_fm->_execute($params);
-        if (FileMaker :: isError($result)) {
-            return $result;
-        }
+        $result = $this->fm->execute($params);
         return $this->_getResult($result);
     }
 
@@ -158,7 +153,7 @@ class Edit extends Command
      */
     public function setFieldFromTimestamp($field, $timestamp, $repetition = 0)
     {
-        $layout = & $this->_fm->getLayout($this->_layout);
+        $layout = & $this->fm->getLayout($this->_layout);
         if (FileMaker :: isError($layout)) {
             return $layout;
         }
@@ -174,7 +169,7 @@ class Edit extends Command
             case 'timestamp' :
                 return $this->setField($fieldname, date('m/d/Y H:i:s', $timestamp), $repetition);
         }
-        return new FileMaker_Error($this->_fm, 'Only time, date, and timestamp fields can be set to the value of a timestamp.');
+        return new FileMaker_Error($this->fm, 'Only time, date, and timestamp fields can be set to the value of a timestamp.');
     }
 
     /**

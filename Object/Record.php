@@ -3,6 +3,7 @@
 namespace airmoi\FileMaker\Object;
 
 use airmoi\FileMaker\FileMaker;
+use airmoi\FileMaker\FileMakerException;
 
 /**
  * FileMaker API for PHP
@@ -34,7 +35,7 @@ use airmoi\FileMaker\FileMaker;
  * FileMaker/conf/filemaker-api.php configuration file where the API is 
  * installed. Then set $__FM_CONFIG['recordClass'] to the name of the record 
  * class to use. The class you specify should be a subclass of the 
- * FileMaker_Record base class or encapsulate its functionality. In PHP 5, 
+ * Record base class or encapsulate its functionality. In PHP 5, 
  * this class would implement an interface that alternate classes would be 
  * required to implement as well. 
  * 
@@ -42,34 +43,44 @@ use airmoi\FileMaker\FileMaker;
  */
 class Record {
 
-    private $_fields = array();
+    public $fields = array();
+    public $recordId;
+    public $modificationId;
+    public $relatedSetName = null;
+    /**
+     *
+     * @var FileMaker
+     */
+    public $fm;
+    public $relatedSets = array();
+    public $parent = null;
+    
     private $_modifiedFields = array();
-    private $_recordId;
-    private $_modificationId;
-    private $_layout;
-    private $_fm;
-    private $_relatedSets = array();
-    private $_parent = null;
-
+    
+    /**
+     *
+     * @var Layout|RelatedSet 
+     */
+    public $layout;
     /**
      * Record object constructor.
      *
-     * @param FileMaker_Layout|FileMaker_RelatedSet Specify either the Layout 
+     * @param Layout|RelatedSet Specify either the Layout 
      *        object associated with this record or the Related Set object 
      *        that this record is a member of.
      */
-    public function __construct(Layout $layout) {
-        $this->_layout = $layout;
-        $this->_fm = $layout->_fm;
+    public function __construct($layout) {
+        $this->layout = $layout;
+        $this->fm = $layout->fm;
     }
 
     /**
      * Returns the layout this record is associated with.
      *
-     * @return FileMaker_Layout This record's layout.
+     * @return Layout This record's layout.
      */
     public function getLayout() {
-        return $this->_layout;
+        return $this->layout;
     }
 
     /**
@@ -77,12 +88,12 @@ class Record {
      *
      * Only the field names are returned. If you need additional 
      * information, examine the Layout object provided by the 
-     * parent object's {@link FileMaker_Result::getLayout()} method.  
+     * parent object's {@link Result::getLayout()} method.  
      *
      * @return array List of field names as strings.
      */
     public function getFields() {
-        return $this->_layout->listFields();
+        return $this->layout->listFields();
     }
 
     /**
@@ -99,15 +110,18 @@ class Record {
      * @return string Encoded field value.
      */
     public function getField($field, $repetition = 0) {
-        if (!isset($this->_fields[$field])) {
-            $this->_fm->log('Field "' . $field . '" not found.', FILEMAKER_LOG_INFO);
+        if( !is_null($this->parent) && !strpos($field, '::')){
+            $field = $this->relatedSetName. '::' . $field;
+        }
+        if (!isset($this->fields[$field])) {
+            //$this->_fm->log('Field "' . $field . '" not found.', FileMaker::LOG_INFO);
             return "";
         }
-        if (!isset($this->_fields[$field][$repetition])) {
-            $this->_fm->log('Repetition "' . (int) $repetition . '" does not exist for "' . $field . '".', FILEMAKER_LOG_INFO);
+        if (!isset($this->fields[$field][$repetition])) {
+            //$this->_fm->log('Repetition "' . (int) $repetition . '" does not exist for "' . $field . '".', FileMaker::LOG_INFO);
             return "";
         }
-        return htmlspecialchars($this->_fields[$field][$repetition]);
+        return htmlspecialchars($this->fields[$field][$repetition]);
     }
 
     /**
@@ -123,15 +137,15 @@ class Record {
      * @return string Unencoded field value.
      */
     public function getFieldUnencoded($field, $repetition = 0) {
-        if (!isset($this->_fields[$field])) {
-            $this->_fm->log('Field "' . $field . '" not found.', FILEMAKER_LOG_INFO);
+        if (!isset($this->fields[$field])) {
+            $this->fm->log('Field "' . $field . '" not found.', FileMaker::LOG_INFO);
             return "";
         }
-        if (!isset($this->_fields[$field][$repetition])) {
-            $this->_fm->log('Repetition "' . (int) $repetition . '" does not exist for "' . $field . '".', FILEMAKER_LOG_INFO);
+        if (!isset($this->fields[$field][$repetition])) {
+            $this->fm->log('Repetition "' . (int) $repetition . '" does not exist for "' . $field . '".', FileMaker::LOG_INFO);
             return "";
         }
-        return $this->_fields[$field][$repetition];
+        return $this->fields[$field][$repetition];
     }
 
     /**
@@ -143,21 +157,22 @@ class Record {
      * the timestamp is for that time on January 1, 1970. Timestamp
      * (date and time) fields map directly to the UNIX timestamp. If the
      * specified field is not a date or time field, or if the timestamp
-     * generated would be out of range, then this method returns a
-     * FileMaker_Error object instead.
+     * generated would be out of range, then this method throws a
+     * FileMakerException object instead.
      * 
      * @param string $field Name of the field.
      * @param integer $repetition Field repetition number to get. 
      *        Defaults to the first repetition.
      *
      * @return integer Timestamp value.
+     * @throws FileMakerException
      */
     public function getFieldAsTimestamp($field, $repetition = 0) {
         $value = $this->getField($field, $repetition);
         if (FileMaker::isError($value)) {
             return $value;
         }
-        $fieldType = $this->_layout->getField($field);
+        $fieldType = $this->layout->getField($field);
         if (FileMaker::isError($fieldType)) {
             return $fieldType;
         }
@@ -165,31 +180,31 @@ class Record {
             case 'date':
                 $explodedValue = explode('/', $value);
                 if (count($explodedValue) != 3) {
-                    return new FileMaker_Error($this->_fm, 'Failed to parse "' . $value . '" as a FileMaker date value.');
+                    throw new FileMakerException($this->fm, 'Failed to parse "' . $value . '" as a FileMaker date value.');
                 }
                 $result = @mktime(0, 0, 0, $explodedValue[0], $explodedValue[1], $explodedValue[2]);
                 if ($result === false) {
-                    return new FileMaker_Error($this->_fm, 'Failed to convert "' . $value . '" to a UNIX timestamp.');
+                    throw new FileMakerException($this->fm, 'Failed to convert "' . $value . '" to a UNIX timestamp.');
                 }
                 break;
             case 'time':
                 $explodedValue = explode(':', $value);
                 if (count($explodedValue) != 3) {
-                    return new FileMaker_Error($this->_fm, 'Failed to parse "' . $value . '" as a FileMaker time value.');
+                    throw new FileMakerException($this->fm, 'Failed to parse "' . $value . '" as a FileMaker time value.');
                 }
                 $result = @mktime($explodedValue[0], $explodedValue[1], $explodedValue[2], 1, 1, 1970);
                 if ($result === false) {
-                    return new FileMaker_Error($this->_fm, 'Failed to convert "' . $value . '" to a UNIX timestamp.');
+                    throw new FileMakerException($this->fm, 'Failed to convert "' . $value . '" to a UNIX timestamp.');
                 }
                 break;
             case 'timestamp':
                 $result = @strtotime($value);
                 if ($result === false) {
-                    return new FileMaker_Error($this->_fm, 'Failed to convert "' . $value . '" to a UNIX timestamp.');
+                    throw new FileMakerException($this->fm, 'Failed to convert "' . $value . '" to a UNIX timestamp.');
                 }
                 break;
             default:
-                $result = new FileMaker_Error($this->_fm, 'Only time, date, and timestamp fields can be converted to UNIX timestamps.');
+                throw new FileMakerException($this->fm, 'Only time, date, and timestamp fields can be converted to UNIX timestamps.');
                 break;
         }
         return $result;
@@ -204,7 +219,10 @@ class Record {
      *        Defaults to the first repetition.
      */
     public function setField($field, $value, $repetition = 0) {
-        $this->_fields[$field][$repetition] = $value;
+        if( !is_null($this->parent) && !strpos($field, '::')){
+            $field = $this->relatedSetName. '::' . $field;
+        }
+        $this->fields[$field][$repetition] = $value;
         $this->_modifiedFields[$field][$repetition] = true;
         return $value;
     }
@@ -226,7 +244,7 @@ class Record {
      *        Defaults to the first repetition.
      */
     public function setFieldFromTimestamp($field, $timestamp, $repetition = 0) {
-        $fieldType = $this->_layout->getField($field);
+        $fieldType = $this->layout->getField($field);
         if (FileMaker::isError($fieldType)) {
             return $fieldType;
         }
@@ -238,7 +256,7 @@ class Record {
             case 'timestamp':
                 return $this->setField($field, date('m/d/Y H:i:s', $value), $repetition);
         }
-        return new FileMaker_Error($this->_fm, 'Only time, date, and timestamp fields can be set to the value of a timestamp.');
+        throw new FileMakerException($this->fm, 'Only time, date, and timestamp fields can be set to the value of a timestamp.');
     }
 
     /**
@@ -247,35 +265,36 @@ class Record {
      * @return string Record ID.
      */
     public function getRecordId() {
-        return $this->_recordId;
+        return $this->recordId;
     }
 
     /**
      * Returns the modification ID of this record.
      * 
      * The modification ID is an incremental counter that specifies the current 
-     * version of a record. See the {@link FileMaker_Command_Edit::setModificationId()} 
+     * version of a record. See the {@link Edit::setModificationId()} 
      * method.
      *
      * @return integer Modification ID.
      */
     public function getModificationId() {
-        return $this->_modificationId;
+        return $this->modificationId;
     }
 
     /**
-     * Returns any Record objects in the specified portal or a FileMaker_Error
+     * Returns any Record objects in the specified portal or throw a FileMakerException
      * object if there are no related records
      *
      * @param string $relatedSet Name of the portal to return records from.
      *
-     * @return array Array of FileMaker_Record objects from $relatedSet|FileMaker_Error object.
+     * @return Record[] Array of Record objects from $relatedSet.
+     * @throws FileMakerException
      */
     public function getRelatedSet($relatedSet) {
-        if (empty($this->_relatedSets[$relatedSet])) {
-            return new FileMaker_Error($this->_fm, 'Related set "' . $relatedSet . '" not present.');
+        if (empty($this->relatedSets[$relatedSet])) {
+            throw new FileMakerException($this->fm, 'Related set "' . $relatedSet . '" not present.');
         }
-        return $this->_relatedSets[$relatedSet];
+        return $this->relatedSets[$relatedSet];
     }
 
     /**
@@ -283,13 +302,11 @@ class Record {
      *
      * @param string $relatedSet Name of the portal to create a new record in.
      *
-     * @return FileMaker_Record A new, blank record.
+     * @return Record A new, blank record.
+     * @throws FileMakerException
      */
     public function newRelatedRecord($relatedSet) {
-        $relatedSetInfos = $this->_layout->getRelatedSet($relatedSet);
-        if (FileMaker::isError($relatedSetInfos)) {
-            return $relatedSetInfos;
-        }
+        $relatedSetInfos = $this->layout->getRelatedSet($relatedSet);
         $record = new Record($relatedSetInfos);
         $record->setParent($this);
         return $record;
@@ -298,19 +315,19 @@ class Record {
     /**
      * Returns the parent record, if this record is a child record in a portal.
      *
-     * @return FileMaker_Record Parent record.
+     * @return Record Parent record.
      */
     public function getParent() {
-        return $this->_parent;
+        return $this->parent;
     }
 
     /**
      * Set the parent record, if this record is a child record in a portal.
      *
-     * @return FileMaker_Record Parent record.
+     * @return Record Parent record.
      */
     public function setParent($record) {
-        $this->_parent = $record;
+        $this->parent = $record;
     }
 
     /**
@@ -325,45 +342,46 @@ class Record {
      * pre-validated. Otherwise, the record is pre-validated as if commit()
      * were called with "Enable record data pre-validation" selected in
      * FileMaker Server Admin Console. If pre-validation passes, validate() 
-     * returns TRUE. If pre-validation fails, then validate() returns a 
-     * FileMaker_Error_Validation object containing details about what failed 
+     * returns TRUE. If pre-validation fails, then validate() throws a 
+     * FileMakerValidationException object containing details about what failed 
      * to pre-validate.
      *
      * @param string $fieldName Name of field to pre-validate. If empty, 
      *        pre-validates the entire record.
      *
-     * @return boolean|FileMaker_Error_Validation TRUE, if pre-validation 
-     *         passes for $value. Otherwise, an Error Validation object.
+     * @return boolean TRUE, if pre-validation passes for $value.
+     * @throws \airmoi\FileMaker\FileMakerValidationException
      */
     public function validate($fieldName = null) {
-        $command = $this->_fm->newAddCommand($this->_layout->getName(), $this->_fields);
+        $command = $this->fm->newAddCommand($this->layout->getName(), $this->fields);
         return $command->validate($fieldName);
     }
 
     /**
      * Saves any changes to this record in the database on the Database Server.
      *
-     * @return boolean|FileMaker_Error TRUE, if successful. Otherwise, an Error
+     * @return boolean TRUE, if successful.
      *         object.
+     * @throws FileMakerException
      */
     public function commit() {
-        if ($this->_fm->getProperty('prevalidate')) {
+        if ($this->fm->getProperty('prevalidate')) {
             $validation = $this->validate();
             if (FileMaker::isError($validation)) {
                 return $validation;
             }
         }
-        if (is_null($this->_parent)) {
-            if ($this->_recordId) {
+        if (is_null($this->parent)) {
+            if ($this->recordId) {
                 return $this->_commitEdit();
             } else {
                 return $this->_commitAdd();
             }
         } else {
-            if (!$this->_parent->getRecordId()) {
-                return new FileMaker_Error($this->_fm, 'You must commit the parent record first before you can commit its children.');
+            if (!$this->parent->getRecordId()) {
+                throw new FileMakerException($this->fm, 'You must commit the parent record first before you can commit its children.');
             }
-            if ($this->_recordId) {
+            if ($this->recordId) {
                 return $this->_commitEditChild();
             } else {
                 return $this->_commitAddChild();
@@ -374,21 +392,22 @@ class Record {
     /**
      * Deletes this record from the database on the Database Server.
      *
-     * @return FileMaker_Result Response object.
+     * @return Result Response object.
+     * @throws FileMakerException
      */
     public function delete() {
-        if (empty($this->_recordId)) {
-            return new FileMaker_Error($this->_fm, 'You cannot delete a record that does not exist on the server.');
+        if (empty($this->recordId)) {
+            throw new FileMakerException($this->fm, 'You cannot delete a record that does not exist on the server.');
         }
-        if ($this->_parent) {
-            $editCommand = $this->_fm->newEditCommand($this->_parent->_impl->_layout->getName(), $this->_parent->_impl->_recordId, []);
-            $editCommand->_impl->_setdeleteRelated($this->_layout->getName() . "." . $this->_recordId);
+        if ($this->parent) {
+            $editCommand = $this->fm->newEditCommand($this->parent->layout->getName(), $this->parent->recordId, []);
+            $editCommand->_setdeleteRelated($this->layout->getName() . "." . $this->recordId);
 
             return $editCommand->execute();
         } else {
-            $layoutName = $this->_layout->getName();
+            $layoutName = $this->layout->getName();
 
-            $editCommand = $this->_fm->newDeleteCommand($layoutName, $this->_recordId);
+            $editCommand = $this->fm->newDeleteCommand($layoutName, $this->recordId);
             return $editCommand->execute();
         }
     }
@@ -401,99 +420,116 @@ class Record {
      * @param string $relatedSetName Name of the portal.
      * @param string $recordId Record ID of the record in the portal.
      * 
-     * @return FileMaker_Response Response object.
+     * @return Record Record object.
+     * @throws FileMakerException
      */
     public function getRelatedRecordById($relatedSetName, $recordId) {
-        $relatedSet = $this->getRelatedSet($relatedSetName);
-        if (FileMaker::IsError($relatedSet)) {
-
-            return new FileMaker_Error($this->_fm, 'Related set "' . $relatedSet . '" not present.');
-            
-        } else {
-            foreach ($relatedSet as $record) {
-                if ($record->getRecordId() == $recordId) {
-                    return $record;
-                }
-            }
-            return new FileMaker_Error($this->_fm, 'Record not present.');
+        try {
+            $relatedSet = $this->getRelatedSet($relatedSetName);
         }
+        catch (FileMakerException $e) {
+            throw new FileMakerException($this->fm, 'Related set "' . $relatedSetName . '" not present.'); 
+        }
+        
+        foreach ($relatedSet as $record) {
+            if ($record->getRecordId() == $recordId) {
+                return $record;
+            }
+        }
+        throw new FileMakerException($this->fm, 'Record not present.');
+
     }
     
+    /**
+     * 
+     * @return boolean TRUE on success
+     * @throws FileMakerException
+     */
     private function _commitAdd() {
-        $addCommand = $this->_fm->newAddCommand($this->_layout->getName(), $this->_fields);
+        $addCommand = $this->fm->newAddCommand($this->layout->getName(), $this->fields);
         $result = $addCommand->execute();
-        if (FileMaker::isError($result)) {
-            return $result;
-        }
         $records = $result->getRecords();
         return $this->_updateFrom($records[0]);
     }
 
+    /**
+     * 
+     * @return boolean TRUE on success
+     * @throws FileMakerException
+     */
     private function _commitEdit() {
-        foreach ($this->_fields as $fieldName => $repetitions) {
+        $editedFields=[];
+        foreach ($this->fields as $fieldName => $repetitions) {
             foreach ($repetitions as $repetition => $value) {
                 if (isset($this->_modifiedFields[$fieldName][$repetition])) {
                     $editedFields[$fieldName][$repetition] = $value;
                 }
             }
         }
-        $command = $this->_fm->newEditCommand($this->_layout->getName(), $this->_recordId, $editedFields);
+        $command = $this->fm->newEditCommand($this->layout->getName(), $this->recordId, $editedFields);
         $result = $command->execute();
-        if (FileMaker::isError($result)) {
-            return $result;
-        }
         $records = $result->getRecords();
         return $this->_updateFrom($records[0]);
     }
 
+     /**
+     * 
+     * @return boolean TRUE on success
+     * @throws FileMakerException
+     */
     private function _commitAddChild() {
         $childs = array();
-        foreach ($this->_fields as $fieldName => $repetitions) {
+        foreach ($this->fields as $fieldName => $repetitions) {
             $childs[$fieldName . '.0'] = $repetitions;
         }
-        $command = $this->_fm->newEditCommand($this->_parent->_impl->_layout->getName(), $this->_parent->getRecordId(), $childs);
+        $command = $this->fm->newEditCommand($this->parent->layout->getName(), $this->parent->getRecordId(), $childs);
         $result = $command->execute();
-        if (FileMaker::isError($result)) {
-            return $result;
-        }
         $records = $result->getRecords();
         $record = $records[0];
-        $relatedSet = & $record->getRelatedSet($this->_layout->getName());
+        $relatedSet = & $record->getRelatedSet($this->layout->getName());
         $lastRecord = array_pop($relatedSet);
         return $this->_updateFrom($lastRecord);
     }
 
+     /**
+     * 
+     * @return boolean TRUE on success
+     * @throws FileMakerException
+     */
     private function _commitEditChild() {
-        foreach ($this->_fields as $fieldName => $repetitions) {
+        $modifiedFields=[];
+        foreach ($this->fields as $fieldName => $repetitions) {
             foreach ($repetitions as $repetition => $value) {
                 if (!empty($this->_modifiedFields[$fieldName][$repetition])) {
-                    $modifiedFields[$fieldName . '.' . $this->_recordId][$repetition] = $value;
+                    $modifiedFields[$fieldName . '.' . $this->recordId][$repetition] = $value;
                 }
             }
         }
-        $editCommand = $this->_fm->newEditCommand($this->_parent->_impl->_layout->getName(), $this->_parent->getRecordId(), $modifiedFields);
+        $editCommand = $this->fm->newEditCommand($this->parent->layout->getName(), $this->parent->getRecordId(), $modifiedFields);
         $result = $editCommand->execute();
-        if (FileMaker::isError($result)) {
-            return $result;
-        }
-        $records = & $result->getRecords();
-        $firstRecord = & $records[0];
-        $relatedSet = & $firstRecord->getRelatedSet($this->_layout->getName());
+        $records = $result->getRecords();
+        $firstRecord = $records[0];
+        $relatedSet = $firstRecord->getRelatedSet($this->layout->getName());
         foreach ($relatedSet as $record) {
-            if ($record->getRecordId() == $this->_recordId) {
+            if ($record->getRecordId() == $this->recordId) {
                 return $this->_updateFrom($record);
                 break;
             }
         }
-        return new FileMaker_Error('Failed to find the updated child in the response.');
+        throw new FileMakerException('Failed to find the updated child in the response.');
     }
 
-    private function _updateFrom($record) {
-        $this->_recordId = $record->getRecordId();
-        $this->_modificationId = $record->getModificationId();
-        $this->_fields = $record->_impl->_fields;
-        $this->_layout = $record->_impl->_layout;
-        $this->_relatedSets = & $record->_impl->_relatedSets;
+    /**
+     * 
+     * @param Record $record
+     * @return boolean
+     */
+    private function _updateFrom(Record $record) {
+        $this->recordId = $record->getRecordId();
+        $this->modificationId = $record->getModificationId();
+        $this->fields = $record->fields;
+        $this->layout = $record->layout;
+        $this->relatedSets = & $record->relatedSets;
         $this->_modifiedFields = array();
         return true;
     }

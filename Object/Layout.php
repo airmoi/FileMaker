@@ -1,6 +1,8 @@
 <?php
 namespace airmoi\FileMaker\Object;
 use airmoi\FileMaker\FileMaker;
+use airmoi\FileMaker\FileMakerException;
+use airmoi\FileMaker\Parser\FMPXMLLAYOUT;
 /**
  * FileMaker API for PHP
  *
@@ -36,14 +38,14 @@ class Layout
      *
      * @var FileMaker 
      */
-    private $_fm;
-    private $_name;
-    private $_fields = array();
-    private $_relatedSets = array();
-    private $_valueLists = array();
-    private $_valueListTwoFields = array();
-    private $_database;
-    private $_extended = false;
+    public $fm;
+    public $name;
+    public $fields = array();
+    public $relatedSets = array();
+    public $valueLists = array();
+    public $valueListTwoFields = array();
+    public $database;
+    public $extended = false;
     /**
      * Layout object constructor.
      *
@@ -52,7 +54,7 @@ class Layout
      */
     public function __construct(FileMaker $fm)
     {
-        $this->_fm = $fm;
+        $this->fm = $fm;
     }
 
     /**
@@ -62,7 +64,7 @@ class Layout
      */
     public function getName()
     {
-        return $this->_name;
+        return $this->name;
     }
 
     /**
@@ -72,7 +74,7 @@ class Layout
      */
     public function getDatabase()
     {
-        return $this->_database;
+        return $this->database;
     }
 
     /**
@@ -82,7 +84,7 @@ class Layout
      */
     public function listFields()
     {
-        return array_keys($this->_fields);
+        return array_keys($this->fields);
     }
 
     /**
@@ -90,26 +92,31 @@ class Layout
      *
      * @param string $fieldName Name of field.
      *
-     * @return FileMaker_Field|FileMaker_Error Field object, if successful. 
-     *         Otherwise, an Error object.
+     * @return Field Field object, if successful. 
+     * @throws FileMakerException
      */
     public function getField($fieldName)
     {
-        if (isset($this->_fields[$fieldName])) {
-            return $this->_fields[$fieldName];
+        if (isset($this->fields[$fieldName])) {
+            return $this->fields[$fieldName];
         }
-        return new FileMaker_Error($this->_fm, 'Field Not Found');
+        if( $pos = strpos($fieldName, ':')){
+            $relatedSet = substr($fieldName, 0, $pos);
+            //$fieldName = substr($fieldName, $pos+1, strlen($fieldName));
+            return $this->getRelatedSet($relatedSet)->getField($fieldName);
+        }
+        throw new FileMakerException($this->fm, 'Field "'.$fieldName.'" Not Found');
     }
 
     /**
      * Returns an associative array with the names of all fields as
-     * keys and FileMaker_Field objects as the array values.
+     * keys and Field objects as the array values.
      *
-     * @return array Array of {@link FileMaker_Field} objects.
+     * @return Field[] an array of Field objects.
      */
     public function getFields()
     {
-        return $this->_fields;
+        return $this->fields;
     }
 
     /**
@@ -120,35 +127,35 @@ class Layout
      */
     public function listRelatedSets()
     {
-        return array_keys($this->_relatedSets);
+        return array_keys($this->relatedSets);
     }
 
     /**
-     * Returns a FileMaker_RelatedSet object that describes the specified 
+     * Returns a RelatedSet object that describes the specified 
      * portal.
      *
      * @param string $relatedSet Name of the related table for a portal.
+     * @throws FileMakerException
      *
-     * @return FileMaker_RelatedSet|FileMaker_Error RelatedSet object, if 
-     *         successful. Otherwise, an Error object.
+     * @return RelatedSet a RelatedSet object
      */
     public function getRelatedSet($relatedSet)
     {
-         if (isset($this->_relatedSets[$relatedSet])) {
-            return $this->_relatedSets[$relatedSet];
+         if (isset($this->relatedSets[$relatedSet])) {
+            return $this->relatedSets[$relatedSet];
         }
-        return new FileMaker_Error($this->_fm, 'RelatedSet Not Found');
+        throw new FileMakerException($this->fm, 'RelatedSet Not Found');
     }
 
     /**
      * Returns an associative array with the related table names of all 
      * portals as keys and FileMaker_RelatedSet objects as the array values.
      *
-     * @return array Array of {@link FileMaker_RelatedSet} objects.
+     * @return RelatedSet[] Array of {@link RelatedSet} objects.
      */
     public function getRelatedSets()
     {
-        return $this->_relatedSets;
+        return $this->relatedSets;
     }
 
     /**
@@ -156,14 +163,15 @@ class Layout
      * layout.
      *
      * @return array List of value list names as strings.
+     * @throws FileMakerException
      */
     public function listValueLists()
     {
         $ExtendedInfos = $this->loadExtendedInfo();
-        if (FileMaker::isError($ExtendedInfos)) {
-            return $ExtendedInfos;
-        }
-        return array_keys($this->_valueLists);
+        if($this->valueLists !== null)
+            return array_keys($this->valueLists);
+        
+        return [];
     }
 
     /**
@@ -175,6 +183,7 @@ class Layout
      *
      * @return array List of defined values.
 
+     * @throws FileMakerException
      * @deprecated Use getValueListTwoFields instead.
 
      * @see getValueListTwoFields
@@ -182,11 +191,8 @@ class Layout
     public function getValueList($listName, $recid = null)
     {
         $ExtendedInfos = $this->loadExtendedInfo($recid);
-        if (FileMaker::isError($ExtendedInfos)) {
-            return $ExtendedInfos;
-        }
-        return isset($this->_valueLists[$listName]) ?
-                $this->_valueLists[$listName] : null;
+        return isset($this->valueLists[$listName]) ?
+                $this->valueLists[$listName] : null;
     }
 
     
@@ -208,21 +214,18 @@ class Layout
      *
 
      * @return array of display names and its corresponding 
+     * @throws FileMakerException
 
      * value from the value list.
 
      */
 
     public function getValueListTwoFields($valueList, $recid = null)
-
     {
 
         $ExtendedInfos = $this->loadExtendedInfo($recid);
-        if (FileMaker::isError($ExtendedInfos)) {
-            return $ExtendedInfos;
-        }
-        return isset($this->_valueLists[$listName]) ?
-                $this->_valueListTwoFields[$listName] : null;
+        return isset($this->valueLists[$valueList]) ?
+                $this->valueListTwoFields[$valueList] : null;
 
     }
 
@@ -237,6 +240,7 @@ class Layout
      * 
      * @return array Array of value-list arrays.
 
+     * @throws FileMakerException
      * @deprecated Use getValueListTwoFields instead.
 
      * @see getValueListsTwoFields
@@ -244,10 +248,7 @@ class Layout
     public function getValueLists($recid = null)
     {
         $ExtendedInfos = $this->loadExtendedInfo($recid);
-        if (FileMaker::isError($ExtendedInfos)) {
-            return $ExtendedInfos;
-        }
-        return $this->_valueLists;
+        return $this->valueLists;
     }
 
     
@@ -268,6 +269,7 @@ class Layout
 
      *        displayed.
 
+     * @throws FileMakerException
      * 
 
      * @return array Array of value-list associative arrays.
@@ -279,10 +281,7 @@ class Layout
     {
 
         $ExtendedInfos = $this->loadExtendedInfo($recid);
-        if (FileMaker::isError($ExtendedInfos)) {
-            return $ExtendedInfos;
-        }
-        return $this->_valueListTwoFields;
+        return $this->valueListTwoFields;
 
     }
 
@@ -293,31 +292,28 @@ class Layout
      *
      * @param string  $recid Record from which to load extended information. 
      *
-     * @return boolean|FileMaker_Error TRUE, if successful. Otherwise, an 
-     *         Error object.
+     * @return boolean TRUE, if successful.
+     * @throws FileMakerException;
      */
     public function loadExtendedInfo($recid = null)
     {
-        if (!$this->_extended) {
+        if (!$this->extended) {
 
             if ($recid != null) {
-                $result = $this->_fm->_execute(array('-db' => $this->_fm->getProperty('database'),
+                $result = $this->fm->execute(array('-db' => $this->fm->getProperty('database'),
                     '-lay' => $this->getName(),
                     '-recid' => $recid,
                     '-view' => null), 'FMPXMLLAYOUT');
             } else {
-                $result = $this->_fm->_execute(array('-db' => $this->_fm->getProperty('database'),
+                $result = $this->fm->execute(array('-db' => $this->fm->getProperty('database'),
                     '-lay' => $this->getName(),
                     '-view' => null), 'FMPXMLLAYOUT');
             }
-            $parser = new Parser\FileMaker_Parser_FMPXMLLAYOUT($this->_fm);
+            $parser = new FMPXMLLAYOUT($this->fm);
             $parseResult = $parser->parse($result);
-            if (FileMaker::isError($parseResult)) {
-                return $parseResult;
-            }
             $parser->setExtendedInfo($this);
-            $this->_extended = true;
+            $this->extended = true;
         }
-        return $this->_extended;
+        return $this->extended;
     }
 }

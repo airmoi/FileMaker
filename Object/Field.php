@@ -1,6 +1,8 @@
 <?php
 namespace airmoi\FileMaker\Object;
 use airmoi\FileMaker\FileMaker;
+use airmoi\FileMaker\FileMakerException;
+use airmoi\FileMaker\FileMakerValidationException;
 /**
  * FileMaker API for PHP
  *
@@ -29,27 +31,27 @@ use airmoi\FileMaker\FileMaker;
  */
 class Field
 {
-    private $_layout;
-    private $_name;
-    private $_autoEntered = false;
-    private $_global = false;
-    private $_maxRepeat = 1;
-    private $_validationMask = 0;
-    private $_validationRules = array();
-    private $_result;
-    private $_type;
-    private $_valueList = null;
-    private $_styleType;
-    private $_maxCharacters = 0;
+    public $layout;
+    public $name;
+    public $autoEntered = false;
+    public $global = false;
+    public $maxRepeat = 1;
+    public $validationMask = 0;
+    public $validationRules = array();
+    public $result;
+    public $type;
+    public $valueList = null;
+    public $styleType;
+    public $maxCharacters = 0;
 
     /**
      * Field object constructor.
      *
-     * @param FileMaker_Layout $layout Parent Layout object.
+     * @param Layout $layout Parent Layout object.
      */
-    public function __construct(Layout $layout)
+    public function __construct(Layout &$layout)
     {
-        $this->_layout = $layout;
+        $this->layout = $layout;
     }
 
     /**
@@ -59,7 +61,7 @@ class Field
      */
     public function getName()
     {
-        return $this->_name;
+        return $this->name;
     }
 
     /**
@@ -69,7 +71,7 @@ class Field
      */
     public function getLayout()
     {
-        return $this->_layout;
+        return $this->layout;
     }
 
     /**
@@ -80,7 +82,7 @@ class Field
      */
     public function isAutoEntered()
     {
-        return $this->_autoEntered;
+        return $this->autoEntered;
     }
 
     /**
@@ -90,7 +92,7 @@ class Field
      */
     public function isGlobal()
     {
-        return $this->_global;
+        return $this->global;
     }
 
     /**
@@ -100,7 +102,7 @@ class Field
      */
     public function getRepetitionCount()
     {
-        return $this->_maxRepeat;
+        return $this->maxRepeat;
     }
 
     /**
@@ -109,46 +111,46 @@ class Field
      * failed.
      *
      * @param mixed $value Value to pre-validate.
-     * @param FileMaker_Error_Validation $error If pre-validation is being 
+     * @param FileMakerValidationException $error If pre-validation is being 
      *        done on more than one field, you may pass validate() an existing 
      *        error object to add pre-validation failures to.$error is not 
      *        passed by reference, though, so you must catch the return value 
      *        of validate() and use it as the new $error object. This method 
      *        never overwrites an existing $error object with boolean TRUE.
      *
-     * @return boolean|FileMaker_Error_Validation Result of field 
-     *         pre-validation on $value.
+     * @return boolean Result of field  pre-validation on $value.
+     * @throws FileMakerValidationException;
      */
-    public function validate($value, $error = null)
+    public function validate($value, FileMakerValidationException $error = null)
     {
         $isValid = true;
         if ($error === null) {
             $isValid = false;
-            $error = new FileMaker_Error_Validation($this->_layout->_impl->_fm);
+            $error = new FileMakerValidationException($this->layout->fm);
         }
         foreach ($this->getValidationRules() as $rule) {
             switch ($rule) {
-                case FILEMAKER_RULE_NOTEMPTY:
+                case FileMaker::RULE_NOTEMPTY:
                     if (empty($value)) {
                         $error->addError($this, $rule, $value);
                     }
                     break;
-                case FILEMAKER_RULE_NUMERICONLY :
+                case FileMaker::RULE_NUMERICONLY :
                     if (!empty($value)) {
                         if ($this->checkNumericOnly($value)) {
                             $error->addError($this, $rule, $value);
                         }
                     }
                     break;
-                case FILEMAKER_RULE_MAXCHARACTERS :
+                case FileMaker::RULE_MAXCHARACTERS :
                     if (!empty($value)) {
                         $strlen = strlen($value);
-                        if ($strlen > $this->_maxCharacters) {
+                        if ($strlen > $this->maxCharacters) {
                             $error->addError($this, $rule, $value);
                         }
                     }
                     break;
-                case FILEMAKER_RULE_TIME_FIELD :
+                case FileMaker::RULE_TIME_FIELD :
                     if (!empty($value)) {
                         if (!$this->checkTimeFormat($value)) {
 
@@ -158,7 +160,7 @@ class Field
                         }
                     }
                     break;
-                case FILEMAKER_RULE_TIMESTAMP_FIELD :
+                case FileMaker::RULE_TIMESTAMP_FIELD :
                     if (!empty($value)) {
                         if (!$this->checkTimeStampFormat($value)) {
 
@@ -169,7 +171,7 @@ class Field
                         }
                     }
                     break;
-                case FILEMAKER_RULE_DATE_FIELD :
+                case FileMaker::RULE_DATE_FIELD :
                     if (!empty($value)) {
                         if (!$this->checkDateFormat($value)) {
 
@@ -179,9 +181,9 @@ class Field
                         }
                     }
                     break;
-                case FILEMAKER_RULE_FOURDIGITYEAR :
+                case FileMaker::RULE_FOURDIGITYEAR :
                     if (!empty($value)) {
-                        switch ($this->_result) {
+                        switch ($this->result) {
                             case 'timestamp' :
                                 if ($this->checkTimeStampFormatFourDigitYear($value)) {
                                     preg_match('#^([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})[-,/,\\\\]([0-9]{4})#', $value, $matches);
@@ -223,7 +225,7 @@ class Field
                         }
                     }
                     break;
-                case FILEMAKER_RULE_TIMEOFDAY :
+                case FileMaker::RULE_TIMEOFDAY :
                     if (!empty($value)) {
                         if ($this->checkTimeFormat($value)) {
                             $this->checkTimeValidity($value, $rule, $error, TRUE);
@@ -235,15 +237,15 @@ class Field
                     break;
             }
         }
-        if ($isValid) {
-            return $error;
+        if ($isValid or $error->numErrors()) {
+            throw $error;
         } else {
-            return $error->numErrors() ? $error : true;
+            return true;
         }
     }
 
     /**
-     * Returns an array of FILEMAKER_RULE_* constants for each rule 
+     * Returns an array of FileMaker::RULE_* constants for each rule 
      * set on this field that can be evaluated by the PHP engine. 
      * 
      * Rules such as "unique" and "exists" can only be pre-validated on the 
@@ -254,30 +256,30 @@ class Field
     public function getLocalValidationRules()
     {
        $rules = array();
-        foreach (array_keys($this->_validationRules) as $rule) {
+        foreach (array_keys($this->validationRules) as $rule) {
             switch ($rule) {
-                case FILEMAKER_RULE_NOTEMPTY :
+                case FileMaker::RULE_NOTEMPTY :
                     $rules[] = $rule;
                     break;
-                case FILEMAKER_RULE_NUMERICONLY :
+                case FileMaker::RULE_NUMERICONLY :
                     $rules[] = $rule;
                     break;
-                case FILEMAKER_RULE_MAXCHARACTERS :
+                case FileMaker::RULE_MAXCHARACTERS :
                     $rules[] = $rule;
                     break;
-                case FILEMAKER_RULE_FOURDIGITYEAR :
+                case FileMaker::RULE_FOURDIGITYEAR :
                     $rules[] = $rule;
                     break;
-                case FILEMAKER_RULE_TIMEOFDAY :
+                case FileMaker::RULE_TIMEOFDAY :
                     $rules[] = $rule;
                     break;
-                case FILEMAKER_RULE_TIMESTAMP_FIELD :
+                case FileMaker::RULE_TIMESTAMP_FIELD :
                     $rules[] = $rule;
                     break;
-                case FILEMAKER_RULE_DATE_FIELD :
+                case FileMaker::RULE_DATE_FIELD :
                     $rules[] = $rule;
                     break;
-                case FILEMAKER_RULE_TIME_FIELD :
+                case FileMaker::RULE_TIME_FIELD :
                     $rules[] = $rule;
                     break;
             }
@@ -286,14 +288,24 @@ class Field
     }
 
     /**
-     * Returns an array of FILEMAKER_RULE_* constants for each rule 
+     * Returns fields max character's length
+     *
+     * @return int.
+     */
+    public function getMaxCharacters()
+    {
+        return $this->maxCharacters;
+    }
+    
+    /**
+     * Returns an array of FileMaker::RULE_* constants for each rule 
      * set on this field.
      *
      * @return array Rule array.
      */
     public function getValidationRules()
     {
-        return array_keys($this->_validationRules);
+        return array_keys($this->validationRules);
     }
 
     /**
@@ -304,11 +316,11 @@ class Field
      */
     public function getValidationMask()
     {
-        return $this->_validationMask;
+        return $this->validationMask;
     }
 
     /**
-     * Returns TRUE if the specified FILEMAKER_RULE_* constant matches the
+     * Returns TRUE if the specified FileMaker::RULE_* constant matches the
      * field's pre-validation bitmask. Otherwise, returns FALSE.
      *
      * @param integer $validationRule Pre-validation rule constant to test.
@@ -317,7 +329,7 @@ class Field
      */
     public function hasValidationRule($validationRule)
     {
-         return $validationRule & $this->_validationMask;
+         return $validationRule & $this->validationMask;
     }
 
     /**
@@ -327,15 +339,15 @@ class Field
      * Used for range rules and other rules that have additional 
      * pre-validation parameters.
      *
-     * @param integer $validationRule FILEMAKER_RULE_* constant 
+     * @param integer $validationRule FileMaker::RULE_* constant 
      *        to get information for. 
      * 
      * @return array Any extra information for $validationRule.
      */
     public function describeValidationRule($validationRule)
     {
-        if (is_array($this->_validationRules[$validationRule])) {
-            return $this->_validationRules[$validationRule];
+        if (is_array($this->validationRules[$validationRule])) {
+            return $this->validationRules[$validationRule];
         }
         return null;
     }
@@ -347,7 +359,7 @@ class Field
      * 
      * Rules such as "unique" and "exists" can be validated only 
      * on the Database Server and are not included in this list. 
-     * Indexes of the outer array are FILEMAKER_RULE_* constants, 
+     * Indexes of the outer array are FileMaker::RULE_* constants, 
      * and values are the same array returned by describeValidationRule().
      *
      * @return array An associative array of all extra pre-validation 
@@ -357,30 +369,30 @@ class Field
     public function describeLocalValidationRules()
     {
         $rules = array();
-        foreach ($this->_validationRules as $rule => $description) {
+        foreach ($this->validationRules as $rule => $description) {
             switch ($rule) {
-                case FILEMAKER_RULE_NOTEMPTY :
+                case FileMaker::RULE_NOTEMPTY :
                     $rules[$rule] = $description;
                     break;
-                case FILEMAKER_RULE_NUMERICONLY :
+                case FileMaker::RULE_NUMERICONLY :
                     $rules[$rule] = $description;
                     break;
-                case FILEMAKER_RULE_MAXCHARACTERS :
+                case FileMaker::RULE_MAXCHARACTERS :
                     $rules[$rule] = $description;
                     break;
-                case FILEMAKER_RULE_FOURDIGITYEAR :
+                case FileMaker::RULE_FOURDIGITYEAR :
                     $rules[$rule] = $description;
                     break;
-                case FILEMAKER_RULE_TIMEOFDAY :
+                case FileMaker::RULE_TIMEOFDAY :
                     $rules[$rule] = $description;
                     break;
-                case FILEMAKER_RULE_TIMESTAMP_FIELD :
+                case FileMaker::RULE_TIMESTAMP_FIELD :
                     $rules[$rule] = $description;
                     break;
-                case FILEMAKER_RULE_DATE_FIELD :
+                case FileMaker::RULE_DATE_FIELD :
                     $rules[$rule] = $description;
                     break;
-                case FILEMAKER_RULE_TIME_FIELD :
+                case FileMaker::RULE_TIME_FIELD :
                     $rules[$rule] = $description;
                     break;
             }
@@ -392,12 +404,12 @@ class Field
      * Returns any additional information for all pre-validation rules.
      *
      * @return array An associative array of all extra pre-validation 
-     *         information, with FILEMAKER_RULE_* constants 
+     *         information, with FileMaker::RULE_* constants 
      *         as keys and extra information as the values.
      */
     public function describeValidationRules()
     {
-        return $this->_validationRules;
+        return $this->validationRules;
     }
 
     /**
@@ -408,7 +420,7 @@ class Field
      */
     public function getResult()
     {
-        return $this->_result;
+        return $this->result;
     }
 
     /**
@@ -419,7 +431,7 @@ class Field
      */
     public function getType()
     {
-        return $this->_type;
+        return $this->type;
     }
 
     /**
@@ -430,16 +442,13 @@ class Field
      * NULL.
      *
      * @param string  $recid Record from which to display the value list.
-     * 
+     * @throws FileMakerException
      * @return array Value list array.
      */
     public function getValueList($listName = null)
     {
-        $extendedInfos = $this->_layout->loadExtendedInfo($listName);
-        if (FileMaker::isError($extendedInfos)) {
-            return $extendedInfos;
-        }
-        return $this->_layout->getValueList($this->_valueList);
+        $extendedInfos = $this->layout->loadExtendedInfo($listName);
+        return $this->layout->getValueList($this->valueList);
     }
 
     /**
@@ -448,14 +457,12 @@ class Field
      * 'CALENDAR'.
      *
      * @return string Style type.
+     * @throws FileMakerException
      */
     public function getStyleType()
     {
-        $extendedInfos = $this->_layout->loadExtendedInfo();
-        if (FileMaker::isError($extendedInfos)) {
-            return $extendedInfos;
-        }
-        return $this->_styleType;
+        $extendedInfos = $this->layout->loadExtendedInfo();
+        return $this->styleType;
     }
     public function checkTimeStampFormatFourDigitYear($value) {
         return (preg_match('#^[ ]*([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})[-,/,\\\\]([0-9]{4})[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#', $value));

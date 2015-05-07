@@ -2,6 +2,7 @@
 
 namespace airmoi\FileMaker;
 use airmoi\FileMaker\Parser\FMResultSet;
+use airmoi\FileMaker\Object\Layout;
 
 /**
  * Simple autoloader that follow the PHP Standards Recommendation #0 (PSR-0)
@@ -60,7 +61,7 @@ class FileMaker {
         'database' => '',
         'username' => '',
         'password' => '',
-        'recordClass' => 'Record',
+        'recordClass' => 'airmoi\FileMaker\Object\Record',
         'prevalidate' => false,
         'curlOptions' => [CURLOPT_SSL_VERIFYPEER => false],
     ];
@@ -419,7 +420,7 @@ class FileMaker {
         }
         $record = $result->getRecords();
         if (!$record) {
-            return new FileMaker_Error($this, 'Record . ' . $recordId . ' not found in layout "' . $layout . '".');
+            throw new FileMakerException($this, 'Record . ' . $recordId . ' not found in layout "' . $layout . '".');
         }
         return $record[0];
     }
@@ -431,7 +432,7 @@ class FileMaker {
      *
      * @return FileMaker_Layout|FileMaker_Error Layout or Error object.
      */
-    public function getLayout($layout) {
+    public function getLayout($layoutName) {
         static $_layouts = array();
         if (isset(self::$_layouts[$layoutName])) {
             return self::$_layouts[$layoutName];
@@ -442,12 +443,12 @@ class FileMaker {
         if (FileMaker::isError($request)) {
             return $request;
         }
-        $parser = new airmoi\FileMaker\Parser\FMResultSet($this);
+        $parser = new FMResultSet($this);
         $result = $parser->parse($request);
         if (FileMaker::isError($result)) {
             return $result;
         }
-        $layout = new airmoi\FileMaker\Layout($this);
+        $layout = new Layout($this);
         $result = $parser->setLayout($layout);
         if (FileMaker::isError($result)) {
             return $result;
@@ -468,7 +469,7 @@ class FileMaker {
         if (FileMaker::isError($request)) {
             return $request;
         }
-        $parser = new airmoi\FileMaker\Parser\FMResultSet($this);
+        $parser = new FMResultSet($this);
         $result = $parser->parse($request);
         if (FileMaker::isError($result)) {
             return $result;
@@ -493,7 +494,7 @@ class FileMaker {
         if (FileMaker::isError($request)) {
             return $request;
         }
-        $parser = new airmoi\FileMaker\Parser\FMResultSet($this);
+        $parser = new FMResultSet($this);
         $result = $parser->parse($request);
         if (FileMaker::isError($result)) {
             return $result;
@@ -554,10 +555,10 @@ class FileMaker {
      */
     public function getContainerData($url) {
         if (!function_exists('curl_init')) {
-            return new FileMaker_Error($this, 'cURL is required to use the FileMaker API.');
+            throw new FileMakerException($this, 'cURL is required to use the FileMaker API.');
         }
         if (strncasecmp($url, '/fmi/xml/cnt', 11) != 0) {
-            return new FileMaker_Error($this, 'getContainerData() does not support remote containers');
+            throw new FileMakerException($this, 'getContainerData() does not support remote containers');
         } else {
             $hostspec = $this->getProperty('hostspec');
             if (substr($hostspec, -1, 1) == '/') {
@@ -598,7 +599,7 @@ class FileMaker {
         }
         $this->log($curlResponse, FileMaker::LOG_DEBUG);
         if ($curlError = curl_errno($curl)) {
-            return new FileMaker_Error($this, 'Communication Error: (' . $curlError . ') ' . curl_error($curl));
+            throw new FileMakerException($this, 'Communication Error: (' . $curlError . ') ' . curl_error($curl));
         }
         curl_close($curl);
         return $curlResponse;
@@ -608,11 +609,12 @@ class FileMaker {
      * Perform xml query to FM Server
      * @param array $params
      * @param string $grammar fm xml grammar
-     * @return \airmoi\FileMaker\FileMaker_Error
+     * @return string the cUrl response
+     * @throws FileMakerException
      */
     public function execute($params, $grammar = 'fmresultset') {
         if (!function_exists('curl_init')) {
-            return new FileMaker_Error($this, 'cURL is required to use the FileMaker API.');
+            throw new FileMakerException($this, 'cURL is required to use the FileMaker API.');
         }
         $RESTparams = array();
         foreach ($params as $option => $value) {
@@ -661,15 +663,15 @@ class FileMaker {
         if ($curlError = curl_errno($curl)) {
 
             if ($curlError == 52) {
-                return new FileMaker_Error($this, 'Communication Error: (' . $curlError . ') ' . curl_error($curl) . ' - The Web Publishing Core and/or FileMaker Server services are not running.', $curlError);
+                throw new FileMakerException($this, 'Communication Error: (' . $curlError . ') ' . curl_error($curl) . ' - The Web Publishing Core and/or FileMaker Server services are not running.', $curlError);
             } else if ($curlError == 22) {
                 if (stristr("50", curl_error($curl))) {
-                    return new FileMaker_Error($this, 'Communication Error: (' . $curlError . ') ' . curl_error($curl) . ' - The Web Publishing Core and/or FileMaker Server services are not running.', $curlError);
+                    throw new FileMakerException($this, 'Communication Error: (' . $curlError . ') ' . curl_error($curl) . ' - The Web Publishing Core and/or FileMaker Server services are not running.', $curlError);
                 } else {
-                    return new FileMaker_Error($this, 'Communication Error: (' . $curlError . ') ' . curl_error($curl) . ' - This can be due to an invalid username or password, or if the FMPHP privilege is not enabled for that user.', $curlError);
+                    throw new FileMakerException($this, 'Communication Error: (' . $curlError . ') ' . curl_error($curl) . ' - This can be due to an invalid username or password, or if the FMPHP privilege is not enabled for that user.', $curlError);
                 }
             } else {
-                return new FileMaker_Error($this, 'Communication Error: (' . $curlError . ') ' . curl_error($curl), $curlError);
+                throw new FileMakerException($this, 'Communication Error: (' . $curlError . ') ' . curl_error($curl), $curlError);
             }
         }
         curl_close($curl);
@@ -787,6 +789,23 @@ class FileMaker {
              */
             return false;
         }
+    }
+    
+    public function toOutputCharset($value) {
+        if (strtolower($this->getProperty('charset')) != 'iso-8859-1') {
+            return $value;
+        }
+        if (is_array($value)) {
+            $output = array();
+            foreach ($value as $key => $value) {
+                $output[$this->toOutputCharset($key)] = $this->toOutputCharset($value);
+            }
+            return $output;
+        }
+        if (!is_string($value)) {
+            return $value;
+        }
+        return utf8_decode($value);
     }
 
 }

@@ -40,7 +40,7 @@ class FindAny extends Find
     public function execute() {
         $params = $this->_getCommandParams();
         $params['-findany'] = true;
-        $result = $this->_fm->_execute($params);
+        $result = $this->fm->_execute($params);
         if (FileMaker::isError($result)) {
             return $result;
         }

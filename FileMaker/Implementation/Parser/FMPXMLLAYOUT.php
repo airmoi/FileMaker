@@ -50,8 +50,8 @@ class FileMaker_Parser_FMPXMLLAYOUT {
         $layout->_valueListTwoFields = $this->_valueListTwoFields;
         foreach ($this->_fields as $fieldName => $fieldInfos) {
             $field = $layout->getField($fieldName);
-            $field->_impl->_styleType = $fieldInfos['styleType'];
-            $field->_impl->_valueList = $fieldInfos['valueList'] ? $fieldInfos['valueList'] : null;
+            $field->_impl->styleType = $fieldInfos['styleType'];
+            $field->_impl->valueList = $fieldInfos['valueList'] ? $fieldInfos['valueList'] : null;
         }
     }
 

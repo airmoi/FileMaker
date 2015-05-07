@@ -45,18 +45,18 @@ class Delete extends Command
     public function __construct($fm, $layout, $recordId)
     {
         parent::__construct($fm, $layout);
-        $this->_recordId = $recordId;
+        $this->recordId = $recordId;
     }
     
     function execute() {
-        if (empty($this->_recordId)) {
-            $error = new FileMaker_Error($this->_fm, 'Delete commands require a record id.');
+        if (empty($this->recordId)) {
+            $error = new FileMaker_Error($this->fm, 'Delete commands require a record id.');
             return $error;
         }
         $params = $this->_getCommandParams();
         $params['-delete'] = true;
-        $params['-recid'] = $this->_recordId;
-        $result = $this->_fm->execute($params);
+        $params['-recid'] = $this->recordId;
+        $result = $this->fm->execute($params);
         if (FileMaker::isError($result)) {
             return $result;
         }

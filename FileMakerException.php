@@ -16,7 +16,7 @@ namespace airmoi\FileMaker;
 
 
 /**
- * Extension of the PEAR_Error class for use in all FileMaker classes.
+ * Extension of the Exception class for use in all FileMaker classes.
  *
  * @package FileMaker
  */
@@ -31,27 +31,15 @@ class FileMakerException extends \Exception
      * @param string $message Error message.
      * @param integer $code Error code.
      */
-    public function __construct($fm, $message = null, $code = null, $previous=null)
+    public function __construct(&$fm, $message = null, $code = null, $previous=null)
     {
         $this->_fm = $fm;
+        if ( $code !== null)
+            $message = $this->getErrorString($code);
+        
         parent::__construct($message, $code, $previous);
     }
-
-    /**
-     * Overloads getMessage() to return an equivalent FileMaker Web Publishing 
-     * Engine error if no message is explicitly set and this object has an 
-     * error code.
-     * 
-     * @return string Error message.
-     */
-    public function getMessage()
-    {
-        if ($this->message === null && $this->getCode() !== null) {
-            return $this->getErrorString();
-        }
-        return parent::getMessage();
-    }
-
+   
     /**
      * Returns the string representation of $this->code in the language 
      * currently  set for PHP error messages in FileMaker Server Admin 
@@ -62,7 +50,7 @@ class FileMakerException extends \Exception
      *
      * @return string Error description.
      */
-    public function getErrorString()
+    public function getErrorString($code)
     {
         // Default to English.
         $lang = basename($this->_fm->getProperty('locale'));
@@ -78,8 +66,8 @@ class FileMakerException extends \Exception
             $strings[$lang] = $__FM_ERRORS;
         }
 
-        if (isset($strings[$lang][$this->getCode()])) {
-            return $strings[$lang][$this->getCode()];
+        if (isset($strings[$lang][$code])) {
+            return $strings[$lang][$code];
         }
 
         return $strings[$lang][-1];

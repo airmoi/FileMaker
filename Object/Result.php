@@ -29,12 +29,12 @@ use airmoi\FileMaker\FileMaker;
  */
 class Result
 {
-    private $_fm;
-    private $_layout;
-    private $_records;
-    private $_tableCount;
-    private $_foundSetCount;
-    private $_fetchCount;
+    public $fm;
+    public $layout;
+    public $records;
+    public $tableCount;
+    public $foundSetCount;
+    public $fetchCount;
 
     /**
      * Result object constructor.
@@ -42,9 +42,9 @@ class Result
      * @param FileMaker $fm FileMaker object 
      *        that this result came from.
      */
-    public function __construct($fm)
+    public function __construct(FileMaker &$fm)
     {
-        $this->_fm = $fm;
+        $this->fm = $fm;
     }
 
     /**
@@ -55,7 +55,7 @@ class Result
      */
     public function getLayout()
     {
-        return $this->_layout;
+        return $this->layout;
     }
 
     /**
@@ -66,11 +66,11 @@ class Result
      * (see {@link FileMaker_Record}. The array may be empty if 
      * the result set contains no records.
      *
-     * @return array Record objects.
+     * @return Record[] Record objects.
      */
     public function getRecords()
     {
-        return $this->_records;
+        return $this->records;
     }
 
     /**
@@ -85,7 +85,7 @@ class Result
      */
     public function getFields()
     {
-        return $this->_layout->listFields();
+        return $this->layout->listFields();
     }
 
     /**
@@ -96,7 +96,7 @@ class Result
      */
     public function getRelatedSets()
     {
-        return $this->_layout->listRelatedSets();
+        return $this->layout->listRelatedSets();
     }
 
     /**
@@ -106,7 +106,7 @@ class Result
      */
     public function getTableRecordCount()
     {
-        return $this->_tableCount;
+        return $this->tableCount;
     }
 
     /**
@@ -116,7 +116,7 @@ class Result
      */
     public function getFoundSetCount()
     {
-        return $this->_foundSetCount;
+        return $this->foundSetCount;
     }
 
     /**
@@ -131,27 +131,27 @@ class Result
      */
     public function getFetchCount()
     {
-        return $this->_fetchCount;
+        return $this->fetchCount;
     }
     
     /**
      * Returns the first record in this result set.
      *
-     * @return FileMaker_Record First record.
+     * @return Record First record.
      */
     public function getFirstRecord()
     {
-    	return $this->_records[0];
+    	return $this->records[0];
     }
     
     /**
      * Returns the last record in this result set.
      *
-     * @return FileMaker_Record Last record.
+     * @return Record Last record.
      */
     public function getLastRecord()
     {
-    	return $this->_records[sizeof($this->_records) - 1];
+    	return $this->records[sizeof($this->records) - 1];
     }
 
 }

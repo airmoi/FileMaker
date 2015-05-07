@@ -61,33 +61,33 @@ class FileMaker_Parser_FMResultSet {
             $result = $this->_result;
             return true;
         }
-        $result->_impl->_layout = new FileMaker_Layout($this->_fm);
-        $this->setLayout($result->_impl->_layout);
-        $result->_impl->_tableCount = $this->_parsedHead['total-count'];
-        $result->_impl->_foundSetCount = $this->_parsedFoundSet['count'];
-        $result->_impl->_fetchCount = $this->_parsedFoundSet['fetch-size'];
+        $result->_impl->layout = new FileMaker_Layout($this->_fm);
+        $this->setLayout($result->_impl->layout);
+        $result->_impl->tableCount = $this->_parsedHead['total-count'];
+        $result->_impl->foundSetCount = $this->_parsedFoundSet['count'];
+        $result->_impl->fetchCount = $this->_parsedFoundSet['fetch-size'];
         $records = array();
         foreach ($this->parsedResult as $recordData) {
-            $record = new $recordClass($result->_impl->_layout);
-            $record->_impl->_fields = $recordData['fields'];
-            $record->_impl->_recordId = $recordData['record-id'];
-            $record->_impl->_modificationId = $recordData['mod-id'];
+            $record = new $recordClass($result->_impl->layout);
+            $record->_impl->fields = $recordData['fields'];
+            $record->_impl->recordId = $recordData['record-id'];
+            $record->_impl->modificationId = $recordData['mod-id'];
             if ($recordData['children']) {
                 foreach ($recordData['children'] as $relatedSetName => $relatedRecords) {
-                    $record->_impl->_relatedSets[$relatedSetName] = array();
+                    $record->_impl->relatedSets[$relatedSetName] = array();
                     foreach ($relatedRecords as $relatedRecordData) {
-                        $relatedRecord = new $recordClass($result->_impl->_layout->getRelatedSet($relatedSetName));
-                        $relatedRecord->_impl->_fields = $relatedRecordData['fields'];
-                        $relatedRecord->_impl->_recordId = $relatedRecordData['record-id'];
-                        $relatedRecord->_impl->_modificationId = $relatedRecordData['mod-id'];
-                        $relatedRecord->_impl->_parent = $record;
-                        $record->_impl->_relatedSets[$relatedSetName][] = $relatedRecord;
+                        $relatedRecord = new $recordClass($result->_impl->layout->getRelatedSet($relatedSetName));
+                        $relatedRecord->_impl->fields = $relatedRecordData['fields'];
+                        $relatedRecord->_impl->recordId = $relatedRecordData['record-id'];
+                        $relatedRecord->_impl->modificationId = $relatedRecordData['mod-id'];
+                        $relatedRecord->_impl->parent = $record;
+                        $record->_impl->relatedSets[$relatedSetName][] = $relatedRecord;
                     }
                 }
             }
             $records[] = $record;
         }
-        $result->_impl->_records = & $records;
+        $result->_impl->records = & $records;
         $this->_result = & $result;
         true;
     }
@@ -100,98 +100,98 @@ class FileMaker_Parser_FMResultSet {
             $layout = & $this->_layout;
             return true;
         }
-        $layout->_impl->_name = $this->_parsedHead['layout'];
-        $layout->_impl->_database = $this->_parsedHead['database'];
+        $layout->_impl->name = $this->_parsedHead['layout'];
+        $layout->_impl->database = $this->_parsedHead['database'];
         foreach ($this->_fieldList as $fieldInfos) {
             $field = new FileMaker_Field($layout);
-            $field->_impl->_name = $fieldInfos['name'];
-            $field->_impl->_autoEntered = (bool) ($fieldInfos['auto-enter'] == 'yes');
-            $field->_impl->_global = (bool) ($fieldInfos['global'] == 'yes');
-            $field->_impl->_maxRepeat = (int) $fieldInfos['max-repeat'];
-            $field->_impl->_result = $fieldInfos['result'];
-            $field->_impl->_type = $fieldInfos['type'];
+            $field->_impl->name = $fieldInfos['name'];
+            $field->_impl->autoEntered = (bool) ($fieldInfos['auto-enter'] == 'yes');
+            $field->_impl->global = (bool) ($fieldInfos['global'] == 'yes');
+            $field->_impl->maxRepeat = (int) $fieldInfos['max-repeat'];
+            $field->_impl->result = $fieldInfos['result'];
+            $field->_impl->type = $fieldInfos['type'];
             if ($fieldInfos['not-empty'] == 'yes') {
-                $field->_impl->_validationRules[FILEMAKER_RULE_NOTEMPTY] = true;
-                $field->_impl->_validationMask |= FILEMAKER_RULE_NOTEMPTY;
+                $field->_impl->validationRules[FILEMAKER_RULE_NOTEMPTY] = true;
+                $field->_impl->validationMask |= FILEMAKER_RULE_NOTEMPTY;
             }
             if ($fieldInfos['numeric-only'] == 'yes') {
-                $field->_impl->_validationRules[FILEMAKER_RULE_NUMERICONLY] = true;
-                $field->_impl->_validationMask |= FILEMAKER_RULE_NUMERICONLY;
+                $field->_impl->validationRules[FILEMAKER_RULE_NUMERICONLY] = true;
+                $field->_impl->validationMask |= FILEMAKER_RULE_NUMERICONLY;
             }
             if (array_key_exists('max-characters', $fieldInfos)) {
-                $field->_impl->_maxCharacters = (int) $fieldInfos['max-characters'];
-                $field->_impl->_validationRules[FILEMAKER_RULE_MAXCHARACTERS] = true;
-                $field->_impl->_validationMask |= FILEMAKER_RULE_MAXCHARACTERS;
+                $field->_impl->maxCharacters = (int) $fieldInfos['max-characters'];
+                $field->_impl->validationRules[FILEMAKER_RULE_MAXCHARACTERS] = true;
+                $field->_impl->validationMask |= FILEMAKER_RULE_MAXCHARACTERS;
             }
             if ($fieldInfos['four-digit-year'] == 'yes') {
-                $field->_impl->_validationRules[FILEMAKER_RULE_FOURDIGITYEAR] = true;
-                $field->_impl->_validationMask |= FILEMAKER_RULE_FOURDIGITYEAR;
+                $field->_impl->validationRules[FILEMAKER_RULE_FOURDIGITYEAR] = true;
+                $field->_impl->validationMask |= FILEMAKER_RULE_FOURDIGITYEAR;
             }
             if ($fieldInfos['time-of-day'] == 'yes') {
-                $field->_impl->_validationRules[FILEMAKER_RULE_TIMEOFDAY] = true;
-                $field->_impl->_validationMask |= FILEMAKER_RULE_TIMEOFDAY;
+                $field->_impl->validationRules[FILEMAKER_RULE_TIMEOFDAY] = true;
+                $field->_impl->validationMask |= FILEMAKER_RULE_TIMEOFDAY;
             }
             if ($fieldInfos['four-digit-year'] == 'no' && $fieldInfos['result'] == 'timestamp') {
-                $field->_impl->_validationRules[FILEMAKER_RULE_TIMESTAMP_FIELD] = true;
-                $field->_impl->_validationMask |= FILEMAKER_RULE_TIMESTAMP_FIELD;
+                $field->_impl->validationRules[FILEMAKER_RULE_TIMESTAMP_FIELD] = true;
+                $field->_impl->validationMask |= FILEMAKER_RULE_TIMESTAMP_FIELD;
             }
             if ($fieldInfos['four-digit-year'] == 'no' && $fieldInfos['result'] == 'date') {
-                $field->_impl->_validationRules[FILEMAKER_RULE_DATE_FIELD] = true;
-                $field->_impl->_validationMask |= FILEMAKER_RULE_DATE_FIELD;
+                $field->_impl->validationRules[FILEMAKER_RULE_DATE_FIELD] = true;
+                $field->_impl->validationMask |= FILEMAKER_RULE_DATE_FIELD;
             }
             if ($fieldInfos['time-of-day'] == 'no' && $fieldInfos['result'] == 'time') {
-                $field->_impl->_validationRules[FILEMAKER_RULE_TIME_FIELD] = true;
-                $field->_impl->_validationMask |= FILEMAKER_RULE_TIME_FIELD;
+                $field->_impl->validationRules[FILEMAKER_RULE_TIME_FIELD] = true;
+                $field->_impl->validationMask |= FILEMAKER_RULE_TIME_FIELD;
             }
-            $layout->_impl->_fields[$field->getName()] = $field;
+            $layout->_impl->fields[$field->getName()] = $field;
         }
         foreach ($this->_relatedSetNames as $relatedSetName => $fields) {
             $relatedSet = new FileMaker_RelatedSet($layout);
-            $relatedSet->_impl->_name = $relatedSetName;
+            $relatedSet->_impl->name = $relatedSetName;
             foreach ($fields as $fieldInfos) {
                 $field = new FileMaker_Field($relatedSet);
-                $field->_impl->_name = $fieldInfos['name'];
-                $field->_impl->_autoEntered = (bool) ($fieldInfos['auto-enter'] == 'yes');
-                $field->_impl->_global = (bool) ($fieldInfos['global'] == 'yes');
-                $field->_impl->_maxRepeat = (int) $fieldInfos['max-repeat'];
-                $field->_impl->_result = $fieldInfos['result'];
-                $field->_impl->_type = $fieldInfos['type'];
+                $field->_impl->name = $fieldInfos['name'];
+                $field->_impl->autoEntered = (bool) ($fieldInfos['auto-enter'] == 'yes');
+                $field->_impl->global = (bool) ($fieldInfos['global'] == 'yes');
+                $field->_impl->maxRepeat = (int) $fieldInfos['max-repeat'];
+                $field->_impl->result = $fieldInfos['result'];
+                $field->_impl->type = $fieldInfos['type'];
                 if ($fieldInfos['not-empty'] == 'yes') {
-                    $field->_impl->_validationRules[FILEMAKER_RULE_NOTEMPTY] = true;
-                    $field->_impl->_validationMask |= FILEMAKER_RULE_NOTEMPTY;
+                    $field->_impl->validationRules[FILEMAKER_RULE_NOTEMPTY] = true;
+                    $field->_impl->validationMask |= FILEMAKER_RULE_NOTEMPTY;
                 }
                 if ($fieldInfos['numeric-only'] == 'yes') {
-                    $field->_impl->_validationRules[FILEMAKER_RULE_NUMERICONLY] = true;
-                    $field->_impl->_validationMask |= FILEMAKER_RULE_NUMERICONLY;
+                    $field->_impl->validationRules[FILEMAKER_RULE_NUMERICONLY] = true;
+                    $field->_impl->validationMask |= FILEMAKER_RULE_NUMERICONLY;
                 }
                 if (array_key_exists('max-characters', $fieldInfos)) {
-                    $field->_impl->_maxCharacters = (int) $fieldInfos['max-characters'];
-                    $field->_impl->_validationRules[FILEMAKER_RULE_MAXCHARACTERS] = true;
-                    $field->_impl->_validationMask |= FILEMAKER_RULE_MAXCHARACTERS;
+                    $field->_impl->maxCharacters = (int) $fieldInfos['max-characters'];
+                    $field->_impl->validationRules[FILEMAKER_RULE_MAXCHARACTERS] = true;
+                    $field->_impl->validationMask |= FILEMAKER_RULE_MAXCHARACTERS;
                 }
                 if ($fieldInfos['four-digit-year'] == 'yes') {
-                    $field->_impl->_validationRules[FILEMAKER_RULE_FOURDIGITYEAR] = true;
-                    $field->_impl->_validationMask |= FILEMAKER_RULE_FOURDIGITYEAR;
+                    $field->_impl->validationRules[FILEMAKER_RULE_FOURDIGITYEAR] = true;
+                    $field->_impl->validationMask |= FILEMAKER_RULE_FOURDIGITYEAR;
                 }
                 if ($fieldInfos['time-of-day'] == 'yes' || $fieldInfos['result'] == 'time') {
-                    $field->_impl->_validationRules[FILEMAKER_RULE_TIMEOFDAY] = true;
-                    $field->_impl->_validationMask |= FILEMAKER_RULE_TIMEOFDAY;
+                    $field->_impl->validationRules[FILEMAKER_RULE_TIMEOFDAY] = true;
+                    $field->_impl->validationMask |= FILEMAKER_RULE_TIMEOFDAY;
                 }
                 if ($fieldInfos['four-digit-year'] == 'no' && $fieldInfos['result'] == 'timestamp') {
-                    $field->_impl->_validationRules[FILEMAKER_RULE_TIMESTAMP_FIELD] = true;
-                    $field->_impl->_validationMask |= FILEMAKER_RULE_TIMESTAMP_FIELD;
+                    $field->_impl->validationRules[FILEMAKER_RULE_TIMESTAMP_FIELD] = true;
+                    $field->_impl->validationMask |= FILEMAKER_RULE_TIMESTAMP_FIELD;
                 }
                 if ($fieldInfos['four-digit-year'] == 'no' && $fieldInfos['result'] == 'date') {
-                    $field->_impl->_validationRules[FILEMAKER_RULE_DATE_FIELD] = true;
-                    $field->_impl->_validationMask |= FILEMAKER_RULE_DATE_FIELD;
+                    $field->_impl->validationRules[FILEMAKER_RULE_DATE_FIELD] = true;
+                    $field->_impl->validationMask |= FILEMAKER_RULE_DATE_FIELD;
                 }
                 if ($fieldInfos['time-of-day'] == 'no' && $fieldInfos['result'] == 'time') {
-                    $field->_impl->_validationRules[FILEMAKER_RULE_TIME_FIELD] = true;
-                    $field->_impl->_validationMask |= FILEMAKER_RULE_TIME_FIELD;
+                    $field->_impl->validationRules[FILEMAKER_RULE_TIME_FIELD] = true;
+                    $field->_impl->validationMask |= FILEMAKER_RULE_TIME_FIELD;
                 }
-                $relatedSet->_impl->_fields[$field->getName()] = $field;
+                $relatedSet->_impl->fields[$field->getName()] = $field;
             }
-            $layout->_impl->_relatedSets[$relatedSet->getName()] = $relatedSet;
+            $layout->_impl->relatedSets[$relatedSet->getName()] = $relatedSet;
         }
         $this->_layout = & $layout;
         return true;

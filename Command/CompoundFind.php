@@ -136,7 +136,7 @@ class CompoundFind extends Command
         }
         $params['-query'] = $query;
         $params['-findquery'] = true;
-        $result = $this->_fm->_execute($params);
+        $result = $this->fm->_execute($params);
         if (FileMaker::isError($result)) {
             return $result;
         }
