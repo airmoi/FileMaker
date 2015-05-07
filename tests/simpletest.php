@@ -192,7 +192,24 @@ try {
    echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
    
    echo "Test if modifed related record match parent's relatedRecord... ";
-   echo ($record->getRelatedSet($relatedSetName)[0] == $relatedRecord) ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>'. PHP_EOL . PHP_EOL;
+   echo ($record->getRelatedSet($relatedSetName)[0] == $relatedRecord ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>'). PHP_EOL . PHP_EOL;
+   
+   echo "Test creation of related record.. ";
+   $currentRelatedSetCount = sizeof($record->getRelatedSet($relatedSetName));
+   $newRecord = $record->newRelatedRecord($relatedSetName);
+   $time = time();
+   $newRecord->setField('id_sample', $record->getField('id'));
+   $newRecord->setField('text_field', "NEW RELATED RECORD");
+   $newRecord->setField('number_field', rand(1,1000));
+   $newRecord->setField('date_field', date('m/d/Y', $time));
+   $newRecord->setField('time_field', date('H:i:s', $time));
+   $newRecord->setField('timestamp_field', date('m/d/Y H:i:s', $time));
+   $newRecord->commit();
+   echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
+   
+   echo "Check if parent's relatedSet has been updated... ";
+   echo (sizeof($record->getRelatedSet($relatedSetName)) == $currentRelatedSetCount+1 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>' ) . PHP_EOL . PHP_EOL;
+
    
  
     

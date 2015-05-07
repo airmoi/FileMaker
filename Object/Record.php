@@ -53,6 +53,11 @@ class Record {
      */
     public $fm;
     public $relatedSets = array();
+    
+    /**
+     *
+     * @var Record
+     */
     public $parent = null;
     
     private $_modifiedFields = array();
@@ -109,7 +114,7 @@ class Record {
      *
      * @return string Encoded field value.
      */
-    public function getField($field, $repetition = 0) {
+    public function getField($field, $repetition = 0, $unencoded = true) {
         if( !is_null($this->parent) && !strpos($field, '::')){
             $field = $this->relatedSetName. '::' . $field;
         }
@@ -129,7 +134,7 @@ class Record {
      *
      * This method does not convert special characters in the field value to 
      * HTML entities.
-     *
+     * @deprecated since version 2.0 use getField($field, $repetition = 0, $unencoded = true) instead
      * @param string $field Name of field.
      * @param integer $repetition Field repetition number to get. 
      *        Defaults to the first repetition.
@@ -137,15 +142,7 @@ class Record {
      * @return string Unencoded field value.
      */
     public function getFieldUnencoded($field, $repetition = 0) {
-        if (!isset($this->fields[$field])) {
-            $this->fm->log('Field "' . $field . '" not found.', FileMaker::LOG_INFO);
-            return "";
-        }
-        if (!isset($this->fields[$field][$repetition])) {
-            $this->fm->log('Repetition "' . (int) $repetition . '" does not exist for "' . $field . '".', FileMaker::LOG_INFO);
-            return "";
-        }
-        return $this->fields[$field][$repetition];
+        return $this->getField($field, $repetition, true);
     }
 
     /**
@@ -169,13 +166,7 @@ class Record {
      */
     public function getFieldAsTimestamp($field, $repetition = 0) {
         $value = $this->getField($field, $repetition);
-        if (FileMaker::isError($value)) {
-            return $value;
-        }
         $fieldType = $this->layout->getField($field);
-        if (FileMaker::isError($fieldType)) {
-            return $fieldType;
-        }
         switch ($fieldType->getResult()) {
             case 'date':
                 $explodedValue = explode('/', $value);
@@ -219,9 +210,13 @@ class Record {
      *        Defaults to the first repetition.
      */
     public function setField($field, $value, $repetition = 0) {
+        
         if( !is_null($this->parent) && !strpos($field, '::')){
             $field = $this->relatedSetName. '::' . $field;
         }
+        if ( !array_search($field, $this->getFields()))
+                throw new FileMakerException($this->fm, 'Field "'.$field.'" is missing');
+        
         $this->fields[$field][$repetition] = $value;
         $this->_modifiedFields[$field][$repetition] = true;
         return $value;
@@ -309,6 +304,7 @@ class Record {
         $relatedSetInfos = $this->layout->getRelatedSet($relatedSet);
         $record = new Record($relatedSetInfos);
         $record->setParent($this);
+        $record->relatedSetName = $relatedSet;
         return $record;
     }
 
@@ -486,8 +482,12 @@ class Record {
         $result = $command->execute();
         $records = $result->getRecords();
         $record = $records[0];
-        $relatedSet = & $record->getRelatedSet($this->layout->getName());
+        $relatedSet = $record->getRelatedSet($this->layout->getName());
         $lastRecord = array_pop($relatedSet);
+        /*
+         * Add record to parents relatedSet
+         */
+        $this->parent->relatedSets[$this->layout->getName()][] = $this;
         return $this->_updateFrom($lastRecord);
     }
 
