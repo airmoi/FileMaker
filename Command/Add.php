@@ -1,6 +1,7 @@
 <?php
 
 namespace airmoi\FileMaker\Command;
+use airmoi\FileMaker\FileMakerException;
 
 /**
  * FileMaker API for PHP
@@ -25,14 +26,6 @@ namespace airmoi\FileMaker\Command;
 class Add extends Command {
 
     /**
-     * Implementation
-     *
-     * @var FileMaker_Command_Add_Implementation
-     * @access private
-     */
-    var $_impl;
-
-    /**
      * Add command constructor.
      *
      * @ignore
@@ -48,21 +41,20 @@ class Add extends Command {
             if (!is_array($value)) {
                 $value = array($value);
             }
-            $this->_fields[$field] = $value;
+            $this->setField($field, $value);
         }
     }
 
+    /**
+     * 
+     * @return \airmoi\FileMaker\Object\Result
+     * @throws FileMakerException
+     */
     public function execute() {
         if ($this->fm->getProperty('prevalidate')) {
             $validation = $this->validate();
-            if (FileMaker::isError($validation)) {
-                return $validation;
-            }
         }
-        $layout = & $this->fm->getLayout($this->_layout);
-        if (FileMaker::isError($layout)) {
-            return $layout;
-        }
+        $layout = $this->fm->getLayout($this->_layout);
         $params = $this->_getCommandParams();
         $params['-new'] = true;
         foreach ($this->_fields as $field => $values) {
@@ -72,9 +64,6 @@ class Add extends Command {
             } else {
                 $fieldname = $field;
                 $fieldInfos = $layout->getField($field);
-                if (FileMaker::isError($fieldInfos)) {
-                    return $fieldInfos;
-                }
                 if ($fieldInfos->isGlobal()) {
                     $fieldType = '.global';
                 } else {
@@ -85,10 +74,7 @@ class Add extends Command {
                 $params[$fieldname . '(' . ($repetition + 1) . ')' . $fieldType] = $value;
             }
         }
-        $result = $this->fm->_execute($params);
-        if (FileMaker::isError($result)) {
-            return $result;
-        }
+        $result = $this->fm->execute($params);
         return $this->_getResult($result);
     }
 
@@ -101,6 +87,8 @@ class Add extends Command {
      *        Defaults to the first repetition.
      */
     function setField($field, $value, $repetition = 0) {
+        if ( !array_search($field, $this->fm->getLayout($this->_layout)->listFields()))
+                throw new FileMakerException($this->fm, 'Field "'.$field.'" is missing');
         $this->_fields[$field][$repetition] = $value;
         return $value;
     }
@@ -122,14 +110,8 @@ class Add extends Command {
      *        Defaults to the first repetition.
      */
     function setFieldFromTimestamp($field, $timestamp, $repetition = 0) {
-        $layout = & $this->fm->getLayout($this->_layout);
-        if (FileMaker::isError($layout)) {
-            return $layout;
-        }
+        $layout = $this->fm->getLayout($this->_layout);
         $fieldInfos = $layout->getField($field);
-        if (FileMaker::isError($fieldInfos)) {
-            return $fieldInfos;
-        }
         switch ($fieldInfos->getResult()) {
             case 'date':
                 return $this->setField($field, date('m/d/Y', $timestamp), $repetition);
@@ -138,7 +120,7 @@ class Add extends Command {
             case 'timestamp':
                 return $this->setField($field, date('m/d/Y H:i:s', $timestamp), $repetition);
         }
-        return new FileMaker_Error($this->fm, 'Only time, date, and timestamp fields can be set to the value of a timestamp.');
+        throw new FileMakerException($this->fm, 'Only time, date, and timestamp fields can be set to the value of a timestamp.');
     }
 
 }

@@ -141,7 +141,7 @@ class FileMaker {
      * @const
      */
     public function getAPIVersion() {
-        return '1.1';
+        return '2.0a';
     }
 
     /**
@@ -252,7 +252,7 @@ class FileMaker {
     }
 
     /**
-     * Creates a new FileMaker_Command_Edit object.
+     * Creates a Edit object.
      *
      * @param string $layout Layout that the record is part of.
      * @param string $recordId ID of the record to edit.
@@ -269,7 +269,7 @@ class FileMaker {
     }
 
     /**
-     * Creates a new FileMaker_Command_Delete object.
+     * Creates a new Delete object.
      *
      * @param string $layout Layout to delete record from.
      * @param string $recordId ID of the record to delete.
@@ -281,7 +281,7 @@ class FileMaker {
     }
 
     /**
-     * Creates a new FileMaker_Command_Duplicate object.
+     * Creates a new Duplicate object.
      *
      * @param string $layout Layout that the record to duplicate is in.
      * @param string $recordId ID of the record to duplicate.
@@ -293,7 +293,7 @@ class FileMaker {
     }
 
     /**
-     * Creates a new FileMaker_Command_Find object.
+     * Creates a new Find object.
      *
      * @param string $layout Layout to find records in.
      *
@@ -305,7 +305,7 @@ class FileMaker {
 
     /**
      * 
-     * Creates a new FileMaker_Command_CompoundFind object.
+     * Creates a new CompoundFind object.
      *
      * @param string $layout Layout to find records in.
      *
@@ -318,8 +318,8 @@ class FileMaker {
 
     /**
      * 
-     * Creates a new FileMaker_Command_FindRequest object. Add one or more 
-     * Find Request objects to a {@link FileMaker_Command_CompoundFind} object, 
+     * Creates a new Command\FindRequest object. Add one or more 
+     * Find Request objects to a {@link Command\CompoundFind} object, 
      * then execute the Compound Find command.
      *
      * @param string $layout Layout to find records in.
@@ -331,7 +331,7 @@ class FileMaker {
     }
 
     /**
-     * Creates a new FileMaker_Command_FindAny object.
+     * Creates a new Command\FindAny object.
      *
      * @param string $layout Layout to find one random record from.
      *
@@ -342,9 +342,9 @@ class FileMaker {
     }
 
     /**
-     * Creates a new FileMaker_Command_FindAll object.
+     * Creates a new Command\FindAll object.
      *
-     * @param string $layout Layout to find all records in.
+     * @param string $layout Layout name to find all records in.
      *
      * @return Command\FindAll New Find All command object.
      */
@@ -353,9 +353,9 @@ class FileMaker {
     }
 
     /**
-     * Creates a new FileMaker_Command_PerformScript object.
+     * Creates a new Command\PerformScript object.
      *
-     * @param string $layout Layout to use for script context.
+     * @param string $layout Layout name to use for script context.
      * @param string $scriptName Name of the ScriptMaker script to run.
      * @param string $scriptParameters Any parameters to pass to the script.
      *
@@ -367,7 +367,7 @@ class FileMaker {
     }
 
     /**
-     * Creates a new FileMaker_Record object. 
+     * Creates a new Object\Record object. 
      * 
      * This method does not save the new record to the database. 
      * The record is not created on the Database Server until you call 
@@ -376,16 +376,14 @@ class FileMaker {
      * Individual field values can also be set in the new record object.
      * 
      *
-     * @param string $layout Layout to create a new record for.
+     * @param string $layout Layout name to create a new record for.
      * @param array $fieldValues Initial values for the new record's fields.
      *
-     * @return FileMaker_Record New Record object.
+     * @return Object\Record New Record object.
+     * @throws FileMakerException
      */
     public function createRecord($layout, $fieldValues = array()) {
         $layout = $this->getLayout($layoutName);
-        if (FileMaker::isError($layout)) {
-            return $layout;
-        }
         $record = new $this->_properties['recordClass']($layout);
         if (is_array($fieldValues)) {
             foreach ($fieldValues as $fieldName => $fieldValue) {
@@ -402,22 +400,21 @@ class FileMaker {
     }
 
     /**
-     * Returns a single FileMaker_Record object matching the given
-     * layout and record ID, or a FileMaker_Error object, if this operation
+     * Returns a single Object\Record object matching the given
+     * layout and record ID, or throws a FileMakerException object, if this operation
      * fails.
      *
      * @param string $layout Layout that $recordId is in.
      * @param string $recordId ID of the record to get.
      *
-     * @return FileMaker_Record|FileMaker_Error Record or Error object.
+     * @return Record
+     * @throws FileMakerException
      */
     public function getRecordById($layout, $recordId) {
         $request = $this->newFindCommand($layout);
         $request->setRecordId($recordId);
         $result = $request->execute();
-        if (FileMaker::isError($result)) {
-            return $result;
-        }
+        
         $record = $result->getRecords();
         if (!$record) {
             throw new FileMakerException($this, 'Record . ' . $recordId . ' not found in layout "' . $layout . '".');
@@ -430,29 +427,22 @@ class FileMaker {
      *
      * @param string $layout Name of the layout to describe.
      *
-     * @return FileMaker_Layout|FileMaker_Error Layout or Error object.
+     * @return FileMaker_Layout Layout.
+     * @throws FileMakerException
      */
     public function getLayout($layoutName) {
         static $_layouts = array();
-        if (isset(self::$_layouts[$layoutName])) {
+        if (isset(self::$_layouts[$layoutName]) ) {
             return self::$_layouts[$layoutName];
         }
         $request = $this->execute(array('-db' => $this->getProperty('database'),
             '-lay' => $layoutName,
             '-view' => true));
-        if (FileMaker::isError($request)) {
-            return $request;
-        }
+        
         $parser = new FMResultSet($this);
         $result = $parser->parse($request);
-        if (FileMaker::isError($result)) {
-            return $result;
-        }
         $layout = new Layout($this);
         $result = $parser->setLayout($layout);
-        if (FileMaker::isError($result)) {
-            return $result;
-        }
         self::$_layouts[$layoutName] = $layout;
         return $layout;
     }
@@ -462,18 +452,14 @@ class FileMaker {
      * server settings and the current user name and password
      * credentials.
      *
-     * @return array|FileMaker_Error List of database names or an Error object.
+     * @return array List of database names.
+     * @throws FileMakerException
      */
     public function listDatabases() {
         $request = $this->execute(array('-dbnames' => true));
-        if (FileMaker::isError($request)) {
-            return $request;
-        }
         $parser = new FMResultSet($this);
         $result = $parser->parse($request);
-        if (FileMaker::isError($result)) {
-            return $result;
-        }
+        
         $list = array();
         foreach ($parser->parsedResult as $data) {
             $list[] = $data['fields']['DATABASE_NAME'][0];
@@ -486,19 +472,15 @@ class FileMaker {
      * are available with the current server settings and the current user 
      * name and password credentials.
      *
-     * @return array|FileMaker_Error List of script names or an Error object.
+     * @return array List of script names.
+     * @throws FileMakerException
      */
     public function listScripts() {
         $request = $this->execute(array('-db' => $this->getProperty('database'),
             '-scriptnames' => true));
-        if (FileMaker::isError($request)) {
-            return $request;
-        }
         $parser = new FMResultSet($this);
         $result = $parser->parse($request);
-        if (FileMaker::isError($result)) {
-            return $result;
-        }
+        
         $list = array();
         foreach ($parser->parsedResult as $data) {
             $list[] = $data['fields']['SCRIPT_NAME'][0];
@@ -511,19 +493,15 @@ class FileMaker {
      * available with the current server settings and the current
      * user name and password credentials.
      *
-     * @return array|FileMaker_Error List of layout names or an Error object.
+     * @return array List of layout names.
+     * @throws FileMakerException
      */
     public function listLayouts() {
         $request = $this->execute(array('-db' => $this->getProperty('database'),
             '-layoutnames' => true));
-        if (FileMaker::isError($request)) {
-            return $request;
-        }
         $parser = new FMResultSet($this);
         $result = $parser->parse($request);
-        if (FileMaker::isError($result)) {
-            return $result;
-        }
+        
         $list = array();
         foreach ($parser->parsedResult as $data) {
             $list[] = $data['fields']['LAYOUT_NAME'][0];
@@ -551,7 +529,8 @@ class FileMaker {
      *
      * @param string $url URL of the container field contents to get.
      *
-     * @return string Raw field data|FileMaker_Error if remote container field.
+     * @return string Raw field data.
+     * @throws FileMakerException if remote container field or curl not active.
      */
     public function getContainerData($url) {
         if (!function_exists('curl_init')) {

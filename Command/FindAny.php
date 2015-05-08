@@ -28,22 +28,22 @@ class FindAny extends Find
      * FindAny command constructor.
      *
      * @ignore
-     * @param FileMaker_Implementation $fm FileMaker_Implementation object the 
-     *        command was created by.
-     * @param string $layout Layout to find a random record from.
+     * @param \airmoi\FileMaker\FileMaker $fm FileMaker object the command was created by.
+     * @param string $layout Layout name to find a random record from.
      */
     function __construct($fm, $layout)
     {
         parent::__construct($fm, $layout);
     }
     
+    /**
+     * 
+     * @return Result
+     */
     public function execute() {
         $params = $this->_getCommandParams();
         $params['-findany'] = true;
-        $result = $this->fm->_execute($params);
-        if (FileMaker::isError($result)) {
-            return $result;
-        }
+        $result = $this->fm->execute($params);
         return $this->_getResult($result);
     }
 

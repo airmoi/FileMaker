@@ -38,16 +38,17 @@ class FindAll extends Find
         parent::__construct($fm, $layout);
     }
     
-    
+    /**
+     * 
+     * @return Result
+     * @throws \airmoi\FileMaker\FileMakerException
+     */
     public function execute() {
         $params = $this->_getCommandParams();
         $params['-findall'] = true;
         $this->_setSortParams($params);
         $this->_setRangeParams($params);
-        $result = $this->fm->_execute($params);
-        if (FileMaker::isError($result)) {
-            return $result;
-        }
+        $result = $this->fm->execute($params);
         return $this->_getResult($result);
     }
 

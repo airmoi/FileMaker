@@ -216,7 +216,7 @@ class Find extends Command
             'relatedsetsmax' => $this->_relatedsetsmax);
     }
     
-    private function _setRelatedSetsFilters(&$params) {
+    protected function _setRelatedSetsFilters(&$params) {
         if ($this->_relatedsetsfilter) {
             $params['-relatedsets.filter'] = $this->_relatedsetsfilter;
         }
@@ -225,7 +225,7 @@ class Find extends Command
         }
     }
 
-    private function _setSortParams(&$params) {
+    protected function _setSortParams(&$params) {
         foreach ($this->_sortRules as $precedence => $fieldname) {
             $params['-sortfield.' . $precedence] = $fieldname;
         }
@@ -234,7 +234,7 @@ class Find extends Command
         }
     }
 
-    private function _setRangeParams(&$params) {
+    protected function _setRangeParams(&$params) {
         if ($this->_skip) {
             $params['-skip'] = $this->_skip;
         }

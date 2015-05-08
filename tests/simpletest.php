@@ -17,7 +17,7 @@ try {
     echo "------------------------------------------" . PHP_EOL;
     echo " Test FileMaker object's main methods" . PHP_EOL;
     echo "------------------------------------------" . PHP_EOL;
-    $fm = new FileMaker('filemaker-test', '192.168.1.22', 'filemaker', 'filemaker');
+    $fm = new FileMaker('filemaker-test', 'localhost', 'filemaker', 'filemaker');
 
     /* API infos */
     echo "API version : " . $fm->getAPIVersion() . PHP_EOL;
@@ -112,7 +112,18 @@ try {
     echo "------------------------------------------" . PHP_EOL;
     echo " Test Find object's main methods" . PHP_EOL;
     echo "------------------------------------------" . PHP_EOL;
-    echo 'Test creating object from FileMaker Object... ';
+    
+    echo 'Test FindAll command... ';
+    $find = $fm->newFindAllCommand($layout->getName());
+    $result = $find->execute();
+    echo 'Found '.$result->getFetchCount().' Expected 100...'.($result->getFetchCount() == 100 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>') . PHP_EOL . PHP_EOL;
+    
+    echo 'Test FindAny command... ';
+    $find = $fm->newFindAnyCommand($layout->getName());
+    $result = $find->execute();
+    echo 'Found '.$result->getFetchCount().' Expected 1...'.($result->getFetchCount() == 1 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>') . PHP_EOL . PHP_EOL;
+    
+    echo 'Test creating Find object from FileMaker... ';
     $find = $fm->newFindCommand($layout->getName());
     echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
     
@@ -152,6 +163,12 @@ try {
     
     echo 'Check if expected record (ID = 2)... ';
     echo 'returned '.$record->getField('id').'... ' . ($record->getField('id') == 2 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>') . PHP_EOL . PHP_EOL;
+    
+    echo 'Test CompoundFind... ';
+    $request = $fm->newCompoundFindCommand($layout->getName());
+    
+    
+    
     
     echo "------------------------------------------" . PHP_EOL;
     echo " Test Record object's main methods" . PHP_EOL;
@@ -196,7 +213,27 @@ try {
    
    echo "Test creation of related record.. ";
    $currentRelatedSetCount = sizeof($record->getRelatedSet($relatedSetName));
-   $newRecord = $record->newRelatedRecord($relatedSetName);
+   $newRelatedRecord = $record->newRelatedRecord($relatedSetName);
+   $time = time();
+   $newRelatedRecord->setField('id_sample', $record->getField('id'));
+   $newRelatedRecord->setField('text_field', "NEW RELATED RECORD");
+   $newRelatedRecord->setField('number_field', rand(1,1000));
+   $newRelatedRecord->setField('date_field', date('m/d/Y', $time));
+   $newRelatedRecord->setField('time_field', date('H:i:s', $time));
+   $newRelatedRecord->setField('timestamp_field', date('m/d/Y H:i:s', $time));
+   $newRelatedRecord->commit();
+   echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
+   
+   echo "Check if parent's relatedSet has been updated... ";
+   echo (sizeof($record->getRelatedSet($relatedSetName)) == $currentRelatedSetCount+1 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>' ) . PHP_EOL . PHP_EOL;
+
+   echo "test duplicate record... ";
+   $duplicateCommand = $fm->newDuplicateCommand($layout->getName(), $record->getRecordId());
+   $result = $duplicateCommand->execute();
+   echo 'New record count '.$result->getTableRecordCount().'... <span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
+   
+   echo "test create record... ";
+   $newRecord = $fm->newAddCommand($layout->getName());
    $time = time();
    $newRecord->setField('id_sample', $record->getField('id'));
    $newRecord->setField('text_field', "NEW RELATED RECORD");
@@ -204,12 +241,16 @@ try {
    $newRecord->setField('date_field', date('m/d/Y', $time));
    $newRecord->setField('time_field', date('H:i:s', $time));
    $newRecord->setField('timestamp_field', date('m/d/Y H:i:s', $time));
-   $newRecord->commit();
+   $result = $newRecord->execute();
+   $recordId = $result->getFirstRecord()->getRecordId();
+   echo 'recId '.$recordId.'... ';
    echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
    
-   echo "Check if parent's relatedSet has been updated... ";
-   echo (sizeof($record->getRelatedSet($relatedSetName)) == $currentRelatedSetCount+1 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>' ) . PHP_EOL . PHP_EOL;
-
+   echo "test delete record... ";
+   $delCommand = $fm->newDeleteCommand($layout->getName(), $recordId);
+   $result = $delCommand->execute();
+   echo 'New record count '.$result->getTableRecordCount().'... <span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
+   
    
  
     

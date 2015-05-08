@@ -1,6 +1,7 @@
 <?php
 namespace airmoi\FileMaker\Command;
 use airmoi\FileMaker\FileMaker;
+use airmoi\FileMaker\FileMakerException;
 /**
  * FileMaker API for PHP
  *
@@ -23,15 +24,6 @@ use airmoi\FileMaker\FileMaker;
  */
 class Delete extends Command
 {
-    /**
-     * Implementation
-     *
-     * @var FileMaker
-     * @access private
-     */
-    private $_fm;
-    
-    private $_recordId;
 
     /**
      * Delete command constructor.
@@ -48,18 +40,19 @@ class Delete extends Command
         $this->recordId = $recordId;
     }
     
+    /**
+     * 
+     * @return \airmoi\FileMaker\Object\Result
+     * @throws FileMakerException
+     */
     function execute() {
         if (empty($this->recordId)) {
-            $error = new FileMaker_Error($this->fm, 'Delete commands require a record id.');
-            return $error;
+            throw new FileMakerException($this->fm, 'Delete commands require a record id.');
         }
         $params = $this->_getCommandParams();
         $params['-delete'] = true;
         $params['-recid'] = $this->recordId;
         $result = $this->fm->execute($params);
-        if (FileMaker::isError($result)) {
-            return $result;
-        }
         return $this->_getResult($result);
     }
 }

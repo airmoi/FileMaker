@@ -36,6 +36,10 @@ class Command
      */
     public $fm;
     
+    /**
+     *
+     * @var \airmoi\FileMaker\Object\Layout
+     */
     protected $_layout;
     protected $_resultLayout;
     protected $_script;

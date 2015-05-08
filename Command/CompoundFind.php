@@ -1,5 +1,6 @@
 <?php
 namespace airmoi\FileMaker\Command;
+use airmoi\FileMaker\FileMaker;
 /**
  * FileMaker API for PHP
  *
@@ -40,8 +41,7 @@ class CompoundFind extends Command
      * Compound find set constructor.
      *
      * @ignore
-     * @param FileMaker_Implementation $fm FileMaker_Implementation object the 
-     *        request was created by.
+     * @param FileMaker $fm FileMaker object the request was created by.
      * @param string $layout Layout to find records in.
      */
     public function __construct($fm, $layout)
@@ -54,7 +54,7 @@ class CompoundFind extends Command
      *
      * @param int $precedence Priority in which the find requests are added to 
      *        this compound find set.
-     * @param findrequest $findrequest {@link FileMaker_FindRequest} object 
+     * @param findrequest $findrequest {@link FindRequest} object 
      *        to add to this compound find set. 
      */
     public function add($precedence, $findrequest)
