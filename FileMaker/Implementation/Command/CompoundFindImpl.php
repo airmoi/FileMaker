@@ -31,7 +31,7 @@ class FileMaker_Command_CompoundFind_Implementation extends FileMaker_Command_Im
         ksort($this->_requests);
         $totalRequestCount = count($this->_requests);
         foreach ($this->_requests as $precedence => $request) {
-            $findCriterias = $request->_impl->_findCriteria;
+            $findCriterias = $request->_impl->findCriteria;
             $critCount = count($findCriterias);
 
             $query = $query . '(';
@@ -52,7 +52,7 @@ class FileMaker_Command_CompoundFind_Implementation extends FileMaker_Command_Im
             $requestCount++;
             if ($requestCount <= $totalRequestCount) {
                 $nextRequest = $this->_requests[$requestCount];
-                if ($nextRequest->_impl->_omit == true) {
+                if ($nextRequest->_impl->omit == true) {
                     $query = $query . ';!';
                 } else {
                     $query = $query . ';';

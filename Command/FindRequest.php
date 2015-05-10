@@ -26,8 +26,8 @@ namespace airmoi\FileMaker\Command;
 class FindRequest
 {
     
-    private $_findCriteria = array();
-    private $_omit;
+    public $findCriteria = array();
+    public $omit;
 
     /**
      * Find request constructor.
@@ -39,7 +39,7 @@ class FindRequest
      */
     function __construct($fm, $layout)
     {
-        $this->_omit = false;
+        $this->omit = false;
     }
 
     /**
@@ -51,7 +51,7 @@ class FindRequest
      */
     function setOmit($value)
     {
-        $this->_omit = $value;
+        $this->omit = $value;
     }
 
     /**
@@ -62,7 +62,7 @@ class FindRequest
      */
     function addFindCriterion($fieldname, $testvalue)
     {
-        $$this->_findCriteria[$fieldname] = $testvalue;
+        $this->findCriteria[$fieldname] = $testvalue;
     }
     
     /**
@@ -70,7 +70,7 @@ class FindRequest
      */
     function clearFindCriteria()
     {
-        $this->_findCriteria = array();
+        $this->findCriteria = array();
     }
 
 	   

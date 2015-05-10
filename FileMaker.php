@@ -633,28 +633,32 @@ class FileMaker {
                 curl_setopt($curl, $key, $value);
             }
         }
+        
         $curlResponse = curl_exec($curl);
-        $this->_setClientWPCSessionCookie($curlResponse);
-        if ($curlHeadersSent) {
-            $curlResponse = $this->_eliminateXMLHeader($curlResponse);
-        }
+          $info = curl_getinfo($curl); 
+        
         //$this->log($curlResponse, FileMaker::LOG_DEBUG);
         if ($curlError = curl_errno($curl)) {
 
             if ($curlError == 52) {
-                throw new FileMakerException($this, 'Communication Error: (' . $curlError . ') ' . curl_error($curl) . ' - The Web Publishing Core and/or FileMaker Server services are not running.', $curlError);
+                throw new \Exception( 'Communication Error: (' . $curlError . ') ' . curl_error($curl) . ' - The Web Publishing Core and/or FileMaker Server services are not running.', $curlError);
             } else if ($curlError == 22) {
                 if (stristr("50", curl_error($curl))) {
-                    throw new FileMakerException($this, 'Communication Error: (' . $curlError . ') ' . curl_error($curl) . ' - The Web Publishing Core and/or FileMaker Server services are not running.', $curlError);
+                    throw new \Exception( 'Communication Error: (' . $curlError . ') ' . curl_error($curl) . ' - The Web Publishing Core and/or FileMaker Server services are not running.', $curlError);
                 } else {
-                    throw new FileMakerException($this, 'Communication Error: (' . $curlError . ') ' . curl_error($curl) . ' - This can be due to an invalid username or password, or if the FMPHP privilege is not enabled for that user.', $curlError);
+                    throw new \Exception( 'Communication Error: (' . $curlError . ') ' . curl_error($curl) . ' - This can be due to an invalid username or password, or if the FMPHP privilege is not enabled for that user.', $curlError);
                 }
             } else {
-                throw new FileMakerException($this, 'Communication Error: (' . $curlError . ') ' . curl_error($curl), $curlError);
+                throw new \Exception( 'Communication Error: (' . $curlError . ') ' . curl_error($curl), $curlError);
             }
         }
         curl_close($curl);
 
+        $this->_setClientWPCSessionCookie($curlResponse);
+        if ($curlHeadersSent) {
+            $curlResponse = $this->_eliminateXMLHeader($curlResponse);
+        }
+        
         return $curlResponse;
     }
 
@@ -706,8 +710,10 @@ class FileMaker {
      */
     private function _setClientWPCSessionCookie($curlResponse) {
         $found = preg_match('/WPCSessionID=(\d+?);/m', $curlResponse, $matches);
-        if ($found) {
+        /* Update WPCSession Cookie if needed */
+        if ($found && @$_COOKIE['WPCSessionID'] != $matches[1]) {
             setcookie("WPCSessionID", $matches[1]);
+            $_COOKIE['WPCSessionID'] = $matches[1];
         }
     }
 

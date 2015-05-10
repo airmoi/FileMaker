@@ -37,11 +37,15 @@ class Add extends Command {
      */
     function __construct($fm, $layout, $values = array()) {
         parent::__construct($fm, $layout);
-        foreach ($values as $field => $value) {
+        foreach ($values as $fieldname => $value) {
             if (!is_array($value)) {
-                $value = array($value);
+                $this->setField($fieldname, $value, 0);  
             }
-            $this->setField($field, $value);
+            else {
+                foreach ( $value as $repetition => $repetitionValue ){
+                    $this->setField($fieldname, $repetitionValue, $repetition) ;
+                }
+            }
         }
     }
 

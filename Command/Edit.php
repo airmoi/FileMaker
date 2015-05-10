@@ -26,9 +26,9 @@ use airmoi\FileMaker\FileMakerValidationException;
  */
 class Edit extends Command
 {
-    private $_fields = array();
-    private $_modificationId = null;
-    private $_deleteRelated;
+    protected $_fields = array();
+    protected $_modificationId = null;
+    protected $_deleteRelated;
 
     /**
      * Edit command constructor.
@@ -50,11 +50,13 @@ class Edit extends Command
         $this->_deleteRelated = null;
         foreach ($updatedValues as $fieldname => $value) {
             if (!is_array($value)) {
-                $value = array(
-                    $value
-                );
+                $this->setField($fieldname, $value, 0);  
             }
-            $this->_fields[$fieldname] = $value;
+            else {
+                foreach ( $value as $repetition => $repetitionValue ){
+                    $this->setField($fieldname, $repetitionValue, $repetition) ;
+                }
+            }
         }
     }
     

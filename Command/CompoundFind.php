@@ -92,6 +92,11 @@ class CompoundFind extends Command
         $this->_sortOrders = array();
     }
     
+    /**
+     * 
+     * @return \airmoi\FileMaker\Object\Result
+     * @throws \airmoi\FileMaker\FileMakerException
+     */
     public function execute() {
         $query = null;
 
@@ -106,7 +111,7 @@ class CompoundFind extends Command
         ksort($this->_requests);
         $totalRequestCount = count($this->_requests);
         foreach ($this->_requests as $precedence => $request) {
-            $findCriterias = $request->_impl->_findCriteria;
+            $findCriterias = $request->findCriteria;
             $critCount = count($findCriterias);
 
             $query = $query . '(';
@@ -127,7 +132,7 @@ class CompoundFind extends Command
             $requestCount++;
             if ($requestCount <= $totalRequestCount) {
                 $nextRequest = $this->_requests[$requestCount];
-                if ($nextRequest->_impl->_omit == true) {
+                if ($nextRequest->omit == true) {
                     $query = $query . ';!';
                 } else {
                     $query = $query . ';';
@@ -136,10 +141,7 @@ class CompoundFind extends Command
         }
         $params['-query'] = $query;
         $params['-findquery'] = true;
-        $result = $this->fm->_execute($params);
-        if (FileMaker::isError($result)) {
-            return $result;
-        }
+        $result = $this->fm->execute($params);
         return $this->_getResult($result);
     }
 

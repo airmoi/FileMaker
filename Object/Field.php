@@ -111,7 +111,7 @@ class Field
      * failed.
      *
      * @param mixed $value Value to pre-validate.
-     * @param FileMakerValidationException $error If pre-validation is being 
+     * @param FileMakerValidationException $validationError If pre-validation is being 
      *        done on more than one field, you may pass validate() an existing 
      *        error object to add pre-validation failures to.$error is not 
      *        passed by reference, though, so you must catch the return value 
@@ -121,24 +121,22 @@ class Field
      * @return boolean Result of field  pre-validation on $value.
      * @throws FileMakerValidationException;
      */
-    public function validate($value, FileMakerValidationException $error = null)
+    public function validate($value)
     {
-        $isValid = true;
-        if ($error === null) {
-            $isValid = false;
-            $error = new FileMakerValidationException($this->layout->fm);
-        }
+        $isValid = false;
+        $validationError = new FileMakerValidationException($this->layout->fm);
+       
         foreach ($this->getValidationRules() as $rule) {
             switch ($rule) {
                 case FileMaker::RULE_NOTEMPTY:
                     if (empty($value)) {
-                        $error->addError($this, $rule, $value);
+                        $validationError->addError($this, $rule, $value);
                     }
                     break;
                 case FileMaker::RULE_NUMERICONLY :
                     if (!empty($value)) {
                         if ($this->checkNumericOnly($value)) {
-                            $error->addError($this, $rule, $value);
+                            $validationError->addError($this, $rule, $value);
                         }
                     }
                     break;
@@ -146,7 +144,7 @@ class Field
                     if (!empty($value)) {
                         $strlen = strlen($value);
                         if ($strlen > $this->maxCharacters) {
-                            $error->addError($this, $rule, $value);
+                            $validationError->addError($this, $rule, $value);
                         }
                     }
                     break;
@@ -154,9 +152,9 @@ class Field
                     if (!empty($value)) {
                         if (!$this->checkTimeFormat($value)) {
 
-                            $error->addError($this, $rule, $value);
+                            $validationError->addError($this, $rule, $value);
                         } else {
-                            $this->checkTimeValidity($value, $rule, $error, FALSE);
+                            $this->checkTimeValidity($value, $rule, $validationError, FALSE);
                         }
                     }
                     break;
@@ -164,10 +162,10 @@ class Field
                     if (!empty($value)) {
                         if (!$this->checkTimeStampFormat($value)) {
 
-                            $error->addError($this, $rule, $value);
+                            $validationError->addError($this, $rule, $value);
                         } else {
-                            $this->checkDateValidity($value, $rule, $error);
-                            $this->checkTimeValidity($value, $rule, $error, FALSE);
+                            $this->checkDateValidity($value, $rule, $validationError);
+                            $this->checkTimeValidity($value, $rule, $validationError, FALSE);
                         }
                     }
                     break;
@@ -175,9 +173,9 @@ class Field
                     if (!empty($value)) {
                         if (!$this->checkDateFormat($value)) {
 
-                            $error->addError($this, $rule, $value);
+                            $validationError->addError($this, $rule, $value);
                         } else {
-                            $this->checkDateValidity($value, $rule, $error);
+                            $this->checkDateValidity($value, $rule, $validationError);
                         }
                     }
                     break;
@@ -191,32 +189,32 @@ class Field
                                     $day = $matches[2];
                                     $year = $matches[3];
                                     if ($year < 1 || $year > 4000) {
-                                        $error->addError($this, $rule, $value);
+                                        $validationError->addError($this, $rule, $value);
                                     } else
                                     if (!checkdate($month, $day, $year)) {
-                                        $error->addError($this, $rule, $value);
+                                        $validationError->addError($this, $rule, $value);
                                     } else {
-                                        $this->checkTimeValidity($value, $rule, $error, FALSE);
+                                        $this->checkTimeValidity($value, $rule, $validationError, FALSE);
                                     }
                                 } else {
 
-                                    $error->addError($this, $rule, $value);
+                                    $validationError->addError($this, $rule, $value);
                                 }
                                 break;
                             default :
                                 preg_match('#([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})[-,/,\\\\]([0-9]{1,4})#', $value, $matches);
                                 if (count($matches) != 3) {
-                                    $error->addError($this, $rule, $value);
+                                    $validationError->addError($this, $rule, $value);
                                 } else {
                                     $strlen = strlen($matches[2]);
                                     if ($strlen != 4) {
-                                        $error->addError($this, $rule, $value);
+                                        $validationError->addError($this, $rule, $value);
                                     } else {
                                         if ($matches[2] < 1 || $matches[2] > 4000) {
-                                            $error->addError($this, $rule, $value);
+                                            $validationError->addError($this, $rule, $value);
                                         } else {
                                             if (!checkdate($matches[0], $matches[1], $matches[2])) {
-                                                $error->addError($this, $rule, $value);
+                                                $validationError->addError($this, $rule, $value);
                                             }
                                         }
                                     }
@@ -228,17 +226,17 @@ class Field
                 case FileMaker::RULE_TIMEOFDAY :
                     if (!empty($value)) {
                         if ($this->checkTimeFormat($value)) {
-                            $this->checkTimeValidity($value, $rule, $error, TRUE);
+                            $this->checkTimeValidity($value, $rule, $validationError, TRUE);
                         } else {
 
-                            $error->addError($this, $rule, $value);
+                            $validationError->addError($this, $rule, $value);
                         }
                     }
                     break;
             }
         }
-        if ($isValid or $error->numErrors()) {
-            throw $error;
+        if ($isValid or $validationError->numErrors()) {
+            throw $validationError;
         } else {
             return true;
         }

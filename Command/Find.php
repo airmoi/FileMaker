@@ -25,14 +25,14 @@ use airmoi\FileMaker\FileMaker;
 class Find extends Command
 {
     
-    private $_findCriteria = array();
-    private $_sortRules = array();
-    private $_sortOrders = array();
-    private $_operator;
-    private $_skip;
-    private $_max;
-    private $_relatedsetsfilter;
-    private $_relatedsetsmax;
+    protected $_findCriteria = array();
+    protected $_sortRules = array();
+    protected $_sortOrders = array();
+    protected $_operator;
+    protected $_skip;
+    protected $_max;
+    protected $_relatedsetsfilter;
+    protected $_relatedsetsmax;
 
     /**
      * Find command constructor.

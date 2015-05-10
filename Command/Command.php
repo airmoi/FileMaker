@@ -77,7 +77,7 @@ class Command
     public function setScript($scriptName, $scriptParameters = null)
     {
         $this->_script = $scriptName;
-        $this->_scriptParams = $scriptParams;
+        $this->_scriptParams = $scriptParameters;
     }
 
     /**
@@ -88,8 +88,8 @@ class Command
      */
     public function setPreCommandScript($scriptName, $scriptParameters = null)
     {
-         $this->_preReqScript = $scriptName;
-        $this->_preReqScriptParams = $scriptParams;
+        $this->_preReqScript = $scriptName;
+        $this->_preReqScriptParams = $scriptParameters;
     }
 
     /**
@@ -102,7 +102,7 @@ class Command
     public function setPreSortScript($scriptName, $scriptParameters = null)
     {
          $this->_preSortScript = $scriptName;
-        $this->_preSortScriptParams = $scriptParams;
+        $this->_preSortScriptParams = $scriptParameters;
     }
 
     /**
@@ -146,44 +146,52 @@ class Command
      */
     public function validate($fieldName = null)
     {
-        if (!is_a($this, 'Add') && !is_a($this, 'Edit')) {
+        if (!is_a($this, __NAMESPACE__.'\Add') && !is_a($this, __NAMESPACE__.'\Edit')) {
             return true;
         }
         $layout = $this->fm->getLayout($this->_layout);
-        if (FileMaker :: isError($layout)) {
-            return $layout;
-        }
-        $validationErrors = new FileMaker_Error_Validation($this->fm);
-        if ($field === null) {
-            foreach ($layout->getFields() as $field => $properties) {
-                if (!isset($this->_fields[$field]) || !count($this->_fields[$field])) {
-                    $errors = array(
+        $validationErrors = new \airmoi\FileMaker\FileMakerValidationException($this->fm);
+        if ($fieldName === null) {
+            foreach ($layout->getFields() as $fieldName => $field) {
+                if (!isset($this->_fields[$fieldName]) || !count($this->_fields[$fieldName])) {
+                    $values = array(
                         0 => null
                     );
                 } else {
-                    $errors = $this->_fields[$field];
+                    $values = $this->_fields[$fieldName];
                 }
-                foreach ($errors as $error) {
-                    $validationErrors = $properties->validate($error, $validationErrors);
+                foreach ($values as $value) {
+                    try {
+                        $field->validate($value);
+                    }catch (\airmoi\FileMaker\FileMakerValidationException $e){
+                        foreach ( $e->getErrors() as $error ) {
+                            $validationErrors->addError($error[0], $error[1], $error[2]);
+                        }
+                    }
                 }
             }
         } else {
-            $properties = & $layout->getField($field);
-            if (FileMaker :: isError($properties)) {
-                return $properties;
-            }
-            if (!isset($this->_fields[$field]) || !count($this->_fields[$field])) {
-                $errors = array(
+            $field = $layout->getField($fieldName);
+            if (!isset($this->_fields[$fieldName]) || !count($this->_fields[$fieldName])) {
+                $values = array(
                     0 => null
                 );
             } else {
-                $errors = $this->_fields[$field];
+                $values = $this->_fields[$fieldName];
             }
-            foreach ($errors as $error) {
-                $validationErrors = $properties->validate($error, $validationErrors);
+            foreach ($values as $value) {
+                try {
+                        $field->validate($value);
+                    }catch (\airmoi\FileMaker\FileMakerValidationException $e){
+                        foreach ( $e->getErrors() as $error ) {
+                            $validationErrors->addError($error[0], $error[1], $error[2]);
+                        }
+                    }
             }
         }
-        return $validationErrors->numErrors() ? $validationErrors : true;
+        if ( $validationErrors->numErrors() )
+            throw $validationErrors;
+        return true;
     }
 
     /**
