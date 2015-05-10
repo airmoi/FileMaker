@@ -24,14 +24,13 @@ class FileMakerException extends \Exception
 {
     private $_fm;
     /**
-     * Overloaded FileMaker_Error constructor.
+     * Overloaded Exception constructor.
      *
-     * @param FileMaker_Delegate &$fm FileMaker_Delegate object this error 
-     *        came from.
+     * @param FileMaker $fm FileMaker object this error came from.
      * @param string $message Error message.
      * @param integer $code Error code.
      */
-    public function __construct(&$fm, $message = null, $code = null, $previous=null)
+    public function __construct($fm, $message = null, $code = null, $previous=null)
     {
         $this->_fm = $fm;
         if ( $code !== null)

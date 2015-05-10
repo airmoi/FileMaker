@@ -62,7 +62,7 @@ class Edit extends Command
     
     /**
      * 
-     * @return \airmoi\FileMaker\Command\FileMaker_Error
+     * @return \airmoi\FileMaker\Object\Result
      * @throws FileMakerException|FileMakerValidationException
      */
     public function execute() {
@@ -171,7 +171,7 @@ class Edit extends Command
             case 'timestamp' :
                 return $this->setField($fieldname, date('m/d/Y H:i:s', $timestamp), $repetition);
         }
-        return new FileMaker_Error($this->fm, 'Only time, date, and timestamp fields can be set to the value of a timestamp.');
+        throw new FileMakerException($this->fm, 'Only time, date, and timestamp fields can be set to the value of a timestamp.');
     }
 
     /**

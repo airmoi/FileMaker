@@ -108,8 +108,8 @@ class RelatedSet
      *
      * @access private
      *
-     * @return boolean|FileMaker_Error TRUE, if successful. Otherwise, an Error 
-     *         object.
+     * @return boolean TRUE, if successful.
+     * @throws FileMakerException
      */
     public function loadExtendedInfo()
     {

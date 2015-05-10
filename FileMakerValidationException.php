@@ -23,7 +23,7 @@ use airmoi\FileMaker\Object\Field;
 
 
 /**
- * Extension of the FileMaker_Error class that adds information about 
+ * Extension of the FileMakerException class that adds information about 
  * pre-validation errors.
  *
  * @package FileMaker

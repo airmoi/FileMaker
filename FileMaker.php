@@ -125,13 +125,15 @@ class FileMaker {
     /**
      * Tests whether a variable is a FileMaker API Error.
      *
+     * @deprecated since version 2.0a use Exceptions nows
+     * 
      * @param mixed $variable Variable to test.
-     * @return boolean TRUE, if the variable is a {@link FileMaker_Error} object.
+     * @return boolean TRUE, if the variable is a {@link FileMakerException} object.
      * @const
      *
      */
     public static function isError($variable) {
-        return is_a($variable, 'FileMaker_Error');
+        return is_a($variable, __NAMESPACE__.'FileMakerException');
     }
 
     /**
