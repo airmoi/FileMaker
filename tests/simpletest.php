@@ -1,5 +1,4 @@
-<pre>
-    <?php
+<pre><?php
 
 //header('Content-Type: text/plain');
 //error_reporting(E_ALL);
@@ -8,6 +7,7 @@ use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\FileMakerValidationException;
 
+require('../autoloader.php');
 require('../FileMaker.php');
 
 echo "==========================================" . PHP_EOL;

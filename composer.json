@@ -1,11 +1,27 @@
 {
-    "name": "vendor/f-m-a-p-i-for-p-h-p-standalone",
-    "description": "Description of project FM_API_for_PHP_Standalone.",
+    "name": "airmoi/filemaker",
+    "description": "Rewriten FileMaker PHP-API",
+    "keywords": ["filemaker","PHP-API"],
+    "license": "FileMaker Sofware Licence",
     "authors": [
         {
-            "name": "romain",
-            "email": "romain_pro@dunand.me"
+            "name": "Romain Dunand",
+            "email": "airmoi@gmail.com"
         }
     ],
-    "require": {}
+    "autoload": {
+        "psr-4": {
+            "airmoi\\FileMaker\\": "/",
+            "airmoi\\FileMaker\\Object\\": "Object/",
+            "airmoi\\FileMaker\\Parser\\": "Parser/",
+            "airmoi\\FileMaker\\Error\\": "Error/",
+            "airmoi\\FileMaker\\Command\\": "Command/"
+        }
+    },
+	"repositories":[
+		{
+			"type": "git",
+			"url": "https://github.com/airmoi/FileMaker.git"
+		}
+	]
 }
