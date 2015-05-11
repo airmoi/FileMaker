@@ -115,7 +115,7 @@ class FileMaker {
      * @const
      */
     public function getAPIVersion() {
-        return '2.0b';
+        return '2.0.0-beta';
     }
 
     /**
