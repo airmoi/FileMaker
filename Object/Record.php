@@ -214,7 +214,7 @@ class Record {
         if( !is_null($this->parent) && !strpos($field, '::')){
             $field = $this->relatedSetName. '::' . $field;
         }
-        if ( !array_search($field, $this->getFields()))
+        if ( array_search($field, $this->getFields()) === false)
                 throw new FileMakerException($this->fm, 'Field "'.$field.'" is missing');
         
         $this->fields[$field][$repetition] = $value;

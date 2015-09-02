@@ -91,7 +91,7 @@ class Add extends Command {
      *        Defaults to the first repetition.
      */
     function setField($field, $value, $repetition = 0) {
-        if ( !array_search($field, $this->fm->getLayout($this->_layout)->listFields()))
+        if ( array_search($field, $this->fm->getLayout($this->_layout)->listFields()) === false)
                 throw new FileMakerException($this->fm, 'Field "'.$field.'" is missing');
         $this->_fields[$field][$repetition] = $value;
         return $value;

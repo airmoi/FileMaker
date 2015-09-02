@@ -356,7 +356,7 @@ class FileMaker {
      * @return Object\Record New Record object.
      * @throws FileMakerException
      */
-    public function createRecord($layout, $fieldValues = array()) {
+    public function createRecord($layoutName, $fieldValues = array()) {
         $layout = $this->getLayout($layoutName);
         $record = new $this->_properties['recordClass']($layout);
         if (is_array($fieldValues)) {
