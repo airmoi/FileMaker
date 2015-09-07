@@ -28,14 +28,16 @@ use airmoi\FileMaker\FileMaker;
  */
 class CompoundFind extends Command
 {
-
-    private $_findCriteria = array();
     private $_sortFields = array();
     private $_sortOrders = array();
     private $_skip;
     private $_max;
     private $_relatedsetsfilter;
     private $_relatedsetsmax;
+    /**
+     *
+     * @var FindRequest[]
+     */
     private $_requests = array();
     /**
      * Compound find set constructor.
@@ -54,10 +56,10 @@ class CompoundFind extends Command
      *
      * @param int $precedence Priority in which the find requests are added to 
      *        this compound find set.
-     * @param findrequest $findrequest {@link FindRequest} object 
+     * @param FindRequest $findrequest {@link FindRequest} object 
      *        to add to this compound find set. 
      */
-    public function add($precedence, $findrequest)
+    public function add($precedence, FindRequest $findrequest)
     {
         $this->_requests[$precedence] = $findrequest;
     }
