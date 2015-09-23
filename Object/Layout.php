@@ -297,7 +297,7 @@ class Layout
      */
     public function loadExtendedInfo($recid = null)
     {
-        if (!$this->extended) {
+        if (!$this->extended || $recid != null) {
 
             if ($recid != null) {
                 $result = $this->fm->execute(array('-db' => $this->fm->getProperty('database'),
