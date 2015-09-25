@@ -43,6 +43,7 @@ class RelatedSet
     public $name;
     
     public $fields;
+    
     /**
      * Portal constructor.
      *
@@ -89,7 +90,7 @@ class RelatedSet
         if (isset($this->fields[$fieldName])) {
             return $this->fields[$fieldName];
         }
-        throw new FileMakerException($this->fm, 'Field Not Found');
+        throw new FileMakerException($this->fm, 'Field '.$fieldName.' Not Found in Layout '. $this->layout->getName());
     }
 
     /**

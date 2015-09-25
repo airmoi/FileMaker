@@ -20,9 +20,6 @@ use airmoi\FileMaker\Parser\FMPXMLLAYOUT;
 /**
  * @ignore Load delegate and field classes.
  */
-//require_once dirname(__FILE__) . '/Implementation/LayoutImpl.php';
-
-//require_once dirname(__FILE__) . '/Field.php';
 
 
 /**
@@ -40,6 +37,7 @@ class Layout
      */
     public $fm;
     public $name;
+    /**  @var Field[] */
     public $fields = array();
     public $relatedSets = array();
     public $valueLists = array();
@@ -198,28 +196,16 @@ class Layout
     
 
     /**
-
      * Returns the list of defined values in the specified value list. 
-
      * This method supports single, 2nd only, and both fields value lists. 
-
      *
-
      * @param string $valueList Name of value list.
-
      * @param string  $recid Record from which the value list should be 
-
      *        displayed.
-
      *
-
-     * @return array of display names and its corresponding 
+     * @return array of display names and its corresponding value from the value list
      * @throws FileMakerException
-
-     * value from the value list.
-
      */
-
     public function getValueListTwoFields($valueList, $recid = null)
     {
 
@@ -239,7 +225,6 @@ class Layout
      *        displayed.
      * 
      * @return array Array of value-list arrays.
-
      * @throws FileMakerException
      * @deprecated Use getValueListTwoFields instead.
 

@@ -18,7 +18,7 @@ try {
     echo "------------------------------------------" . PHP_EOL;
     echo " Test FileMaker object's main methods" . PHP_EOL;
     echo "------------------------------------------" . PHP_EOL;
-    $fm = new FileMaker('filemaker-test', 'localhost', 'filemaker', 'filemaker');
+    $fm = new FileMaker('filemaker-test', '192.168.1.22', 'filemaker', 'filemaker');
 
     /* API infos */
     echo "API version : " . $fm->getAPIVersion() . PHP_EOL;
@@ -250,8 +250,13 @@ try {
    $value = $record->getField('date_field');
    echo ($value != "" ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>'). PHP_EOL . PHP_EOL;
     
+   
+   echo 'Get simple field Value List... ';
+   $list = $record->getFieldValueListTwoFields('text_field');
+   echo (sizeof($list) == 5 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>'). PHP_EOL . PHP_EOL;
+   
    echo 'Get record related ValueList... ';
-   $list = $layout->getValueListTwoFields('related field value list', $record->recordId);
+   $list = $record->getFieldValueListTwoFields('number_field', true);
    echo (sizeof($list) == sizeof($record->getRelatedSet($relatedSetName)) ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>' ). PHP_EOL . PHP_EOL ;
    
    echo 'Get a related Record... ';

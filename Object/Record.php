@@ -127,6 +127,32 @@ class Record {
             return "";
         }
         return htmlspecialchars($this->fields[$field][$repetition]);
+    }    
+    
+    /**
+     * Returns the two field value list associated with the given field in Record's layout.
+     * 
+     * @param string $fieldName Field's Name 
+     * @return array
+     * @see Layout::getValueListTwoFields
+     */
+    public function getFieldValueListTwoFields($fieldName) {
+        if( !is_null($this->parent) && !strpos($fieldName, '::')){
+            $fieldName = $this->relatedSetName. '::' . $fieldName;
+        }
+        if (!isset($this->fields[$fieldName])) {
+            //$this->_fm->log('Field "' . $field . '" not found.', FileMaker::LOG_INFO);
+            return [];
+        }
+        
+        //Force load extendedInfos as Field's valueList property is not set until extended infos are retrieved
+        $this->layout->loadExtendedInfo($this->recordId);
+        
+        //Get the value list if field has one
+        if($this->layout->fields[$fieldName]->valueList !== null){
+            return $this->layout->getValueListTwoFields($this->layout->fields[$fieldName]->valueList, $this->recordId );
+        }
+        return [];
     }
 
     /**
