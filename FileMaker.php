@@ -521,7 +521,7 @@ class FileMaker {
             $hostspec = htmlspecialchars_decode($hostspec);
             $hostspec = str_replace(" ", "%20", $hostspec);
         }
-        $this->log('Request for ' . $hostspec, self::LOG_INFO);
+        //$this->log('Request for ' . $hostspec, self::LOG_INFO);
         $curl = curl_init($hostspec);
 
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
@@ -550,7 +550,7 @@ class FileMaker {
         if ($isHeadersSent) {
             $curlResponse = $this->_eliminateContainerHeader($curlResponse);
         }
-        $this->log($curlResponse, FileMaker::LOG_DEBUG);
+        //$this->log($curlResponse, FileMaker::LOG_DEBUG);
         if ($curlError = curl_errno($curl)) {
             throw new FileMakerException($this, 'Communication Error: (' . $curlError . ') ' . curl_error($curl));
         }

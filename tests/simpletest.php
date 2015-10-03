@@ -18,7 +18,7 @@ try {
     echo "------------------------------------------" . PHP_EOL;
     echo " Test FileMaker object's main methods" . PHP_EOL;
     echo "------------------------------------------" . PHP_EOL;
-    $fm = new FileMaker('filemaker-test', '192.168.1.22', 'filemaker', 'filemaker');
+    $fm = new FileMaker('filemaker-test', 'localhost', 'filemaker', 'filemaker');
 
     /* API infos */
     echo "API version : " . $fm->getAPIVersion() . PHP_EOL;
@@ -249,7 +249,12 @@ try {
    echo 'Get record field Value... ';
    $value = $record->getField('date_field');
    echo ($value != "" ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>'). PHP_EOL . PHP_EOL;
+   
     
+   echo 'Get record container... ';
+   $container = base64_encode($fm->getContainerData($record->getField('container_field')));
+   echo "<img src='data:image/png;base64,$container' />";
+   echo (sizeof($container) > 0 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>'). PHP_EOL . PHP_EOL;
    
    echo 'Get simple field Value List... ';
    $list = $record->getFieldValueListTwoFields('text_field');
