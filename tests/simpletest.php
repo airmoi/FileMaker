@@ -1,7 +1,10 @@
 <pre><?php
 
-//header('Content-Type: text/plain');
-//error_reporting(E_ALL);
+/**
+ * Upload the filemaker-test.fmp12 file to your server then 
+ * edit this param to point to your server IP
+ */
+$host = "localhost";
 
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
@@ -18,7 +21,7 @@ try {
     echo "------------------------------------------" . PHP_EOL;
     echo " Test FileMaker object's main methods" . PHP_EOL;
     echo "------------------------------------------" . PHP_EOL;
-    $fm = new FileMaker('filemaker-test', 'localhost', 'filemaker', 'filemaker');
+    $fm = new FileMaker('filemaker-test', $host , 'filemaker', 'filemaker');
 
     /* API infos */
     echo "API version : " . $fm->getAPIVersion() . PHP_EOL;
@@ -249,10 +252,14 @@ try {
    echo 'Get record field Value... ';
    $value = $record->getField('date_field');
    echo ($value != "" ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>'). PHP_EOL . PHP_EOL;
-   
     
    echo 'Get record container... ';
    $container = base64_encode($fm->getContainerData($record->getField('container_field')));
+   echo "<img src='data:image/png;base64,$container' />";
+   echo (sizeof($container) > 0 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>'). PHP_EOL . PHP_EOL;
+    
+   echo 'Get record external container... ';
+   $container = base64_encode($fm->getContainerData($record->getField('external_container_field')));
    echo "<img src='data:image/png;base64,$container' />";
    echo (sizeof($container) > 0 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>'). PHP_EOL . PHP_EOL;
    
