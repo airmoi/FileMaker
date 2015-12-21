@@ -39,6 +39,8 @@ class FileMaker {
     ];
     private $_logger = null;
     private static $_layouts = [];
+    
+    public $lastRequestedUrl;
 
     /*
      * Find constants.
@@ -607,9 +609,8 @@ class FileMaker {
                 curl_setopt($curl, $key, $value);
             }
         }
-        
+        $this->lastRequestedUrl = $host . '?' . implode('&', $RESTparams);
         $curlResponse = curl_exec($curl);
-          $info = curl_getinfo($curl); 
         
         //$this->log($curlResponse, FileMaker::LOG_DEBUG);
         if ($curlError = curl_errno($curl)) {
@@ -765,6 +766,14 @@ class FileMaker {
             return $value;
         }
         return utf8_decode($value);
+    }
+    
+    /**
+     * Returns the last URL call to xml engine
+     * @return string
+     */
+    public function getLastRequestedUrl(){
+        return $this->lastRequestedUrl;
     }
 
 }
