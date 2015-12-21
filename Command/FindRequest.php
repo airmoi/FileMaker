@@ -72,6 +72,14 @@ class FindRequest
     {
         $this->findCriteria = array();
     }
+    
+    /**
+     * 
+     * @return bool true if the request as no criterion set
+     */
+    public function isEmpty() {
+        return sizeof($this->findCriteria) === 0;
+    }
 
 	   
 }
