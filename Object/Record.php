@@ -312,7 +312,7 @@ class Record {
      * @throws FileMakerException
      */
     public function getRelatedSet($relatedSet) {
-        if (empty($this->relatedSets[$relatedSet])) {
+        if (!isset($this->relatedSets[$relatedSet])) {
             throw new FileMakerException($this->fm, 'Related set "' . $relatedSet . '" not present.');
         }
         return $this->relatedSets[$relatedSet];
