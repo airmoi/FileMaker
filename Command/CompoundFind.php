@@ -104,7 +104,7 @@ class CompoundFind extends Command
 
         $critCount = 0;
         $totalRequestCount = 0;
-        $requestCount = 1;
+        $requestCount = 0;
         $totalCritCount = 1;
         $params = $this->_getCommandParams();
         $this->_setSortParams($params);
@@ -132,7 +132,7 @@ class CompoundFind extends Command
             }
             $query = $query . ")";
             $requestCount++;
-            if ($requestCount <= $totalRequestCount) {
+            if ($requestCount < $totalRequestCount) {
                 $nextRequest = $this->_requests[$requestCount];
                 if ($nextRequest->omit == true) {
                     $query = $query . ';!';
