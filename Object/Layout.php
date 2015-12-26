@@ -44,6 +44,7 @@ class Layout
     public $valueListTwoFields = array();
     public $database;
     public $extended = false;
+    public $table = false;
     /**
      * Layout object constructor.
      *

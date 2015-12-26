@@ -107,6 +107,7 @@ class FMResultSet {
         }
         $layout->name = $this->_parsedHead['layout'];
         $layout->database = $this->_parsedHead['database'];
+        $layout->table = $this->_parsedHead['table'];
         foreach ($this->_fieldList as $fieldInfos) {
             $field = new Field($layout);
             $field->name = $fieldInfos['name'];
