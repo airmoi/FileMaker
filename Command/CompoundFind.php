@@ -179,7 +179,7 @@ class CompoundFind extends Command
      * a portal. 
      *
      * For more information, see the description for the 
-     * {@link FileMaker_Command_Find::setRelatedSetsFilters()} method.
+     * {@link Find::setRelatedSetsFilters()} method.
      *
      * @param string $relatedsetsfilter Specify either 'layout' or 'none' to 
      *        control filtering.  
