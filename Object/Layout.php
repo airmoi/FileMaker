@@ -212,7 +212,7 @@ class Layout
 
         $ExtendedInfos = $this->loadExtendedInfo($recid);
         return isset($this->valueLists[$valueList]) ?
-                $this->valueListTwoFields[$valueList] : null;
+                $this->valueListTwoFields[$valueList] : [];
 
     }
 
