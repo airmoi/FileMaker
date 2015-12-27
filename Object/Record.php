@@ -126,7 +126,18 @@ class Record {
             //$this->_fm->log('Repetition "' . (int) $repetition . '" does not exist for "' . $field . '".', FileMaker::LOG_INFO);
             return "";
         }
-        return htmlspecialchars($this->fields[$field][$repetition]);
+        $format = $this->layout->getField($field)->result;
+        $value = $this->fields[$field][$repetition];
+        if( !empty($value) && $this->fm->getProperty('dateFormat') !== null && ($format == 'date' || $format == 'timestamp')){  
+            if( $format == 'date' ){
+                $dateTime = \DateTime::createFromFormat('m/d/Y H:i:s', $value . ' 00:00:00');
+                return $dateTime->format($this->fm->getProperty('dateFormat'));
+            } else {
+                $dateTime = \DateTime::createFromFormat('m/d/Y H:i:s', $value );
+                return $dateTime->format($this->fm->getProperty('dateFormat') . ' H:i:s' );
+            }
+        }
+        return $unencoded ? $value : htmlspecialchars($value);
     }    
     
     /**
@@ -242,6 +253,17 @@ class Record {
         }
         if ( array_search($field, $this->getFields()) === false)
                 throw new FileMakerException($this->fm, 'Field "'.$field.'" is missing');
+        
+        $format = $this->layout->getField($field)->result;
+        if( !empty($value) && $this->fm->getProperty('dateFormat') !== null && ($format == 'date' || $format == 'timestamp')){  
+            if( $format == 'date' ){
+                $dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value . ' 00:00:00');
+                $value = $dateTime->format('m/d/Y');
+            } else {
+                $dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value );
+                $value = $dateTime->format( 'm/d/Y H:i:s' );
+            }
+        }
         
         $this->fields[$field][$repetition] = $value;
         $this->_modifiedFields[$field][$repetition] = true;

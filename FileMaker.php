@@ -36,6 +36,7 @@ class FileMaker {
         'recordClass' => 'airmoi\FileMaker\Object\Record',
         'prevalidate' => false,
         'curlOptions' => [CURLOPT_SSL_VERIFYPEER => false],
+        'dateFormat' => null,
     ];
     private $_logger = null;
     private static $_layouts = [];
@@ -774,6 +775,23 @@ class FileMaker {
      */
     public function getLastRequestedUrl(){
         return $this->lastRequestedUrl;
+    }
+    
+    
+    public function dateConvertInput($value) {
+        if($this->getProperty('dateFormat') === null){
+            return $value;
+        }
+        $date = \DateTime::createFromFormat($this->getProperty('dateFormat'), $value);
+        return $date->format('m/d/Y');
+    }
+    
+    public function dateConvertOutput($value) {
+        if($this->getProperty('dateFormat') === null){
+            return $value;
+        }
+        $date = \DateTime::createFromFormat('m/d/Y', $value);
+        return $date->format($this->getProperty('dateFormat'));
     }
 
 }

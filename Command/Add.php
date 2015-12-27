@@ -93,6 +93,16 @@ class Add extends Command {
     function setField($field, $value, $repetition = 0) {
         if ( array_search($field, $this->fm->getLayout($this->_layout)->listFields()) === false)
                 throw new FileMakerException($this->fm, 'Field "'.$field.'" is missing');
+        $format = $this->fm->getLayout($this->_layout)->getField($field)->result; 
+        if( !empty($value) && $this->fm->getProperty('dateFormat') !== null && ($format == 'date' || $format == 'timestamp')){ 
+            if( $format == 'date' ){
+                $dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value . ' 00:00:00');
+                $value = $dateTime->format('m/d/Y');
+            } else {
+                $dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value );
+                $value = $dateTime->format( 'm/d/Y H:i:s' );
+            }
+        }
         $this->_fields[$field][$repetition] = $value;
         return $value;
     }

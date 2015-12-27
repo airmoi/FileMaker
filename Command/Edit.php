@@ -133,6 +133,20 @@ class Edit extends Command
      */
     public function setField($field, $value, $repetition = 0)
     {
+        if ( array_search($field, $this->fm->getLayout($this->_layout)->listFields()) === false)
+                throw new FileMakerException($this->fm, 'Field "'.$field.'" is missing');
+        
+        $format = $this->fm->getLayout($this->_layout)->getField($field)->result; 
+        if( !empty($value) && $this->fm->getProperty('dateFormat') !== null && ($format == 'date' || $format == 'timestamp')){ 
+            if( $format == 'date' ){
+                $dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value . ' 00:00:00');
+                $value = $dateTime->format('m/d/Y');
+            } else {
+                $dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value );
+                $value = $dateTime->format( 'm/d/Y H:i:s' );
+            }
+        }
+        
         $this->_fields[$field][$repetition] = $value;
         return $value;
     }
@@ -178,7 +192,7 @@ class Edit extends Command
      * Sets the modification ID for this command.
      *
      * Before you edit a record, you can use the 
-     * {@link FileMaker_Record::getModificationId()} method to get the record's 
+     * {@link Record::getModificationId()} method to get the record's 
      * modification ID. By specifying a modification ID when you execute an 
      * Edit command, you can make sure that you are editing the current version 
      * of a record. If the modification ID value you specify does not match the 
