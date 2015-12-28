@@ -78,7 +78,8 @@ class Edit extends Command
         }
 
         if ($this->fm->getProperty('prevalidate')) {
-            $layout = $this->fm->getLayout($this->_layout);
+            $validation = $this->validate();
+            /*$layout = $this->fm->getLayout($this->_layout);
             $validationError = new FileMakerValidationException($this->fm);
             foreach ($layout->getFields() as $field => $infos) {
                 if (isset($this->_fields[$field])) {
@@ -87,7 +88,7 @@ class Edit extends Command
                         $validationError = $infos->validate($values);
                     }
                 }
-            }
+            }*/
         }
 
         $layout = $this->fm->getLayout($this->_layout);
