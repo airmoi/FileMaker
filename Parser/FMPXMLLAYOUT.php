@@ -8,7 +8,7 @@ use airmoi\FileMaker\Object\Layout;
 
 class FMPXMLLAYOUT {
 
-    private $_fields;
+    private $_fields = [];
     private $_valueLists;
     private $_valueListTwoFields;
     private $_fm;
@@ -50,9 +50,13 @@ class FMPXMLLAYOUT {
         $layout->valueLists = $this->_valueLists;
         $layout->valueListTwoFields = $this->_valueListTwoFields;
         foreach ($this->_fields as $fieldName => $fieldInfos) {
-            $field = $layout->getField($fieldName);
-            $field->styleType = $fieldInfos['styleType'];
-            $field->valueList = $fieldInfos['valueList'] ? $fieldInfos['valueList'] : null;
+            try {
+                $field = $layout->getField($fieldName);
+                $field->styleType = $fieldInfos['styleType'];
+                $field->valueList = $fieldInfos['valueList'] ? $fieldInfos['valueList'] : null;
+            } catch ( \Exception $e ) {
+                //Field may be missing when it is stored in a portal
+            }
         }
     }
 
