@@ -133,10 +133,18 @@ class Edit extends Command
      */
     public function setField($field, $value, $repetition = 0)
     {
-        if ( array_search($field, $this->fm->getLayout($this->_layout)->listFields()) === false)
+        if($pos = strpos($field, ':')){
+            $fieldName = substr($field, 0, strpos($field, '.'));
+            $Field = $this->fm->getLayout($this->_layout)->getRelatedSet(substr($field, 0, $pos))->getField($fieldName);
+        }
+        else {
+            $Field = $this->fm->getLayout($this->_layout)->getField($field);
+        }
+        /*if ( array_search($field, $this->fm->getLayout($this->_layout)->listFields()) === false){
                 throw new FileMakerException($this->fm, 'Field "'.$field.'" is missing');
+        }*/
         
-        $format = $this->fm->getLayout($this->_layout)->getField($field)->result; 
+        $format = $Field->result; 
         if( !empty($value) && $this->fm->getProperty('dateFormat') !== null && ($format == 'date' || $format == 'timestamp')){ 
             if( $format == 'date' ){
                 $dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value . ' 00:00:00');
