@@ -42,7 +42,7 @@ class Field
     public $type;
     public $valueList = null;
     public $styleType;
-    public $maxCharacters = 0;
+    public $maxCharacters = null;
 
     /**
      * Field object constructor.
