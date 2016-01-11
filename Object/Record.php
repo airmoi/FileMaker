@@ -137,6 +137,9 @@ class Record {
                 return $dateTime->format($this->fm->getProperty('dateFormat') . ' H:i:s' );
             }
         }
+        elseif(!empty($value) && $format == 'number'){
+            $value = preg_replace('/,/', '.', $value);
+        }
         return $unencoded ? $value : htmlspecialchars($value);
     }    
     
