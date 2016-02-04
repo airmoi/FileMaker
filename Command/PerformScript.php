@@ -22,6 +22,9 @@ namespace airmoi\FileMaker\Command;
  */
 class PerformScript extends Command
 {
+    protected $_skip;
+    protected $_max;
+    
     protected $_script;
     protected $_scriptParams;
 
@@ -43,14 +46,51 @@ class PerformScript extends Command
     }
     
     /**
+     * Sets a range to request only part of the result set.
+     *
+     * @param integer $skip Number of records to skip past. Default is 0.
+     * @param integer $max Maximum number of records to return. 
+     *        Default is all.
+     */
+    public function setRange($skip = 0, $max = null)
+    {
+         $this->_skip = $skip;
+        $this->_max = $max;
+    }
+
+    /**
+     * Returns the current range settings.
+     *
+     * @return array Associative array with two keys: 'skip' for
+     * the current skip setting, and 'max' for the current maximum
+     * number of records. If either key does not have a value, the 
+     * returned value for that key is NULL.
+     */
+    public function getRange()
+    {
+        return array('skip' => $this->_skip,
+            'max' => $this->_max);
+    }
+    
+    /**
      * 
      * @return type
      */
     function execute() {
         $params = $this->_getCommandParams();
         $params['-findany'] = true;
+        $this->_setRangeParams($params);
         $cUrlResponse = $this->fm->execute($params);
         return $this->_getResult($cUrlResponse);
+    }
+
+    protected function _setRangeParams(&$params) {
+        if ($this->_skip) {
+            $params['-skip'] = $this->_skip;
+        }
+        if ($this->_max) {
+            $params['-max'] = $this->_max;
+        }
     }
 
 }
