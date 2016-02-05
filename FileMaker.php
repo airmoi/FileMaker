@@ -692,7 +692,7 @@ class FileMaker {
         if(!$this->getProperty('useCookieSession')) {
             return;
         }
-        $found = preg_match('/WPCSessionID=(\d+?);/m', $curlResponse, $matches);
+        $found = preg_match('/WPCSessionID="([^;]*)";/m', $curlResponse, $matches);
         /* Update WPCSession Cookie if needed */
         if ($found && @$_COOKIE['WPCSessionID'] != $matches[1]) {
             setcookie("WPCSessionID", $matches[1]);
