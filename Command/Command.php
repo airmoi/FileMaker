@@ -113,8 +113,8 @@ class Command
      * Sets the PHP class that the API instantiates to represent records 
      * returned in any result set. 
      * 
-     * The default is to use the provided FileMaker_Record class. Any 
-     * substitute classes must provide the same API that FileMaker_Record does, 
+     * The default is to use the provided \airmoi\FileMaker\Object\Record class. Any 
+     * substitute classes must provide the same API that \airmoi\FileMaker\Object\Record does, 
      * either by extending it or re-implementing the necessary methods. The 
      * user is responsible for defining any custom class before the API 
      * needs to instantiate it.
@@ -138,15 +138,14 @@ class Command
      * pre-validated. Otherwise, the command is pre-validated as if execute() 
      * were called with "Enable record data pre-validation" selected in 
      * FileMaker Server Admin Console. If pre-validation passes, validate() 
-     * returns TRUE. If pre-validation fails, then validate() returns a  
-     * FileMaker_Error_Validation object containing details about what failed 
+     * returns TRUE. If pre-validation fails, then validate() throws a  
+     * \airmoi\FileMaker\FileMakerValidationException object containing details about what failed 
      * to pre-validate.
      *
      * @param string $fieldName Name of field to pre-validate. If empty, 
      *        pre-validates the entire command.
      *
-     * @return boolean|FileMaker_Error_Validation TRUE, if pre-validation 
-     *         passes. Otherwise, an Error Validation object.
+     * @return boolean TRUE, if pre-validation passes.
      */
     public function validate($fieldName = null)
     {
@@ -201,7 +200,7 @@ class Command
     /**
      * Executes the command.
      *
-     * @return FileMaker_Result Result object.
+     * @return Result Result object.
      */
     public function execute()
     {

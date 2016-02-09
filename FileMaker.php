@@ -491,7 +491,7 @@ class FileMaker {
      * Returns the data for the specified container field.
      * Pass in a URL string that represents the file path for the container 
      * field contents. For example, get the image data from a container field 
-     * named 'Cover Image'. For a FileMaker_Record object named $record, 
+     * named 'Cover Image'. For a Object\Record object named $record, 
      * URL-encode the path returned by the getField() method.  For example:
      * 
      * <samp>

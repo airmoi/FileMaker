@@ -48,7 +48,7 @@ class Layout
     /**
      * Layout object constructor.
      *
-     * @param FileMaker_Implementation &$fm FileMaker_Implementation object 
+     * @param FileMaker $fm FileMaker object 
      *        that this layout was created through.
      */
     public function __construct(FileMaker $fm)
@@ -87,7 +87,7 @@ class Layout
     }
 
     /**
-     * Returns a FileMaker_Field object that describes the specified field.
+     * Returns a Field object that describes the specified field.
      *
      * @param string $fieldName Name of field.
      *
@@ -148,7 +148,7 @@ class Layout
 
     /**
      * Returns an associative array with the related table names of all 
-     * portals as keys and FileMaker_RelatedSet objects as the array values.
+     * portals as keys and RelatedSet objects as the array values.
      *
      * @return RelatedSet[] Array of {@link RelatedSet} objects.
      */

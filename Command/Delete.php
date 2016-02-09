@@ -29,8 +29,7 @@ class Delete extends Command
      * Delete command constructor.
      *
      * @ignore
-     * @param FileMaker_Implementation $fm FileMaker_Implementation object the 
-     *        command was created by.
+     * @param FileMaker $fm FileMaker object the command was created by.
      * @param string $layout Layout to delete record from.
      * @param string $recordId ID of the record to delete.
      */

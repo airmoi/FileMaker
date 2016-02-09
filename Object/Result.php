@@ -48,7 +48,7 @@ class Result
     }
 
     /**
-     * Returns a FileMaker_Layout object that describes the layout of this 
+     * Returns a Layout object that describes the layout of this 
      * result set.
      *
      * @return Layout Layout object.
@@ -61,9 +61,9 @@ class Result
     /**
      * Returns an array containing each record in the result set. 
      * 
-     * Each member of the array is a FileMaker_Record object, or an
+     * Each member of the array is a Record object, or an
      * instance of the alternate class you specified to use for records
-     * (see {@link FileMaker_Record}. The array may be empty if 
+     * (see {@link Record}. The array may be empty if 
      * the result set contains no records.
      *
      * @return Record[] Record objects.

@@ -32,8 +32,7 @@ class PerformScript extends Command
      * PerformScript command constructor.
      *
      * @ignore
-     * @param FileMaker_Implementation $fm FileMaker_Implementation object the 
-     *        command was created by.
+     * @param \airmoi\FileMaker\FileMaker $fm FileMaker object the command was created by.
      * @param string $layout Layout to use for script context.
      * @param string $scriptName Name of the script to run.
      * @param string $scriptParameters Any parameters to pass to the script.

@@ -65,9 +65,9 @@ class Field
     }
 
     /**
-     * Returns the FileMaker_Layout object that contains this field.
+     * Returns the Layout object that contains this field.
      *
-     * @return FileMaker_Layout Layout object.
+     * @return Layout Layout object.
      */
     public function getLayout()
     {
@@ -106,17 +106,11 @@ class Field
     }
 
     /**
-     * Returns TRUE if $value is valid for this field, or a
-     * FileMaker_Error_Validation object describing how pre-validation
+     * Returns TRUE if $value is valid for this field, or throws a
+     * FileMakerValidationException object describing how pre-validation
      * failed.
      *
      * @param mixed $value Value to pre-validate.
-     * @param FileMakerValidationException $validationError If pre-validation is being 
-     *        done on more than one field, you may pass validate() an existing 
-     *        error object to add pre-validation failures to.$error is not 
-     *        passed by reference, though, so you must catch the return value 
-     *        of validate() and use it as the new $error object. This method 
-     *        never overwrites an existing $error object with boolean TRUE.
      *
      * @return boolean Result of field  pre-validation on $value.
      * @throws FileMakerValidationException;

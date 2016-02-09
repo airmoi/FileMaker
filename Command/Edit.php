@@ -34,8 +34,7 @@ class Edit extends Command
      * Edit command constructor.
      *
      * @ignore
-     * @param FileMaker_Implementation $fm FileMaker_Implementation object the 
-     *        command was created by.
+     * @param FileMaker $fm FileMaker object the command was created by.
      * @param string $layout Layout the record is part of.
      * @param string $recordId ID of the record to edit.
      * @param array $values Associative array of field name => value pairs. 

@@ -78,7 +78,7 @@ class RelatedSet
     }
 
     /**
-     * Returns a FileMaker_Field object that describes the specified field.
+     * Returns a Field object that describes the specified field.
      *
      * @param string $fieldName Name of field.
      * 
@@ -95,7 +95,7 @@ class RelatedSet
 
     /**
      * Returns an associative array with the names of all fields as keys and 
-     * FileMaker_Field objects as the array values.
+     * Field objects as the array values.
      *
      * @return array Array of {@link Field} objects.
      */

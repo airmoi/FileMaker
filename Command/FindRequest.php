@@ -33,8 +33,7 @@ class FindRequest
      * Find request constructor.
      *
      * @ignore
-     * @param FileMaker_Implementation $fm FileMaker_Implementation object the 
-     *        request was created by.
+     * @param \airmoi\FileMaker\FileMaker $fm FileMaker object the request was created by.
      * @param string $layout Layout to find records in.
      */
     function __construct($fm, $layout)

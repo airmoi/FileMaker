@@ -38,8 +38,7 @@ class Find extends Command
      * Find command constructor.
      *
      * @ignore
-     * @param FileMaker_Implementation $fm FileMaker_Implementation object the 
-     *        command was created by.
+     * @param FileMaker $fm FileMaker object the command was created by.
      * @param string $layout Layout to find records in.
      */
     public function __construct($fm, $layout)

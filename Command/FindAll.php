@@ -29,8 +29,7 @@ class FindAll extends Find
      * FindAll command constructor.
      *
      * @ignore
-     * @param FileMaker_Implementation $fm FileMaker_Implementation object the 
-     *        command was created by.
+     * @param \airmoi\FileMaker\FileMaker $fm FileMaker object the command was created by.
      * @param string $layout Layout to find all records in.
      */
     public function __construct($fm, $layout)

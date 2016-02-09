@@ -1,6 +1,8 @@
 <?php
 
 namespace airmoi\FileMaker\Command;
+
+use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 
 /**
@@ -29,7 +31,7 @@ class Add extends Command {
      * Add command constructor.
      *
      * @ignore
-     * @param FileMaker_Implementation $fm FileMaker_Implementation object the command was created by.
+     * @param FileMaker $fm FileMaker object the command was created by.
      * @param string $layout Layout to add a record to.
      * @param array $values Associative array of field name => value pairs. To set field repetitions,
      * use a numerically indexed array for the value of a field, with the numeric keys
