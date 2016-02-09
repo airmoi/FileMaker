@@ -64,7 +64,7 @@ class FileMaker {
 
     /**
      * Find logical operator constants.
-     * Use with the {@link FileMaker_Command_Find::setLogicalOperator()}  
+     * Use with the {@link Command\Find::setLogicalOperator()}  
      * method.
      */
     const FIND_AND = 'and';
@@ -84,8 +84,8 @@ class FileMaker {
 
     /**
      * Sort direction constants. 
-     * Use with the {@link FileMaker_Command_Find::addSortRule()} and
-     * {@link FileMaker_Command_CompoundFind::addSortRule()} methods.
+     * Use with the {@link Command\Find::addSortRule()} and
+     * {@link Command\CompoundFind::addSortRule()} methods.
      */
     const SORT_ASCEND = 'ascend';
     const SORT_DESCEND = 'descend';
@@ -215,7 +215,7 @@ class FileMaker {
     }
 
     /**
-     * Creates a new FileMaker_Command_Add object.
+     * Creates a new Command\Add object.
      *
      * @param string $layout Layout to add a record to.
      * @param array $values Associative array of field name => value pairs. 
@@ -230,7 +230,7 @@ class FileMaker {
     }
 
     /**
-     * Creates a Edit object.
+     * Creates a Command\Edit object.
      *
      * @param string $layout Layout that the record is part of.
      * @param string $recordId ID of the record to edit.
@@ -247,7 +247,7 @@ class FileMaker {
     }
 
     /**
-     * Creates a new Delete object.
+     * Creates a new Command\Delete object.
      *
      * @param string $layout Layout to delete record from.
      * @param string $recordId ID of the record to delete.
@@ -259,7 +259,7 @@ class FileMaker {
     }
 
     /**
-     * Creates a new Duplicate object.
+     * Creates a new Command\Duplicate object.
      *
      * @param string $layout Layout that the record to duplicate is in.
      * @param string $recordId ID of the record to duplicate.
@@ -271,7 +271,7 @@ class FileMaker {
     }
 
     /**
-     * Creates a new Find object.
+     * Creates a new Command\Find object.
      *
      * @param string $layout Layout to find records in.
      *
@@ -283,7 +283,7 @@ class FileMaker {
 
     /**
      * 
-     * Creates a new CompoundFind object.
+     * Creates a new Command\CompoundFind object.
      *
      * @param string $layout Layout to find records in.
      *
@@ -354,7 +354,7 @@ class FileMaker {
      * Individual field values can also be set in the new record object.
      * 
      *
-     * @param string $layout Layout name to create a new record for.
+     * @param string $layoutName Layout name to create a new record for.
      * @param array $fieldValues Initial values for the new record's fields.
      *
      * @return Object\Record New Record object.
@@ -403,9 +403,9 @@ class FileMaker {
     /**
      * Returns a Layout object that describes the specified layout.
      *
-     * @param string $layout Name of the layout to describe.
+     * @param string $layoutName Name of the layout to describe.
      *
-     * @return FileMaker_Layout Layout.
+     * @return Layout Layout.
      * @throws FileMakerException
      */
     public function getLayout($layoutName) {
@@ -685,7 +685,7 @@ class FileMaker {
     }
 
     /**
-     * Pass WPC sesion cookie to client for later auth
+     * Pass WPC session cookie to client for later auth
      * @param string $curlResponse a curl response
      */
     private function _setClientWPCSessionCookie($curlResponse) {
