@@ -1,5 +1,6 @@
 <?php
 namespace airmoi\FileMaker\Command;
+
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\Parser\FMResultSet;
 use airmoi\FileMaker\Object\Result;
@@ -41,6 +42,7 @@ class Command
      * @var \airmoi\FileMaker\Object\Layout
      */
     protected $_layout;
+    
     protected $_resultLayout;
     protected $_script;
     protected $_scriptParams;
@@ -49,6 +51,8 @@ class Command
     protected $_preSortScript;
     protected $_preSortScriptParams;
     protected $_recordClass;
+    protected $_globals = [];
+    
     public $recordId;
 
     public function __construct(FileMaker $fm, $layout){
@@ -219,6 +223,18 @@ class Command
     }
 
     /**
+     * Set a global field to be define before perfoming the command. 
+     * 
+     *
+     * @param string $fieldName the global field name.
+     * @param string $fieldValue value to be set.
+     */
+    public function setGlobal($fieldName, $fieldValue)
+    {
+        $this->_globals[$fieldName] = $fieldValue;
+    }
+
+    /**
      * 
      * @param string $xml
      * @return Result
@@ -233,7 +249,7 @@ class Command
         return $result;
     }
 
-    function _getCommandParams() {
+    protected function _getCommandParams() {
         $queryParams = array(
             '-db' => $this->fm->getProperty('database'
             ), '-lay' => $this->_layout);
@@ -254,6 +270,10 @@ class Command
         }
         if ($this->_resultLayout) {
             $queryParams['-lay.response'] = $this->_resultLayout;
+        }
+        
+        foreach ( $this->_globals as $fieldName => $fieldValue ){
+            $queryParams[$fieldName.'.global'] = $fieldValue;
         }
         return $queryParams;
     }

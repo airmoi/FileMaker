@@ -37,6 +37,7 @@ class FileMaker {
         'prevalidate' => false,
         'curlOptions' => [CURLOPT_SSL_VERIFYPEER => false],
         'dateFormat' => null,
+        'useCookieSession' => false,
     ];
     private $_logger = null;
     private static $_layouts = [];
@@ -671,6 +672,9 @@ class FileMaker {
      * @param Resource $curl a cUrl handle ressource
      */
     private function _setCurlWPCSessionCookie($curl) {
+        if(!$this->getProperty('useCookieSession')) {
+            return;
+        }
         if (isset($_COOKIE["WPCSessionID"])) {
             $WPCSessionID = $_COOKIE["WPCSessionID"];
             if (!is_null($WPCSessionID)) {
@@ -685,7 +689,10 @@ class FileMaker {
      * @param string $curlResponse a curl response
      */
     private function _setClientWPCSessionCookie($curlResponse) {
-        $found = preg_match('/WPCSessionID=(\d+?);/m', $curlResponse, $matches);
+        if(!$this->getProperty('useCookieSession')) {
+            return;
+        }
+        $found = preg_match('/WPCSessionID="([^;]*)";/m', $curlResponse, $matches);
         /* Update WPCSession Cookie if needed */
         if ($found && @$_COOKIE['WPCSessionID'] != $matches[1]) {
             setcookie("WPCSessionID", $matches[1]);
