@@ -145,6 +145,15 @@ class Layout
         }
         throw new FileMakerException($this->fm, 'RelatedSet "'.$relatedSet.'" Not Found in layout '. $this->getName());
     }
+    
+    /**
+     * Check wether a portal based on the given table occurrence exists
+     * @param string $relatedSet Table occurrence name to test
+     * @return bool true if related set exist
+     */
+    public function hasRelatedSet($relatedSet) {
+        return isset($this->relatedSets[$relatedSet]);
+    }
 
     /**
      * Returns an associative array with the related table names of all 
