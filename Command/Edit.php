@@ -133,9 +133,16 @@ class Edit extends Command
      */
     public function setField($field, $value, $repetition = 0)
     {
+        //handle related fields in portals or in model
         if($pos = strpos($field, ':')){
             $fieldName = substr($field, 0, strpos($field, '.'));
-            $Field = $this->fm->getLayout($this->_layout)->getRelatedSet(substr($field, 0, $pos))->getField($fieldName);
+            $relationName = substr($field, 0, $pos);
+            if( $this->fm->getLayout($this->_layout)->hasRelatedSet($relationName)) {
+                $Field = $this->fm->getLayout($this->_layout)->getRelatedSet(substr($field, 0, $pos))->getField($fieldName);
+            }
+            else {
+                $Field = $this->fm->getLayout($this->_layout)->getField($field);
+            }
         }
         else {
             $Field = $this->fm->getLayout($this->_layout)->getField($field);
