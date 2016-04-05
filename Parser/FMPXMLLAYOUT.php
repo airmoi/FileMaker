@@ -33,7 +33,7 @@ class FMPXMLLAYOUT {
         xml_set_element_handler($this->_xmlParser, '_start', '_end');
         xml_set_character_data_handler($this->_xmlParser, '_cdata');
         if (!@xml_parse($this->_xmlParser, $xmlResponse)) {
-             throw new FileMakerException(sprintf('XML error: %s at line %d', xml_error_string(xml_get_error_code($this->_xmlParser)), xml_get_current_line_number($this->_xmlParser)));
+             throw new FileMakerException($this->_fm, sprintf('XML error: %s at line %d', xml_error_string(xml_get_error_code($this->_xmlParser)), xml_get_current_line_number($this->_xmlParser)));
         }
         xml_parser_free($this->_xmlParser);
         if (!empty($this->errorCode)) {

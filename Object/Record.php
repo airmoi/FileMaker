@@ -571,7 +571,7 @@ class Record {
                 break;
             }
         }
-        throw new FileMakerException('Failed to find the updated child in the response.');
+        throw new FileMakerException($this->fm, 'Failed to find the updated child in the response.');
     }
 
     /**
