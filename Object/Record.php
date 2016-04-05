@@ -264,10 +264,14 @@ class Record {
         $format = $this->layout->getField($field)->result;
         if( !empty($value) && $this->fm->getProperty('dateFormat') !== null && ($format == 'date' || $format == 'timestamp')){  
             if( $format == 'date' ){
-                $dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value . ' 00:00:00');
+                if(!$dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value . ' 00:00:00')) {
+                    throw new FileMakerException($this->fm, $value . ' could not be converted to a valid timestamp for field ' . $field . ' (expected format '. $this->fm->getProperty('dateFormat') .')');
+                }
                 $value = $dateTime->format('m/d/Y');
             } else {
-                $dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value );
+                if(!$dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value)) {
+                    throw new FileMakerException($this->fm, $value . ' could not be converted to a valid timestamp for field ' . $field . ' (expected format '. $this->fm->getProperty('dateFormat') .')');
+                }
                 $value = $dateTime->format( 'm/d/Y H:i:s' );
             }
         }
