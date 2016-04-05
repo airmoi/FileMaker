@@ -130,10 +130,14 @@ class Record {
         $value = $this->fields[$field][$repetition];
         if( !empty($value) && $this->fm->getProperty('dateFormat') !== null && ($format == 'date' || $format == 'timestamp')){  
             if( $format == 'date' ){
-                $dateTime = \DateTime::createFromFormat('m/d/Y H:i:s', $value . ' 00:00:00');
+                if(!$dateTime = \DateTime::createFromFormat('m/d/Y H:i:s', $value . ' 00:00:00')) {
+                    throw new FileMakerException($this->fm, $field . ' could not be converted to a valid timestamp ('. $value .')');
+                }
                 return $dateTime->format($this->fm->getProperty('dateFormat'));
             } else {
-                $dateTime = \DateTime::createFromFormat('m/d/Y H:i:s', $value );
+                if(!$dateTime = \DateTime::createFromFormat('m/d/Y H:i:s', $value )){
+                    throw new FileMakerException($this->fm, $field . ' could not be converted to a valid timestamp ('. $value .')');
+                }
                 return $dateTime->format($this->fm->getProperty('dateFormat') . ' H:i:s' );
             }
         }
