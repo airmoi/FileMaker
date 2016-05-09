@@ -120,14 +120,18 @@ class Record {
         }
         if (!isset($this->fields[$field])) {
             //$this->_fm->log('Field "' . $field . '" not found.', FileMaker::LOG_INFO);
-            return "";
+            return null;
         }
         if (!isset($this->fields[$field][$repetition])) {
             //$this->_fm->log('Repetition "' . (int) $repetition . '" does not exist for "' . $field . '".', FileMaker::LOG_INFO);
-            return "";
+            return null;
         }
         $format = $this->layout->getField($field)->result;
         $value = $this->fields[$field][$repetition];
+        
+        if(empty($value) && $this->fm->getProperty('emptyAsNull')) {
+            return null;
+        }
         if( !empty($value) && $this->fm->getProperty('dateFormat') !== null && ($format == 'date' || $format == 'timestamp')){  
             if( $format == 'date' ){
                 if(!$dateTime = \DateTime::createFromFormat('m/d/Y H:i:s', $value . ' 00:00:00')) {

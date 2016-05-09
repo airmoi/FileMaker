@@ -38,6 +38,7 @@ class FileMaker {
         'curlOptions' => [CURLOPT_SSL_VERIFYPEER => false],
         'dateFormat' => null,
         'useCookieSession' => false,
+        'emptyAsNull' => false, //Returns null value instead of empty strings on empty field value
     ];
     private $_logger = null;
     private static $_layouts = [];
