@@ -1,8 +1,10 @@
 <?php
 
 namespace airmoi\FileMaker;
+
 use airmoi\FileMaker\Parser\FMResultSet;
 use airmoi\FileMaker\Object\Layout;
+
 /**
  * FileMaker API for PHP
  *
@@ -18,7 +20,7 @@ use airmoi\FileMaker\Object\Layout;
  */
 
 /**
- * Base FileMaker class. Defines database properties, connects to a database, 
+ * Base FileMaker class. Defines database properties, connects to a database,
  * and gets information about the API.
  *
  * @package FileMaker
@@ -42,7 +44,7 @@ class FileMaker {
     ];
     private $_logger = null;
     private static $_layouts = [];
-    
+
     public $lastRequestedUrl;
 
     /*
@@ -65,7 +67,7 @@ class FileMaker {
 
     /**
      * Find logical operator constants.
-     * Use with the {@link Command\Find::setLogicalOperator()}  
+     * Use with the {@link Command\Find::setLogicalOperator()}
      * method.
      */
     const FIND_AND = 'and';
@@ -84,7 +86,7 @@ class FileMaker {
     const RULE_TIME_FIELD = 8;
 
     /**
-     * Sort direction constants. 
+     * Sort direction constants.
      * Use with the {@link Command\Find::addSortRule()} and
      * {@link Command\CompoundFind::addSortRule()} methods.
      */
@@ -98,12 +100,12 @@ class FileMaker {
     const LOG_INFO = 6;
     const LOG_DEBUG = 7;
 
-    
+
     /**
      * Tests whether a variable is a FileMaker API Error.
      *
      * @deprecated since version 2.0a use Exceptions nows
-     * 
+     *
      * @param mixed $variable Variable to test.
      * @return boolean TRUE, if the variable is a {@link FileMakerException} object.
      * @const
@@ -134,19 +136,19 @@ class FileMaker {
     }
 
     /**
-     * FileMaker object constructor. 
-     * 
-     * If you want to use the constructor without specifying all the 
-     *  parameters, pass in NULL for the parameters you want to omit. 
-     * For example, to specify only the database name, username, and 
+     * FileMaker object constructor.
+     *
+     * If you want to use the constructor without specifying all the
+     *  parameters, pass in NULL for the parameters you want to omit.
+     * For example, to specify only the database name, username, and
      * password, but omit the hostspec, call the constructor as follows:
-     *  
+     *
      * <samp>
      * new FileMaker('DatabaseName', NULL, 'username', 'password');
      * </samp>
-     * 
+     *
      * @param string $database Name of the database to connect to.
-     * @param string $hostspec Hostspec of web server in FileMaker Server 
+     * @param string $hostspec Hostspec of web server in FileMaker Server
      *        deployment. Defaults to http://localhost, if set to NULL.
      * @param string $username Account name to log into database.
      * @param string $password Password for account.
@@ -189,7 +191,7 @@ class FileMaker {
 
     /**
      * Returns an associative array of property name => property value for
-     * all current properties and their current values. 
+     * all current properties and their current values.
      *
      * This array enables PHP object introspection and debugging when necessary.
      *
@@ -204,6 +206,7 @@ class FileMaker {
      * and responses.
      *
      * @param \Log $logger PEAR Log object.
+     * @throws FileMakerException
      */
     public function setLogger($logger) {
         /**
@@ -219,9 +222,9 @@ class FileMaker {
      * Creates a new Command\Add object.
      *
      * @param string $layout Layout to add a record to.
-     * @param array $values Associative array of field name => value pairs. 
-     *        To set field repetitions, use a numerically indexed array for 
-     *        the value of a field, with the numeric keys corresponding to the 
+     * @param array $values Associative array of field name => value pairs.
+     *        To set field repetitions, use a numerically indexed array for
+     *        the value of a field, with the numeric keys corresponding to the
      *        repetition number to set.
      *
      * @return Command\Add New Add command object.
@@ -235,10 +238,10 @@ class FileMaker {
      *
      * @param string $layout Layout that the record is part of.
      * @param string $recordId ID of the record to edit.
-     * @param array $updatedValues Associative array of field name => value 
-     *        pairs that contain the updated field values. To set field 
-     *        repetitions, use a numerically indexed array for the value of a 
-     *        field, with the numeric keys corresponding to the repetition 
+     * @param array $updatedValues Associative array of field name => value
+     *        pairs that contain the updated field values. To set field
+     *        repetitions, use a numerically indexed array for the value of a
+     *        field, with the numeric keys corresponding to the repetition
      *        number to set.
      *
      * @return Command\Edit New Edit command object.
@@ -283,12 +286,12 @@ class FileMaker {
     }
 
     /**
-     * 
+     *
      * Creates a new Command\CompoundFind object.
      *
      * @param string $layout Layout to find records in.
      *
-     * @return Command\CompoundFind New Compound Find Set command 
+     * @return Command\CompoundFind New Compound Find Set command
      *         object.
      */
     public function newCompoundFindCommand($layout) {
@@ -296,9 +299,9 @@ class FileMaker {
     }
 
     /**
-     * 
-     * Creates a new Command\FindRequest object. Add one or more 
-     * Find Request objects to a {@link Command\CompoundFind} object, 
+     *
+     * Creates a new Command\FindRequest object. Add one or more
+     * Find Request objects to a {@link Command\CompoundFind} object,
      * then execute the Compound Find command.
      *
      * @param string $layout Layout to find records in.
@@ -338,7 +341,7 @@ class FileMaker {
      * @param string $scriptName Name of the ScriptMaker script to run.
      * @param string $scriptParameters Any parameters to pass to the script.
      *
-     * @return Command\PerformScript New Perform Script command 
+     * @return Command\PerformScript New Perform Script command
      *         object.
      */
     public function newPerformScriptCommand($layout, $scriptName, $scriptParameters = null) {
@@ -346,14 +349,14 @@ class FileMaker {
     }
 
     /**
-     * Creates a new Object\Record object. 
-     * 
-     * This method does not save the new record to the database. 
-     * The record is not created on the Database Server until you call 
-     * this record's commit() method. You must specify a layout name, 
-     * and you can optionally specify an array of field values. 
+     * Creates a new Object\Record object.
+     *
+     * This method does not save the new record to the database.
+     * The record is not created on the Database Server until you call
+     * this record's commit() method. You must specify a layout name,
+     * and you can optionally specify an array of field values.
      * Individual field values can also be set in the new record object.
-     * 
+     *
      *
      * @param string $layoutName Layout name to create a new record for.
      * @param array $fieldValues Initial values for the new record's fields.
@@ -364,6 +367,7 @@ class FileMaker {
     public function createRecord($layoutName, $fieldValues = array()) {
         $layout = $this->getLayout($layoutName);
         $record = new $this->_properties['recordClass']($layout);
+        /* @var $record Object\Record */
         if (is_array($fieldValues)) {
             foreach ($fieldValues as $fieldName => $fieldValue) {
                 if (is_array($fieldValue)) {
@@ -386,14 +390,14 @@ class FileMaker {
      * @param string $layout Layout that $recordId is in.
      * @param string $recordId ID of the record to get.
      *
-     * @return Record
+     * @return Object\Record
      * @throws FileMakerException
      */
     public function getRecordById($layout, $recordId) {
         $request = $this->newFindCommand($layout);
         $request->setRecordId($recordId);
         $result = $request->execute();
-        
+
         $record = $result->getRecords();
         if (!$record) {
             throw new FileMakerException($this, 'Record . ' . $recordId . ' not found in layout "' . $layout . '".');
@@ -417,7 +421,7 @@ class FileMaker {
         $request = $this->execute(array('-db' => $this->getProperty('database'),
             '-lay' => $layoutName,
             '-view' => true));
-        
+
         $parser = new FMResultSet($this);
         $result = $parser->parse($request);
         $layout = new Layout($this);
@@ -438,7 +442,7 @@ class FileMaker {
         $request = $this->execute(array('-dbnames' => true));
         $parser = new FMResultSet($this);
         $result = $parser->parse($request);
-        
+
         $list = array();
         foreach ($parser->parsedResult as $data) {
             $list[] = $data['fields']['DATABASE_NAME'][0];
@@ -447,8 +451,8 @@ class FileMaker {
     }
 
     /**
-     * Returns an array of ScriptMaker scripts from the current database that 
-     * are available with the current server settings and the current user 
+     * Returns an array of ScriptMaker scripts from the current database that
+     * are available with the current server settings and the current user
      * name and password credentials.
      *
      * @return array List of script names.
@@ -459,7 +463,7 @@ class FileMaker {
             '-scriptnames' => true));
         $parser = new FMResultSet($this);
         $result = $parser->parse($request);
-        
+
         $list = array();
         foreach ($parser->parsedResult as $data) {
             $list[] = $data['fields']['SCRIPT_NAME'][0];
@@ -480,7 +484,7 @@ class FileMaker {
             '-layoutnames' => true));
         $parser = new FMResultSet($this);
         $result = $parser->parse($request);
-        
+
         $list = array();
         foreach ($parser->parsedResult as $data) {
             $list[] = $data['fields']['LAYOUT_NAME'][0];
@@ -490,18 +494,18 @@ class FileMaker {
 
     /**
      * Returns the data for the specified container field.
-     * Pass in a URL string that represents the file path for the container 
-     * field contents. For example, get the image data from a container field 
-     * named 'Cover Image'. For a Object\Record object named $record, 
+     * Pass in a URL string that represents the file path for the container
+     * field contents. For example, get the image data from a container field
+     * named 'Cover Image'. For a Object\Record object named $record,
      * URL-encode the path returned by the getField() method.  For example:
-     * 
+     *
      * <samp>
      * <IMG src="img.php?-url=<?php echo urlencode($record->getField('Cover Image')); ?>">
      * </samp>
-     * 
-     * Then as shown below in a line from img.php, pass the URL into 
+     *
+     * Then as shown below in a line from img.php, pass the URL into
      * getContainerData() for the FileMaker object named $fm:
-     * 
+     *
      * <samp>
      * echo $fm->getContainerData($_GET['-url']);
      * </samp>
@@ -565,10 +569,13 @@ class FileMaker {
 
     /**
      * Perform xml query to FM Server
+     *
      * @param array $params
      * @param string $grammar fm xml grammar
+     *
      * @return string the cUrl response
      * @throws FileMakerException
+     * @throws \Exception
      */
     public function execute($params, $grammar = 'fmresultset') {
         if (!function_exists('curl_init')) {
@@ -614,7 +621,7 @@ class FileMaker {
         }
         $this->lastRequestedUrl = $host . '?' . implode('&', $RESTparams);
         $curlResponse = curl_exec($curl);
-        
+
         //$this->log($curlResponse, FileMaker::LOG_DEBUG);
         if ($curlError = curl_errno($curl)) {
 
@@ -636,16 +643,16 @@ class FileMaker {
         if ($curlHeadersSent) {
             $curlResponse = $this->_eliminateXMLHeader($curlResponse);
         }
-        
+
         return $curlResponse;
     }
 
     /**
      * Returns the fully qualified URL for the specified container field.
-     * Pass in a URL string that represents the file path for the container 
-     * field contents. For example, get the URL for a container field 
+     * Pass in a URL string that represents the file path for the container
+     * field contents. For example, get the URL for a container field
      * named 'Cover Image'.  For example:
-     * 
+     *
      * <samp>
      * <IMG src="<?php echo $fm->getContainerDataURL($record->getField('Cover Image')); ?>">
      * </samp>
@@ -702,7 +709,7 @@ class FileMaker {
     }
 
     /**
-     * 
+     *
      * @param string $curlResponse a curl response
      * @return int content length, -1 if not provided by headers
      */
@@ -716,7 +723,7 @@ class FileMaker {
     }
 
     /**
-     * 
+     *
      * @param string $curlResponse  a curl response
      * @return string curlResponse without xml header
      */
@@ -730,7 +737,7 @@ class FileMaker {
     }
 
     /**
-     * 
+     *
      * @param string $curlResponse  a curl response
      * @return string cUrl Response without leading carriage return
      */
@@ -746,8 +753,11 @@ class FileMaker {
 
     /**
      * magic setter
+     *
      * @param string $name
      * @param mixed $value
+     *
+     * @return boolean
      */
     public function __set($name, $value) {
         if (array_key_exists($name, $this->_properties)) {
@@ -759,15 +769,15 @@ class FileMaker {
             return false;
         }
     }
-    
+
     public function toOutputCharset($value) {
         if (strtolower($this->getProperty('charset')) != 'iso-8859-1') {
             return $value;
         }
         if (is_array($value)) {
             $output = array();
-            foreach ($value as $key => $value) {
-                $output[$this->toOutputCharset($key)] = $this->toOutputCharset($value);
+            foreach ($value as $key => $val) {
+                $output[$this->toOutputCharset($key)] = $this->toOutputCharset($val);
             }
             return $output;
         }
@@ -776,7 +786,7 @@ class FileMaker {
         }
         return utf8_decode($value);
     }
-    
+
     /**
      * Returns the last URL call to xml engine
      * @return string
@@ -784,8 +794,8 @@ class FileMaker {
     public function getLastRequestedUrl(){
         return $this->lastRequestedUrl;
     }
-    
-    
+
+
     public function dateConvertInput($value) {
         if($this->getProperty('dateFormat') === null){
             return $value;
@@ -793,7 +803,7 @@ class FileMaker {
         $date = \DateTime::createFromFormat($this->getProperty('dateFormat'), $value);
         return $date->format('m/d/Y');
     }
-    
+
     public function dateConvertOutput($value) {
         if($this->getProperty('dateFormat') === null){
             return $value;
