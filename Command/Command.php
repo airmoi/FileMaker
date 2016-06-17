@@ -2,8 +2,11 @@
 namespace airmoi\FileMaker\Command;
 
 use airmoi\FileMaker\FileMaker;
+use airmoi\FileMaker\FileMakerException;
+use airmoi\FileMaker\FileMakerValidationException;
 use airmoi\FileMaker\Parser\FMResultSet;
 use airmoi\FileMaker\Object\Result;
+
 /**
  * FileMaker API for PHP
  *
@@ -42,7 +45,8 @@ class Command
      * @var \airmoi\FileMaker\Object\Layout
      */
     protected $_layout;
-    
+
+    protected $_fields = array();
     protected $_resultLayout;
     protected $_script;
     protected $_scriptParams;
@@ -55,6 +59,12 @@ class Command
     
     public $recordId;
 
+    /**
+     * Command constructor.
+     *
+     * @param FileMaker $fm
+     * @param string    $layout
+     */
     public function __construct(FileMaker $fm, $layout){
         $this->fm = $fm;
         $this->_layout = $layout;
@@ -129,23 +139,25 @@ class Command
     /**
      * Pre-validates either a single field or the entire command.
      *
-     * This method uses the pre-validation rules that are enforceable by the 
-     * PHP engine -- for example, type rules, ranges, and four-digit dates. 
-     * Rules such as "unique" or "existing," or validation by calculation 
+     * This method uses the pre-validation rules that are enforceable by the
+     * PHP engine -- for example, type rules, ranges, and four-digit dates.
+     * Rules such as "unique" or "existing," or validation by calculation
      * field, cannot be pre-validated.
      *
-     * If you pass the optional $fieldName argument, only that field is 
-     * pre-validated. Otherwise, the command is pre-validated as if execute() 
-     * were called with "Enable record data pre-validation" selected in 
-     * FileMaker Server Admin Console. If pre-validation passes, validate() 
-     * returns TRUE. If pre-validation fails, then validate() throws a  
-     * \airmoi\FileMaker\FileMakerValidationException object containing details about what failed 
+     * If you pass the optional $fieldName argument, only that field is
+     * pre-validated. Otherwise, the command is pre-validated as if execute()
+     * were called with "Enable record data pre-validation" selected in
+     * FileMaker Server Admin Console. If pre-validation passes, validate()
+     * returns TRUE. If pre-validation fails, then validate() throws a
+     * \airmoi\FileMaker\FileMakerValidationException object containing details about what failed
      * to pre-validate.
      *
-     * @param string $fieldName Name of field to pre-validate. If empty, 
-     *        pre-validates the entire command.
+     * @param string $fieldName Name of field to pre-validate. If empty,
+     *                          pre-validates the entire command.
      *
-     * @return boolean TRUE, if pre-validation passes.
+     * @return bool TRUE, if pre-validation passes.
+     * @throws FileMakerException
+     * @throws FileMakerValidationException
      */
     public function validate($fieldName = null)
     {
@@ -153,7 +165,7 @@ class Command
             return true;
         }
         $layout = $this->fm->getLayout($this->_layout);
-        $validationErrors = new \airmoi\FileMaker\FileMakerValidationException($this->fm);
+        $validationErrors = new FileMakerValidationException($this->fm);
         if ($fieldName === null) {
             foreach ($layout->getFields() as $fieldName => $field) {
                 if (!isset($this->_fields[$fieldName]) || !count($this->_fields[$fieldName])) {
@@ -166,7 +178,7 @@ class Command
                 foreach ($values as $value) {
                     try {
                         $field->validate($value);
-                    }catch (\airmoi\FileMaker\FileMakerValidationException $e){
+                    }catch (FileMakerValidationException $e){
                         foreach ( $e->getErrors() as $error ) {
                             $validationErrors->addError($error[0], $error[1], $error[2]);
                         }
@@ -185,7 +197,7 @@ class Command
             foreach ($values as $value) {
                 try {
                         $field->validate($value);
-                    }catch (\airmoi\FileMaker\FileMakerValidationException $e){
+                    }catch (FileMakerValidationException $e){
                         foreach ( $e->getErrors() as $error ) {
                             $validationErrors->addError($error[0], $error[1], $error[2]);
                         }
@@ -204,7 +216,7 @@ class Command
      */
     public function execute()
     {
-        return $this->execute();
+        
     }
 
     /**
@@ -237,12 +249,12 @@ class Command
      * 
      * @param string $xml
      * @return Result
-     * @throws \airmoi\FileMaker\FileMakerException
+     * @throws FileMakerException
      */
     protected function _getResult($xml) {
-        $parser = new FMResultSet($this->fm);
+        $parser      = new FMResultSet($this->fm);
         $parseResult = $parser->parse($xml);
-        $result = new Result($this->fm);
+        $result      = new Result($this->fm);
         $parseResult = $parser->setResult($result, $this->_recordClass);
         
         return $result;

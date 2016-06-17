@@ -1,8 +1,10 @@
 <?php
 namespace airmoi\FileMaker\Object;
+
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\FileMakerValidationException;
+
 /**
  * FileMaker API for PHP
  *
@@ -456,6 +458,7 @@ class Field
         $extendedInfos = $this->layout->loadExtendedInfo();
         return $this->styleType;
     }
+    
     public function checkTimeStampFormatFourDigitYear($value) {
         return (preg_match('#^[ ]*([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})[-,/,\\\\]([0-9]{4})[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#', $value));
     }
@@ -476,7 +479,7 @@ class Field
         return (!is_numeric($value));
     }
 
-    public function checkDateValidity($value, $rule, $validationError) {
+    public function checkDateValidity($value, $rule, FileMakerValidationException $validationError) {
         preg_match('#([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})([-,/,\\\\]([0-9]{1,4}))?#', $value, $matches);
         if ($matches[4]) {
             $strlen = strlen($matches[4]);
@@ -499,7 +502,7 @@ class Field
         }
     }
 
-    public function checkTimeValidity($value, $rule, $validationError, $shortHoursFormat) {
+    public function checkTimeValidity($value, $rule, FileMakerValidationException $validationError, $shortHoursFormat) {
         $format = 0;
         if ($shortHoursFormat) {
             $format = 12;

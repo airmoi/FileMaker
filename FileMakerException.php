@@ -29,6 +29,7 @@ class FileMakerException extends \Exception
      * @param FileMaker $fm FileMaker object this error came from.
      * @param string $message Error message.
      * @param integer $code Error code.
+     * @param null|\Exception $previous
      */
     public function __construct($fm, $message = null, $code = null, $previous=null)
     {

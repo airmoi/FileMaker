@@ -1,5 +1,6 @@
 <?php
 namespace airmoi\FileMaker\Command;
+
 /**
  * FileMaker API for PHP
  *
@@ -36,7 +37,7 @@ class FindRequest
      * @param \airmoi\FileMaker\FileMaker $fm FileMaker object the request was created by.
      * @param string $layout Layout to find records in.
      */
-    function __construct($fm, $layout)
+    public function __construct($fm, $layout)
     {
         $this->omit = false;
     }
@@ -48,7 +49,7 @@ class FindRequest
      *
      * @param boolean $value TRUE if this is an omit request. Otherwise, FALSE.
      */
-    function setOmit($value)
+    public function setOmit($value)
     {
         $this->omit = $value;
     }
@@ -59,7 +60,7 @@ class FindRequest
      * @param string $fieldname Name of the field being tested.
      * @param string $testvalue Value of the field to test against.
      */
-    function addFindCriterion($fieldname, $testvalue)
+    public function addFindCriterion($fieldname, $testvalue)
     {
         $this->findCriteria[$fieldname] = $testvalue;
     }
@@ -67,7 +68,7 @@ class FindRequest
     /**
      * Clears all existing criteria from this find request.
      */
-    function clearFindCriteria()
+    public function clearFindCriteria()
     {
         $this->findCriteria = array();
     }
@@ -80,5 +81,4 @@ class FindRequest
         return sizeof($this->findCriteria) === 0;
     }
 
-	   
 }

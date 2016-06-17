@@ -33,7 +33,7 @@ class FileMaker {
         'database' => '',
         'username' => '',
         'password' => '',
-        'recordClass' => 'airmoi\FileMaker\Object\Record',
+        'recordClass' => Object\Record::class,
         'prevalidate' => false,
         'curlOptions' => [CURLOPT_SSL_VERIFYPEER => false],
         'dateFormat' => null,
@@ -203,7 +203,7 @@ class FileMaker {
      * Associates a PEAR Log object with the API for logging requests
      * and responses.
      *
-     * @param Log &$logger PEAR Log object.
+     * @param \Log $logger PEAR Log object.
      */
     public function setLogger($logger) {
         /**

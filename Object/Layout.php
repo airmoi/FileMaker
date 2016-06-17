@@ -1,8 +1,10 @@
 <?php
 namespace airmoi\FileMaker\Object;
+
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\Parser\FMPXMLLAYOUT;
+
 /**
  * FileMaker API for PHP
  *
@@ -185,8 +187,8 @@ class Layout
     /**
      * Returns the list of defined values in the specified value list.
      *
-     * @param string $valueList Name of value list.
-     * @param string  $recid Record from which the value list should be 
+     * @param string $listName Name of value list.
+     * @param string $recid Record from which the value list should be 
      *        displayed.
      *
      * @return array List of defined values.
@@ -237,7 +239,6 @@ class Layout
      * @return array Array of value-list arrays.
      * @throws FileMakerException
      * @deprecated Use getValueListTwoFields instead.
-
      * @see getValueListsTwoFields
      */
     public function getValueLists($recid = null)
@@ -246,38 +247,22 @@ class Layout
         return $this->valueLists;
     }
 
-    
-
     /**
-
      * Returns a multi-level associative array of value lists. 
-
      * The top-level array has names of value lists as keys and associative arrays as 
-
      * values. The second level associative arrays are lists of display name and its corresponding 
-
      * value from the value list.
-
      *
-
      * @param string  $recid Record from which the value list should be 
-
      *        displayed.
-
      * @throws FileMakerException
      * 
-
      * @return array Array of value-list associative arrays.
-
      */
-
     public function getValueListsTwoFields($recid = null)
-
     {
-
         $ExtendedInfos = $this->loadExtendedInfo($recid);
         return $this->valueListTwoFields;
-
     }
 
     /**

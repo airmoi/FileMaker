@@ -1,8 +1,10 @@
 <?php
 namespace airmoi\FileMaker\Command;
+
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\FileMakerValidationException;
+
 /**
  * FileMaker API for PHP
  *
@@ -26,7 +28,6 @@ use airmoi\FileMaker\FileMakerValidationException;
  */
 class Edit extends Command
 {
-    protected $_fields = array();
     protected $_modificationId = null;
     protected $_deleteRelated;
 
@@ -37,12 +38,12 @@ class Edit extends Command
      * @param FileMaker $fm FileMaker object the command was created by.
      * @param string $layout Layout the record is part of.
      * @param string $recordId ID of the record to edit.
-     * @param array $values Associative array of field name => value pairs. 
+     * @param array $updatedValues Associative array of field name => value pairs. 
      *        To set field repetitions, use a numerically indexed array for 
      *        the value of a field, with the numeric keys corresponding to the 
      *        repetition number to set.
      */
-    public function __construct($fm, $layout, $recordId, $updatedValues = [])
+    public function __construct(FileMaker $fm, $layout, $recordId, $updatedValues = [])
     {
         parent::__construct($fm, $layout);
         $this->recordId = $recordId;
@@ -68,7 +69,6 @@ class Edit extends Command
         $params = $this->_getCommandParams();
         if (empty($this->recordId)) {
             throw new FileMakerException ($this->fm, 'Edit commands require a record id.');
-            return $error;
         }
         if (!count($this->_fields)) {
             if ($this->_deleteRelated == null) {
@@ -130,6 +130,9 @@ class Edit extends Command
      * @param string $value Value for the field.
      * @param integer $repetition Field repetition number to set,
      *        Defaults to the first repetition.
+     *                            
+     * @return string
+     * @throws FileMakerException
      */
     public function setField($field, $value, $repetition = 0)
     {
@@ -181,6 +184,9 @@ class Edit extends Command
      * @param string $timestamp Timestamp value.
      * @param integer $repetition Field repetition number to set. 
      *        Defaults to the first repetition.
+     *                            
+     * @return string
+     * @throws FileMakerException
      */
     public function setFieldFromTimestamp($field, $timestamp, $repetition = 0)
     {
@@ -188,17 +194,17 @@ class Edit extends Command
         if (FileMaker :: isError($layout)) {
             return $layout;
         }
-        $field = & $layout->getField($fieldname);
+        $field = & $layout->getField($field);
         if (FileMaker :: isError($field)) {
             return $field;
         }
         switch ($field->getResult()) {
             case 'date' :
-                return $this->setField($fieldname, date('m/d/Y', $timestamp), $repetition);
+                return $this->setField($field, date('m/d/Y', $timestamp), $repetition);
             case 'time' :
-                return $this->setField($fieldname, date('H:i:s', $timestamp), $repetition);
+                return $this->setField($field, date('H:i:s', $timestamp), $repetition);
             case 'timestamp' :
-                return $this->setField($fieldname, date('m/d/Y H:i:s', $timestamp), $repetition);
+                return $this->setField($field, date('m/d/Y H:i:s', $timestamp), $repetition);
         }
         throw new FileMakerException($this->fm, 'Only time, date, and timestamp fields can be set to the value of a timestamp.');
     }
@@ -221,7 +227,7 @@ class Edit extends Command
         $this->_modificationId = $modificationId;
     }
 
-    private function _setdeleteRelated($relatedRecordId) {
+    public function setDeleteRelated($relatedRecordId) {
         $this->_deleteRelated = $relatedRecordId;
     }
 
