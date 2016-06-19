@@ -1,8 +1,10 @@
 <?php
 namespace airmoi\FileMaker\Object;
+
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\FileMakerValidationException;
+
 /**
  * FileMaker API for PHP
  *
@@ -42,7 +44,7 @@ class Field
     public $type;
     public $valueList = null;
     public $styleType;
-    public $maxCharacters = 0;
+    public $maxCharacters = null;
 
     /**
      * Field object constructor.
@@ -65,9 +67,9 @@ class Field
     }
 
     /**
-     * Returns the FileMaker_Layout object that contains this field.
+     * Returns the Layout object that contains this field.
      *
-     * @return FileMaker_Layout Layout object.
+     * @return Layout Layout object.
      */
     public function getLayout()
     {
@@ -106,17 +108,11 @@ class Field
     }
 
     /**
-     * Returns TRUE if $value is valid for this field, or a
-     * FileMaker_Error_Validation object describing how pre-validation
+     * Returns TRUE if $value is valid for this field, or throws a
+     * FileMakerValidationException object describing how pre-validation
      * failed.
      *
      * @param mixed $value Value to pre-validate.
-     * @param FileMakerValidationException $validationError If pre-validation is being 
-     *        done on more than one field, you may pass validate() an existing 
-     *        error object to add pre-validation failures to.$error is not 
-     *        passed by reference, though, so you must catch the return value 
-     *        of validate() and use it as the new $error object. This method 
-     *        never overwrites an existing $error object with boolean TRUE.
      *
      * @return boolean Result of field  pre-validation on $value.
      * @throws FileMakerValidationException;
@@ -462,6 +458,7 @@ class Field
         $extendedInfos = $this->layout->loadExtendedInfo();
         return $this->styleType;
     }
+    
     public function checkTimeStampFormatFourDigitYear($value) {
         return (preg_match('#^[ ]*([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})[-,/,\\\\]([0-9]{4})[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#', $value));
     }
@@ -482,7 +479,7 @@ class Field
         return (!is_numeric($value));
     }
 
-    public function checkDateValidity($value, $rule, $validationError) {
+    public function checkDateValidity($value, $rule, FileMakerValidationException $validationError) {
         preg_match('#([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})([-,/,\\\\]([0-9]{1,4}))?#', $value, $matches);
         if ($matches[4]) {
             $strlen = strlen($matches[4]);
@@ -505,7 +502,7 @@ class Field
         }
     }
 
-    public function checkTimeValidity($value, $rule, $validationError, $shortHoursFormat) {
+    public function checkTimeValidity($value, $rule, FileMakerValidationException $validationError, $shortHoursFormat) {
         $format = 0;
         if ($shortHoursFormat) {
             $format = 12;

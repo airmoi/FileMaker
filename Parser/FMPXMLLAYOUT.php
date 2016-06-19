@@ -8,7 +8,7 @@ use airmoi\FileMaker\Object\Layout;
 
 class FMPXMLLAYOUT {
 
-    private $_fields;
+    private $_fields = [];
     private $_valueLists;
     private $_valueListTwoFields;
     private $_fm;
@@ -33,7 +33,7 @@ class FMPXMLLAYOUT {
         xml_set_element_handler($this->_xmlParser, '_start', '_end');
         xml_set_character_data_handler($this->_xmlParser, '_cdata');
         if (!@xml_parse($this->_xmlParser, $xmlResponse)) {
-             throw new FileMakerException(sprintf('XML error: %s at line %d', xml_error_string(xml_get_error_code($this->_xmlParser)), xml_get_current_line_number($this->_xmlParser)));
+             throw new FileMakerException($this->_fm, sprintf('XML error: %s at line %d', xml_error_string(xml_get_error_code($this->_xmlParser)), xml_get_current_line_number($this->_xmlParser)));
         }
         xml_parser_free($this->_xmlParser);
         if (!empty($this->errorCode)) {
@@ -50,9 +50,13 @@ class FMPXMLLAYOUT {
         $layout->valueLists = $this->_valueLists;
         $layout->valueListTwoFields = $this->_valueListTwoFields;
         foreach ($this->_fields as $fieldName => $fieldInfos) {
-            $field = $layout->getField($fieldName);
-            $field->styleType = $fieldInfos['styleType'];
-            $field->valueList = $fieldInfos['valueList'] ? $fieldInfos['valueList'] : null;
+            try {
+                $field = $layout->getField($fieldName);
+                $field->styleType = $fieldInfos['styleType'];
+                $field->valueList = $fieldInfos['valueList'] ? $fieldInfos['valueList'] : null;
+            } catch ( \Exception $e ) {
+                //Field may be missing when it is stored in a portal
+            }
         }
     }
 

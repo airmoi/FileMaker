@@ -1,5 +1,9 @@
 <?php
 namespace airmoi\FileMaker\Command;
+
+use airmoi\FileMaker\FileMaker;
+use airmoi\FileMaker\Object\Result;
+
 /**
  * FileMaker API PHP
  *
@@ -22,6 +26,9 @@ namespace airmoi\FileMaker\Command;
  */
 class PerformScript extends Command
 {
+    protected $_skip;
+    protected $_max;
+
     protected $_script;
     protected $_scriptParams;
 
@@ -29,28 +36,64 @@ class PerformScript extends Command
      * PerformScript command constructor.
      *
      * @ignore
-     * @param FileMaker_Implementation $fm FileMaker_Implementation object the 
-     *        command was created by.
+     * @param \airmoi\FileMaker\FileMaker $fm FileMaker object the command was created by.
      * @param string $layout Layout to use for script context.
      * @param string $scriptName Name of the script to run.
      * @param string $scriptParameters Any parameters to pass to the script.
      */
-    function __construct($fm, $layout, $scriptName, $scriptParameters = null)
+    public function __construct(FileMaker $fm, $layout, $scriptName, $scriptParameters = null)
     {
         parent::__construct($fm, $layout);
         $this->_script = $scriptName;
         $this->_scriptParams = $scriptParameters;
     }
-    
+
     /**
-     * 
-     * @return type
+     * Sets a range to request only part of the result set.
+     *
+     * @param integer $skip Number of records to skip past. Default is 0.
+     * @param integer $max Maximum number of records to return.
+     *        Default is all.
      */
-    function execute() {
+    public function setRange($skip = 0, $max = null)
+    {
+         $this->_skip = $skip;
+        $this->_max = $max;
+    }
+
+    /**
+     * Returns the current range settings.
+     *
+     * @return array Associative array with two keys: 'skip' for
+     * the current skip setting, and 'max' for the current maximum
+     * number of records. If either key does not have a value, the
+     * returned value for that key is NULL.
+     */
+    public function getRange()
+    {
+        return array('skip' => $this->_skip,
+            'max' => $this->_max);
+    }
+
+    /**
+     *
+     * @return Result
+     */
+    public function execute() {
         $params = $this->_getCommandParams();
         $params['-findany'] = true;
+        $this->_setRangeParams($params);
         $cUrlResponse = $this->fm->execute($params);
         return $this->_getResult($cUrlResponse);
+    }
+
+    protected function _setRangeParams(&$params) {
+        if ($this->_skip) {
+            $params['-skip'] = $this->_skip;
+        }
+        if ($this->_max) {
+            $params['-max'] = $this->_max;
+        }
     }
 
 }

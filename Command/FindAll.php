@@ -1,5 +1,8 @@
 <?php
 namespace airmoi\FileMaker\Command;
+
+use airmoi\FileMaker\Object\Result;
+
 /**
  * FileMaker API for PHP
  *
@@ -14,32 +17,16 @@ namespace airmoi\FileMaker\Command;
  * by implication, by FileMaker.
  */
 
-
-
 /**
- * Command class that finds all records from a layout. 
+ * Command class that finds all records from a layout.
  * Create this command with {@link FileMaker::newFindAllCommand()}.
  *
  * @package FileMaker
  */
 class FindAll extends Find
 {
-
     /**
-     * FindAll command constructor.
      *
-     * @ignore
-     * @param FileMaker_Implementation $fm FileMaker_Implementation object the 
-     *        command was created by.
-     * @param string $layout Layout to find all records in.
-     */
-    public function __construct($fm, $layout)
-    {
-        parent::__construct($fm, $layout);
-    }
-    
-    /**
-     * 
      * @return Result
      * @throws \airmoi\FileMaker\FileMakerException
      */

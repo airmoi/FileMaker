@@ -1,6 +1,8 @@
 <?php
 
 namespace airmoi\FileMaker\Command;
+
+use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 
 /**
@@ -29,17 +31,17 @@ class Add extends Command {
      * Add command constructor.
      *
      * @ignore
-     * @param FileMaker_Implementation $fm FileMaker_Implementation object the command was created by.
+     * @param FileMaker $fm FileMaker object the command was created by.
      * @param string $layout Layout to add a record to.
      * @param array $values Associative array of field name => value pairs. To set field repetitions,
      * use a numerically indexed array for the value of a field, with the numeric keys
      * corresponding to the repetition number to set.
      */
-    function __construct($fm, $layout, $values = array()) {
+    public function __construct(FileMaker $fm, $layout, $values = array()) {
         parent::__construct($fm, $layout);
         foreach ($values as $fieldname => $value) {
             if (!is_array($value)) {
-                $this->setField($fieldname, $value, 0);  
+                $this->setField($fieldname, $value, 0);
             }
             else {
                 foreach ( $value as $repetition => $repetitionValue ){
@@ -50,7 +52,7 @@ class Add extends Command {
     }
 
     /**
-     * 
+     *
      * @return \airmoi\FileMaker\Object\Result
      * @throws FileMakerException
      */
@@ -89,31 +91,63 @@ class Add extends Command {
      * @param string $value Value to set for this field.
      * @param integer $repetition Field repetition number to set,
      *        Defaults to the first repetition.
+     *
+     * @return string
      */
-    function setField($field, $value, $repetition = 0) {
-        if ( array_search($field, $this->fm->getLayout($this->_layout)->listFields()) === false)
+    public function setField($field, $value, $repetition = 0) {
+        //handle related fields in portals or in model
+        if($pos = strpos($field, ':')){
+            $fieldName = substr($field, 0, strpos($field, '.'));
+            $relationName = substr($field, 0, $pos);
+            if( $this->fm->getLayout($this->_layout)->hasRelatedSet($relationName)) {
+                $Field = $this->fm->getLayout($this->_layout)->getRelatedSet(substr($field, 0, $pos))->getField($fieldName);
+            }
+            else {
+                $Field = $this->fm->getLayout($this->_layout)->getField($field);
+            }
+        }
+        else {
+            $Field = $this->fm->getLayout($this->_layout)->getField($field);
+        }
+        /*if ( array_search($field, $this->fm->getLayout($this->_layout)->listFields()) === false){
                 throw new FileMakerException($this->fm, 'Field "'.$field.'" is missing');
+        }*/
+
+        $format = $Field->result;
+        if( !empty($value) && $this->fm->getProperty('dateFormat') !== null && ($format == 'date' || $format == 'timestamp')){
+            if( $format == 'date' ){
+                $dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value . ' 00:00:00');
+                $value = $dateTime->format('m/d/Y');
+            } else {
+                $dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value );
+                $value = $dateTime->format( 'm/d/Y H:i:s' );
+            }
+        }
+
         $this->_fields[$field][$repetition] = $value;
         return $value;
     }
 
     /**
      * Sets the new value for a date, time, or timestamp field from a
-     * UNIX timestamp value. 
+     * UNIX timestamp value.
      *
-     * If the field is not a date or time field, then this method returns  
+     * If the field is not a date or time field, then this method returns
      * an Error object. Otherwise, returns TRUE.
      *
-     * If layout data for the target of this command has not already 
+     * If layout data for the target of this command has not already
      * been loaded, calling this method loads layout data so that
      * the type of the field can be checked.
      *
      * @param string $field Name of the field to set.
      * @param string $timestamp Timestamp value.
-     * @param integer $repetition Field repetition number to set. 
+     * @param integer $repetition Field repetition number to set.
      *        Defaults to the first repetition.
+     *
+     * @return string
+     * @throws FileMakerException
      */
-    function setFieldFromTimestamp($field, $timestamp, $repetition = 0) {
+    public function setFieldFromTimestamp($field, $timestamp, $repetition = 0) {
         $layout = $this->fm->getLayout($this->_layout);
         $fieldInfos = $layout->getField($field);
         switch ($fieldInfos->getResult()) {

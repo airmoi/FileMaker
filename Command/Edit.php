@@ -1,8 +1,10 @@
 <?php
 namespace airmoi\FileMaker\Command;
+
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\FileMakerValidationException;
+
 /**
  * FileMaker API for PHP
  *
@@ -26,7 +28,6 @@ use airmoi\FileMaker\FileMakerValidationException;
  */
 class Edit extends Command
 {
-    protected $_fields = array();
     protected $_modificationId = null;
     protected $_deleteRelated;
 
@@ -34,16 +35,15 @@ class Edit extends Command
      * Edit command constructor.
      *
      * @ignore
-     * @param FileMaker_Implementation $fm FileMaker_Implementation object the 
-     *        command was created by.
+     * @param FileMaker $fm FileMaker object the command was created by.
      * @param string $layout Layout the record is part of.
      * @param string $recordId ID of the record to edit.
-     * @param array $values Associative array of field name => value pairs. 
+     * @param array $updatedValues Associative array of field name => value pairs. 
      *        To set field repetitions, use a numerically indexed array for 
      *        the value of a field, with the numeric keys corresponding to the 
      *        repetition number to set.
      */
-    public function __construct($fm, $layout, $recordId, $updatedValues = [])
+    public function __construct(FileMaker $fm, $layout, $recordId, $updatedValues = [])
     {
         parent::__construct($fm, $layout);
         $this->recordId = $recordId;
@@ -69,7 +69,6 @@ class Edit extends Command
         $params = $this->_getCommandParams();
         if (empty($this->recordId)) {
             throw new FileMakerException ($this->fm, 'Edit commands require a record id.');
-            return $error;
         }
         if (!count($this->_fields)) {
             if ($this->_deleteRelated == null) {
@@ -78,7 +77,8 @@ class Edit extends Command
         }
 
         if ($this->fm->getProperty('prevalidate')) {
-            $layout = $this->fm->getLayout($this->_layout);
+            $validation = $this->validate();
+            /*$layout = $this->fm->getLayout($this->_layout);
             $validationError = new FileMakerValidationException($this->fm);
             foreach ($layout->getFields() as $field => $infos) {
                 if (isset($this->_fields[$field])) {
@@ -87,7 +87,7 @@ class Edit extends Command
                         $validationError = $infos->validate($values);
                     }
                 }
-            }
+            }*/
         }
 
         $layout = $this->fm->getLayout($this->_layout);
@@ -130,9 +130,41 @@ class Edit extends Command
      * @param string $value Value for the field.
      * @param integer $repetition Field repetition number to set,
      *        Defaults to the first repetition.
+     *                            
+     * @return string
+     * @throws FileMakerException
      */
     public function setField($field, $value, $repetition = 0)
     {
+        //handle related fields in portals or in model
+        if($pos = strpos($field, ':')){
+            $fieldName = substr($field, 0, strpos($field, '.'));
+            $relationName = substr($field, 0, $pos);
+            if( $this->fm->getLayout($this->_layout)->hasRelatedSet($relationName)) {
+                $Field = $this->fm->getLayout($this->_layout)->getRelatedSet(substr($field, 0, $pos))->getField($fieldName);
+            }
+            else {
+                $Field = $this->fm->getLayout($this->_layout)->getField($field);
+            }
+        }
+        else {
+            $Field = $this->fm->getLayout($this->_layout)->getField($field);
+        }
+        /*if ( array_search($field, $this->fm->getLayout($this->_layout)->listFields()) === false){
+                throw new FileMakerException($this->fm, 'Field "'.$field.'" is missing');
+        }*/
+        
+        $format = $Field->result; 
+        if( !empty($value) && $this->fm->getProperty('dateFormat') !== null && ($format == 'date' || $format == 'timestamp')){ 
+            if( $format == 'date' ){
+                $dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value . ' 00:00:00');
+                $value = $dateTime->format('m/d/Y');
+            } else {
+                $dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value );
+                $value = $dateTime->format( 'm/d/Y H:i:s' );
+            }
+        }
+        
         $this->_fields[$field][$repetition] = $value;
         return $value;
     }
@@ -152,6 +184,9 @@ class Edit extends Command
      * @param string $timestamp Timestamp value.
      * @param integer $repetition Field repetition number to set. 
      *        Defaults to the first repetition.
+     *                            
+     * @return string
+     * @throws FileMakerException
      */
     public function setFieldFromTimestamp($field, $timestamp, $repetition = 0)
     {
@@ -159,17 +194,17 @@ class Edit extends Command
         if (FileMaker :: isError($layout)) {
             return $layout;
         }
-        $field = & $layout->getField($fieldname);
+        $field = & $layout->getField($field);
         if (FileMaker :: isError($field)) {
             return $field;
         }
         switch ($field->getResult()) {
             case 'date' :
-                return $this->setField($fieldname, date('m/d/Y', $timestamp), $repetition);
+                return $this->setField($field, date('m/d/Y', $timestamp), $repetition);
             case 'time' :
-                return $this->setField($fieldname, date('H:i:s', $timestamp), $repetition);
+                return $this->setField($field, date('H:i:s', $timestamp), $repetition);
             case 'timestamp' :
-                return $this->setField($fieldname, date('m/d/Y H:i:s', $timestamp), $repetition);
+                return $this->setField($field, date('m/d/Y H:i:s', $timestamp), $repetition);
         }
         throw new FileMakerException($this->fm, 'Only time, date, and timestamp fields can be set to the value of a timestamp.');
     }
@@ -178,7 +213,7 @@ class Edit extends Command
      * Sets the modification ID for this command.
      *
      * Before you edit a record, you can use the 
-     * {@link FileMaker_Record::getModificationId()} method to get the record's 
+     * {@link Record::getModificationId()} method to get the record's 
      * modification ID. By specifying a modification ID when you execute an 
      * Edit command, you can make sure that you are editing the current version 
      * of a record. If the modification ID value you specify does not match the 
@@ -192,7 +227,7 @@ class Edit extends Command
         $this->_modificationId = $modificationId;
     }
 
-    private function _setdeleteRelated($relatedRecordId) {
+    public function setDeleteRelated($relatedRecordId) {
         $this->_deleteRelated = $relatedRecordId;
     }
 

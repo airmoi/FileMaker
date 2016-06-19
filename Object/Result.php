@@ -22,14 +22,21 @@ use airmoi\FileMaker\FileMaker;
 
 
 /**
- * Result set description class. Contains all the information about a set of 
- * records returned by a command. 
+ * Result set description class. Contains all the information about a set of
+ * records returned by a command.
  *
  * @package FileMaker
  */
 class Result
 {
+    /**
+     * @var FileMaker
+     */
     public $fm;
+
+    /**
+     * @var Layout
+     */
     public $layout;
     public $records;
     public $tableCount;
@@ -39,7 +46,7 @@ class Result
     /**
      * Result object constructor.
      *
-     * @param FileMaker $fm FileMaker object 
+     * @param FileMaker $fm FileMaker object
      *        that this result came from.
      */
     public function __construct(FileMaker &$fm)
@@ -48,7 +55,7 @@ class Result
     }
 
     /**
-     * Returns a FileMaker_Layout object that describes the layout of this 
+     * Returns a Layout object that describes the layout of this
      * result set.
      *
      * @return Layout Layout object.
@@ -59,11 +66,11 @@ class Result
     }
 
     /**
-     * Returns an array containing each record in the result set. 
-     * 
-     * Each member of the array is a FileMaker_Record object, or an
+     * Returns an array containing each record in the result set.
+     *
+     * Each member of the array is a Record object, or an
      * instance of the alternate class you specified to use for records
-     * (see {@link FileMaker_Record}. The array may be empty if 
+     * (see {@link Record}. The array may be empty if
      * the result set contains no records.
      *
      * @return Record[] Record objects.
@@ -74,11 +81,11 @@ class Result
     }
 
     /**
-     * Returns a list of the names of all fields in the records in 
-     * this result set. 
-     * 
-     * Only the field names are returned. If you need additional 
-     * information, examine the Layout object provided by the 
+     * Returns a list of the names of all fields in the records in
+     * this result set.
+     *
+     * Only the field names are returned. If you need additional
+     * information, examine the Layout object provided by the
      * {@link getLayout()} method.
      *
      * @return array List of field names as strings.
@@ -89,7 +96,7 @@ class Result
     }
 
     /**
-     * Returns the names of related tables for all portals present in records 
+     * Returns the names of related tables for all portals present in records
      * in this result set.
      *
      * @return array List of related table names as strings.
@@ -121,10 +128,10 @@ class Result
 
     /**
      * Returns the number of records in the filtered result set.
-     * 
-     * If no range parameters were specified on the Find command, 
+     *
+     * If no range parameters were specified on the Find command,
      * then this value is equal to the result of the {@link getFoundSetCount()}
-     * method. It is always equal to the value of 
+     * method. It is always equal to the value of
      * count($response->{@link getRecords()}).
      *
      * @return integer Filtered record count.
@@ -133,7 +140,7 @@ class Result
     {
         return $this->fetchCount;
     }
-    
+
     /**
      * Returns the first record in this result set.
      *
@@ -141,9 +148,9 @@ class Result
      */
     public function getFirstRecord()
     {
-    	return $this->records[0];
+        return $this->records[0];
     }
-    
+
     /**
      * Returns the last record in this result set.
      *
@@ -151,7 +158,7 @@ class Result
      */
     public function getLastRecord()
     {
-    	return $this->records[sizeof($this->records) - 1];
+        return $this->records[sizeof($this->records) - 1];
     }
 
 }
