@@ -18,10 +18,10 @@
             "airmoi\\FileMaker\\Command\\": "Command/"
         }
     },
-	"repositories":[
-		{
-			"type": "git",
-			"url": "https://github.com/airmoi/FileMaker.git"
-		}
-	]
+    "repositories":[
+        {
+            "type": "git",
+            "url": "https://github.com/airmoi/FileMaker.git"
+        }
+    ]
 }

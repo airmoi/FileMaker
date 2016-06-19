@@ -24,21 +24,21 @@ use airmoi\FileMaker\FileMakerException;
 //require_once dirname(__FILE__) . '/Implementation/RecordImpl.php';
 
 /**
- * Default Record class that represents each record of a result set. 
- * 
- * From a Record object, you can get field data, edit and delete the record, 
- * get its parent record, get its related record set, and create related 
- * records. 
- * 
- * Instead of this class, you can specify a different class to use for Record 
- * objects. To specify the record class to use, open the 
- * FileMaker/conf/filemaker-api.php configuration file where the API is 
- * installed. Then set $__FM_CONFIG['recordClass'] to the name of the record 
- * class to use. The class you specify should be a subclass of the 
- * Record base class or encapsulate its functionality. In PHP 5, 
- * this class would implement an interface that alternate classes would be 
- * required to implement as well. 
- * 
+ * Default Record class that represents each record of a result set.
+ *
+ * From a Record object, you can get field data, edit and delete the record,
+ * get its parent record, get its related record set, and create related
+ * records.
+ *
+ * Instead of this class, you can specify a different class to use for Record
+ * objects. To specify the record class to use, open the
+ * FileMaker/conf/filemaker-api.php configuration file where the API is
+ * installed. Then set $__FM_CONFIG['recordClass'] to the name of the record
+ * class to use. The class you specify should be a subclass of the
+ * Record base class or encapsulate its functionality. In PHP 5,
+ * this class would implement an interface that alternate classes would be
+ * required to implement as well.
+ *
  * @package FileMaker
  */
 class Record {
@@ -53,25 +53,25 @@ class Record {
      */
     public $fm;
     public $relatedSets = array();
-    
+
     /**
      *
      * @var Record
      */
     public $parent = null;
-    
+
     private $_modifiedFields = array();
-    
+
     /**
      *
-     * @var Layout|RelatedSet 
+     * @var Layout|RelatedSet
      */
     public $layout;
     /**
      * Record object constructor.
      *
-     * @param Layout|RelatedSet Specify either the Layout 
-     *        object associated with this record or the Related Set object 
+     * @param Layout|RelatedSet Specify either the Layout
+     *        object associated with this record or the Related Set object
      *        that this record is a member of.
      */
     public function __construct($layout) {
@@ -89,11 +89,11 @@ class Record {
     }
 
     /**
-     * Returns a list of the names of all fields in the record. 
+     * Returns a list of the names of all fields in the record.
      *
-     * Only the field names are returned. If you need additional 
-     * information, examine the Layout object provided by the 
-     * parent object's {@link Result::getLayout()} method.  
+     * Only the field names are returned. If you need additional
+     * information, examine the Layout object provided by the
+     * parent object's {@link Result::getLayout()} method.
      *
      * @return array List of field names as strings.
      */
@@ -104,15 +104,17 @@ class Record {
     /**
      * Returns the HTML-encoded value of the specified field.
      *
-     * This method converts some special characters in the field value to 
-     * HTML entities. For example, '&', '"', '<', and '>' are converted to 
+     * This method converts some special characters in the field value to
+     * HTML entities. For example, '&', '"', '<', and '>' are converted to
      * '&amp;', '&quot;', '&lt;', and '&gt;', respectively.
      *
-     * @param string $field Name of field.
-     * @param integer $repetition Field repetition number to get. 
-     *        Defaults to the first repetition.
+     * @param string  $field      Name of field.
+     * @param integer $repetition Field repetition number to get.
+     *                            Defaults to the first repetition.
+     * @param boolean $unencoded
      *
-     * @return string Encoded field value.
+     * @return null|string Encoded field value.
+     * @throws FileMakerException
      */
     public function getField($field, $repetition = 0, $unencoded = true) {
         if( !is_null($this->parent) && !strpos($field, '::')){
@@ -128,11 +130,11 @@ class Record {
         }
         $format = $this->layout->getField($field)->result;
         $value = $this->fields[$field][$repetition];
-        
+
         if(empty($value) && $this->fm->getProperty('emptyAsNull')) {
             return null;
         }
-        if( !empty($value) && $this->fm->getProperty('dateFormat') !== null && ($format == 'date' || $format == 'timestamp')){  
+        if( !empty($value) && $this->fm->getProperty('dateFormat') !== null && ($format == 'date' || $format == 'timestamp')){
             if( $format == 'date' ){
                 if(!$dateTime = \DateTime::createFromFormat('m/d/Y H:i:s', $value . ' 00:00:00')) {
                     throw new FileMakerException($this->fm, $field . ' could not be converted to a valid timestamp ('. $value .')');
@@ -149,12 +151,12 @@ class Record {
             $value = preg_replace('/,/', '.', $value);
         }
         return $unencoded ? $value : htmlspecialchars($value);
-    }    
-    
+    }
+
     /**
      * Returns the two field value list associated with the given field in Record's layout.
-     * 
-     * @param string $fieldName Field's Name 
+     *
+     * @param string $fieldName Field's Name
      * @return array
      * @see Layout::getValueListTwoFields
      */
@@ -166,10 +168,10 @@ class Record {
             //$this->_fm->log('Field "' . $field . '" not found.', FileMaker::LOG_INFO);
             return [];
         }
-        
+
         //Force load extendedInfos as Field's valueList property is not set until extended infos are retrieved
         $this->layout->loadExtendedInfo($this->recordId);
-        
+
         //Get the value list if field has one
         if($this->layout->fields[$fieldName]->valueList !== null){
             return $this->layout->getValueListTwoFields($this->layout->fields[$fieldName]->valueList, $this->recordId );
@@ -180,11 +182,11 @@ class Record {
     /**
      * Returns the unencoded value of the specified field.
      *
-     * This method does not convert special characters in the field value to 
+     * This method does not convert special characters in the field value to
      * HTML entities.
      * @deprecated since version 2.0 use getField($field, $repetition = 0, $unencoded = true) instead
      * @param string $field Name of field.
-     * @param integer $repetition Field repetition number to get. 
+     * @param integer $repetition Field repetition number to get.
      *        Defaults to the first repetition.
      *
      * @return string Unencoded field value.
@@ -194,9 +196,9 @@ class Record {
     }
 
     /**
-     * Returns the value of the specified field as a UNIX 
-     * timestamp. 
-     * 
+     * Returns the value of the specified field as a UNIX
+     * timestamp.
+     *
      * If the field is a date field, the timestamp is
      * for the field date at midnight. It the field is a time field,
      * the timestamp is for that time on January 1, 1970. Timestamp
@@ -204,9 +206,9 @@ class Record {
      * specified field is not a date or time field, or if the timestamp
      * generated would be out of range, then this method throws a
      * FileMakerException object instead.
-     * 
+     *
      * @param string $field Name of the field.
-     * @param integer $repetition Field repetition number to get. 
+     * @param integer $repetition Field repetition number to get.
      *        Defaults to the first repetition.
      *
      * @return integer Timestamp value.
@@ -254,19 +256,22 @@ class Record {
      *
      * @param string $field Name of the field.
      * @param string $value New value of the field.
-     * @param integer $repetition Field repetition number to set. 
+     * @param integer $repetition Field repetition number to set.
      *        Defaults to the first repetition.
+     *
+     * @return string
+     * @throws FileMakerException
      */
     public function setField($field, $value, $repetition = 0) {
-        
+
         if( !is_null($this->parent) && !strpos($field, '::')){
             $field = $this->relatedSetName. '::' . $field;
         }
         if ( array_search($field, $this->getFields()) === false)
                 throw new FileMakerException($this->fm, 'Field "'.$field.'" is missing');
-        
+
         $format = $this->layout->getField($field)->result;
-        if( !empty($value) && $this->fm->getProperty('dateFormat') !== null && ($format == 'date' || $format == 'timestamp')){  
+        if( !empty($value) && $this->fm->getProperty('dateFormat') !== null && ($format == 'date' || $format == 'timestamp')){
             if( $format == 'date' ){
                 if(!$dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value . ' 00:00:00')) {
                     throw new FileMakerException($this->fm, $value . ' could not be converted to a valid timestamp for field ' . $field . ' (expected format '. $this->fm->getProperty('dateFormat') .')');
@@ -279,7 +284,7 @@ class Record {
                 $value = $dateTime->format( 'm/d/Y H:i:s' );
             }
         }
-        
+
         $this->fields[$field][$repetition] = $value;
         $this->_modifiedFields[$field][$repetition] = true;
         return $value;
@@ -287,19 +292,22 @@ class Record {
 
     /**
      * Sets the new value for a date, time, or timestamp field from a
-     * UNIX timestamp value. 
+     * UNIX timestamp value.
      *
-     * If the field is not a date or time field, then returns an error. 
+     * If the field is not a date or time field, then returns an error.
      * Otherwise, returns TRUE.
      *
-     * If layout data for the target of this command has not already 
+     * If layout data for the target of this command has not already
      * been loaded, calling this method loads layout data so that
      * the type of the field can be checked.
      *
      * @param string $field Name of the field to set.
      * @param string $timestamp Timestamp value.
-     * @param integer $repetition Field repetition number to set. 
+     * @param integer $repetition Field repetition number to set.
      *        Defaults to the first repetition.
+     *
+     * @return string
+     * @throws FileMakerException
      */
     public function setFieldFromTimestamp($field, $timestamp, $repetition = 0) {
         $fieldType = $this->layout->getField($field);
@@ -308,11 +316,11 @@ class Record {
         }
         switch ($fieldType->getResult()) {
             case 'date':
-                return $this->setField($field, date('m/d/Y', $value), $repetition);
+                return $this->setField($field, date('m/d/Y', $timestamp), $repetition);
             case 'time':
-                return $this->setField($field, date('H:i:s', $value), $repetition);
+                return $this->setField($field, date('H:i:s', $timestamp), $repetition);
             case 'timestamp':
-                return $this->setField($field, date('m/d/Y H:i:s', $value), $repetition);
+                return $this->setField($field, date('m/d/Y H:i:s', $timestamp), $repetition);
         }
         throw new FileMakerException($this->fm, 'Only time, date, and timestamp fields can be set to the value of a timestamp.');
     }
@@ -328,9 +336,9 @@ class Record {
 
     /**
      * Returns the modification ID of this record.
-     * 
-     * The modification ID is an incremental counter that specifies the current 
-     * version of a record. See the {@link Edit::setModificationId()} 
+     *
+     * The modification ID is an incremental counter that specifies the current
+     * version of a record. See the {@link Edit::setModificationId()}
      * method.
      *
      * @return integer Modification ID.
@@ -383,6 +391,8 @@ class Record {
     /**
      * Set the parent record, if this record is a child record in a portal.
      *
+     * @param Record $record
+     * 
      * @return Record Parent record.
      */
     public function setParent($record) {
@@ -391,21 +401,21 @@ class Record {
 
     /**
      * Pre-validates either a single field or the entire record.
-     * 
-     * This method uses the pre-validation rules that are enforceable by the 
-     * PHP engine -- for example, type rules, ranges, and four-digit dates. 
-     * Rules such as "unique" or "existing," or validation by calculation 
+     *
+     * This method uses the pre-validation rules that are enforceable by the
+     * PHP engine -- for example, type rules, ranges, and four-digit dates.
+     * Rules such as "unique" or "existing," or validation by calculation
      * field, cannot be pre-validated.
      *
-     * If you pass the optional $fieldName argument, only that field is 
+     * If you pass the optional $fieldName argument, only that field is
      * pre-validated. Otherwise, the record is pre-validated as if commit()
      * were called with "Enable record data pre-validation" selected in
-     * FileMaker Server Admin Console. If pre-validation passes, validate() 
-     * returns TRUE. If pre-validation fails, then validate() throws a 
-     * FileMakerValidationException object containing details about what failed 
+     * FileMaker Server Admin Console. If pre-validation passes, validate()
+     * returns TRUE. If pre-validation fails, then validate() throws a
+     * FileMakerValidationException object containing details about what failed
      * to pre-validate.
      *
-     * @param string $fieldName Name of field to pre-validate. If empty, 
+     * @param string $fieldName Name of field to pre-validate. If empty,
      *        pre-validates the entire record.
      *
      * @return boolean TRUE, if pre-validation passes for $value.
@@ -460,7 +470,7 @@ class Record {
         }
         if ($this->parent) {
             $editCommand = $this->fm->newEditCommand($this->parent->layout->getName(), $this->parent->recordId, []);
-            $editCommand->_setdeleteRelated($this->layout->getName() . "." . $this->recordId);
+            $editCommand->setDeleteRelated($this->layout->getName() . "." . $this->recordId);
 
             return $editCommand->execute();
         } else {
@@ -472,13 +482,13 @@ class Record {
     }
 
     /**
-     * Gets a specific related record. 
+     * Gets a specific related record.
      *
      * @access private
      *
      * @param string $relatedSetName Name of the portal.
      * @param string $recordId Record ID of the record in the portal.
-     * 
+     *
      * @return Record Record object.
      * @throws FileMakerException
      */
@@ -487,9 +497,9 @@ class Record {
             $relatedSet = $this->getRelatedSet($relatedSetName);
         }
         catch (FileMakerException $e) {
-            throw new FileMakerException($this->fm, 'Related set "' . $relatedSetName . '" not present.'); 
+            throw new FileMakerException($this->fm, 'Related set "' . $relatedSetName . '" not present.');
         }
-        
+
         foreach ($relatedSet as $record) {
             if ($record->getRecordId() == $recordId) {
                 return $record;
@@ -498,9 +508,9 @@ class Record {
         throw new FileMakerException($this->fm, 'Record not present.');
 
     }
-    
+
     /**
-     * 
+     *
      * @return boolean TRUE on success
      * @throws FileMakerException
      */
@@ -512,7 +522,7 @@ class Record {
     }
 
     /**
-     * 
+     *
      * @return boolean TRUE on success
      * @throws FileMakerException
      */
@@ -532,7 +542,7 @@ class Record {
     }
 
      /**
-     * 
+     *
      * @return boolean TRUE on success
      * @throws FileMakerException
      */
@@ -555,7 +565,7 @@ class Record {
     }
 
      /**
-     * 
+     *
      * @return boolean TRUE on success
      * @throws FileMakerException
      */
@@ -583,7 +593,7 @@ class Record {
     }
 
     /**
-     * 
+     *
      * @param Record $record
      * @return boolean
      */

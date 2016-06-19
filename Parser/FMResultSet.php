@@ -7,7 +7,6 @@ use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\Object\Layout;
 use airmoi\FileMaker\Object\Field;
 use airmoi\FileMaker\Object\RelatedSet;
-use airmoi\FileMaker\Object\Record;
 
 class FMResultSet {
 
@@ -29,7 +28,7 @@ class FMResultSet {
     private $_result;
     private $_layout;
 
-    public function __construct(FileMaker &$fm) {
+    public function __construct(FileMaker $fm) {
         $this->_fm = $fm;
     }
 
@@ -258,8 +257,8 @@ class FMResultSet {
 
     /**
      * 
-     * @param type $unusedVar
-     * @param type $tag
+     * @param mixed  $unusedVar
+     * @param string $tag
      */
     private function _end($unusedVar, $tag) {
         switch ($tag) {

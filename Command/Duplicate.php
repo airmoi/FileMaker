@@ -1,7 +1,10 @@
 <?php
 namespace airmoi\FileMaker\Command;
+
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
+use airmoi\FileMaker\Object\Result;
+
 /**
  * FileMaker API for PHP
  *
@@ -25,7 +28,7 @@ use airmoi\FileMaker\FileMakerException;
  */
 class Duplicate extends Command
 {
-   /**
+    /**
      * Duplicate command constructor.
      *
      * @ignore
@@ -33,7 +36,7 @@ class Duplicate extends Command
      * @param string $layout Layout the record to duplicate is in.
      * @param string $recordId ID of the record to duplicate.
      */
-    public function __construct($fm, $layout, $recordId)
+    public function __construct(FileMaker $fm, $layout, $recordId)
     {
         parent::__construct($fm, $layout);
         $this->recordId = $recordId;
@@ -46,7 +49,7 @@ class Duplicate extends Command
      * @return Result
      * @throws FileMakerException
      */
-    function execute() {
+    public function execute() {
         if (empty($this->recordId)) {
             throw new FileMakerException($this->fm, 'Duplicate commands require a record id.');
         }

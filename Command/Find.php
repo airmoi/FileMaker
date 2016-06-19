@@ -1,6 +1,8 @@
 <?php
 namespace airmoi\FileMaker\Command;
+
 use airmoi\FileMaker\FileMaker;
+
 /**
  * FileMaker API for PHP
  *
@@ -33,18 +35,6 @@ class Find extends Command
     protected $_max;
     protected $_relatedsetsfilter;
     protected $_relatedsetsmax;
-
-    /**
-     * Find command constructor.
-     *
-     * @ignore
-     * @param FileMaker $fm FileMaker object the command was created by.
-     * @param string $layout Layout to find records in.
-     */
-    public function __construct($fm, $layout)
-    {
-        parent::__construct($fm, $layout);
-    }
 
     /**
      * Adds a criterion to this Find command.
@@ -196,7 +186,7 @@ class Find extends Command
      */
     public function setRelatedSetsFilters($relatedsetsfilter, $relatedsetsmax = null)
     {
-    	$this->_relatedsetsfilter = $relatedsetsfilter;
+        $this->_relatedsetsfilter = $relatedsetsfilter;
         $this->_relatedsetsmax = $relatedsetsmax;
     }
     
@@ -211,7 +201,7 @@ class Find extends Command
      */
     public function getRelatedSetsFilters()
     {
-    	return array('relatedsetsfilter' => $this->_relatedsetsfilter,
+        return array('relatedsetsfilter' => $this->_relatedsetsfilter,
             'relatedsetsmax' => $this->_relatedsetsmax);
     }
     
