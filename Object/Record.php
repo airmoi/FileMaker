@@ -134,7 +134,7 @@ class Record {
         if(empty($value) && $this->fm->getProperty('emptyAsNull')) {
             return null;
         }
-        if( !empty($value) && $this->fm->getProperty('dateFormat') !== null && ($format == 'date' || $format == 'timestamp')){
+        if( !empty($value) && preg_match('/\d{2}.\d{2}.\d{4}/', $value) && $this->fm->getProperty('dateFormat') !== null && ($format == 'date' || $format == 'timestamp')){
             if( $format == 'date' ){
                 if(!$dateTime = \DateTime::createFromFormat('m/d/Y H:i:s', $value . ' 00:00:00')) {
                     throw new FileMakerException($this->fm, $field . ' could not be converted to a valid timestamp ('. $value .')');
