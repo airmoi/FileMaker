@@ -13,11 +13,5 @@
         "psr-4": {
             "airmoi\\FileMaker\\": "src/"
         }
-    },
-    "repositories":[
-        {
-            "type": "git",
-            "url": "https://github.com/airmoi/FileMaker.git"
-        }
-    ]
+    }
 }
