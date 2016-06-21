@@ -11,11 +11,7 @@
     ],
     "autoload": {
         "psr-4": {
-            "airmoi\\FileMaker\\": "/",
-            "airmoi\\FileMaker\\Object\\": "Object/",
-            "airmoi\\FileMaker\\Parser\\": "Parser/",
-            "airmoi\\FileMaker\\Error\\": "Error/",
-            "airmoi\\FileMaker\\Command\\": "Command/"
+            "airmoi\\FileMaker\\": "src/"
         }
     },
     "repositories":[

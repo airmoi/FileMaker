@@ -1,5 +1,6 @@
 <?php
 namespace airmoi\FileMaker;
+
 /**
  * FileMaker API for PHP
  *
@@ -13,7 +14,6 @@ namespace airmoi\FileMaker;
  * other intellectual property license or right is granted, either expressly or
  * by implication, by FileMaker.
  */
-
 
 /**
  * Extension of the Exception class for use in all FileMaker classes.

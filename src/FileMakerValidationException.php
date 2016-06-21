@@ -18,11 +18,6 @@ use airmoi\FileMaker\Object\Field;
  */
 
 /**
- * @ignore Include parent class.
- */
-
-
-/**
  * Extension of the FileMakerException class that adds information about
  * pre-validation errors.
  *
