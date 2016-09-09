@@ -3,29 +3,33 @@
  * FileMaker API for PHP
  *
  * @package FileMaker
- *
- * Copyright © 2005-2007, FileMaker, Inc. All rights reserved.
- * NOTE: Use of this source code is subject to the terms of the FileMaker
- * Software License which accompanies the code. Your use of this source code
- * signifies your agreement to such license terms and conditions. Except as
- * expressly granted in the Software License, no other copyright, patent, or
- * other intellectual property license or right is granted, either expressly or
- * by implication, by FileMaker.
+ * @version 2.0.5
+ * 
+ * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
+ * @licence BSD
  */
-
 
 namespace airmoi\FileMaker;
 
 use airmoi\FileMaker\Parser\FMResultSet;
 use airmoi\FileMaker\Object\Layout;
+
 /**
  * Base FileMaker class. Defines database properties, connects to a database,
  * and gets information about the API.
  *
  * @package FileMaker
+ * 
+ * @author Romain Dunand <airmoi@gmail.com>
  */
 class FileMaker {
 
+    /**
+     *
+     * @var array The FileMaker connection properties
+     * You may access and manipulate thoes properties using 
+     * [[getProperty()]] and [[setPropety()]] methods
+     */
     private $_properties = [
         'charset' => 'utf-8',
         'locale' => 'en',
@@ -42,9 +46,20 @@ class FileMaker {
         'emptyAsNull' => false, //Returns null value instead of empty strings on empty field value
         'errorHandling' => 'default', //Default to use old school FileMaker Errors trapping, 'exception' to handle errors as exceptions
     ];
+    
+    /**
+     * @var \Log PEAR Log object
+     */
     private $_logger = null;
+    
+    /**
+     * @var Layout[] a pseudo cache for layouts to prevent unnecessary call's to Custom Web Publishing engine 
+     */
     private static $_layouts = [];
 
+    /**
+     * @var string Store the last URL call to Custom Web Publishing engine
+     */
     public $lastRequestedUrl;
 
     /**
@@ -110,7 +125,7 @@ class FileMaker {
      *
      */
     public static function isError($variable) {
-        return is_a($variable, __NAMESPACE__.'FileMakerException') || is_a($variable, __NAMESPACE__.'FileMakerError');
+        return is_a($variable, __NAMESPACE__.'FileMakerException');
     }
 
     /**
@@ -120,7 +135,7 @@ class FileMaker {
      * @const
      */
     public function getAPIVersion() {
-        return '2.0.5-beta';
+        return '2.0.5';
     }
 
     /**
@@ -137,13 +152,11 @@ class FileMaker {
      * FileMaker object constructor.
      *
      * If you want to use the constructor without specifying all the
-     *  parameters, pass in NULL for the parameters you want to omit.
+     * parameters, pass in NULL for the parameters you want to omit.
      * For example, to specify only the database name, username, and
      * password, but omit the hostspec, call the constructor as follows:
      *
-     * <samp>
-     * new FileMaker('DatabaseName', NULL, 'username', 'password');
-     * </samp>
+     * @example new FileMaker('DatabaseName', NULL, 'username', 'password');
      *
      * @param string $database Name of the database to connect to.
      * @param string $hostspec Hostspec of web server in FileMaker Server
@@ -203,7 +216,7 @@ class FileMaker {
      * Associates a PEAR Log object with the API for logging requests
      * and responses.
      *
-     * @param \Log $logger PEAR Log object.
+     * @param \Log|FileMakerException $logger PEAR Log object.
      * @throws FileMakerException
      */
     public function setLogger($logger) {
@@ -426,7 +439,6 @@ class FileMaker {
      * @throws FileMakerException
      */
     public function getLayout($layoutName) {
-        static $_layouts = array();
         if (isset(self::$_layouts[$layoutName]) ) {
             return self::$_layouts[$layoutName];
         }
@@ -550,16 +562,12 @@ class FileMaker {
      * named 'Cover Image'. For a Object\Record object named $record,
      * URL-encode the path returned by the getField() method.  For example:
      *
-     * <samp>
-     * <IMG src="img.php?-url=<?php echo urlencode($record->getField('Cover Image')); ?>">
-     * </samp>
+     * @example <IMG src="img.php?-url=<?php echo urlencode($record->getField('Cover Image')); ?>">
      *
      * Then as shown below in a line from img.php, pass the URL into
      * getContainerData() for the FileMaker object named $fm:
      *
-     * <samp>
-     * echo $fm->getContainerData($_GET['-url']);
-     * </samp>
+     * @example echo $fm->getContainerData($_GET['-url']);
      *
      * @param string $url URL of the container field contents to get.
      *
@@ -728,9 +736,7 @@ class FileMaker {
      * field contents. For example, get the URL for a container field
      * named 'Cover Image'.  For example:
      *
-     * <samp>
-     * <IMG src="<?php echo $fm->getContainerDataURL($record->getField('Cover Image')); ?>">
-     * </samp>
+     * @example <IMG src="<?php echo $fm->getContainerDataURL($record->getField('Cover Image')); ?>">
      *
      * @param string $url URL of the container field contents to get.
      *

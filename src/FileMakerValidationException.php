@@ -1,21 +1,11 @@
 <?php
+/**
+ * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
+ * @licence BSD
+ */
 namespace airmoi\FileMaker;
 
 use airmoi\FileMaker\Object\Field;
-
-/**
- * FileMaker API for PHP
- *
- * @package FileMaker
- *
- * Copyright � 2005-2007, FileMaker, Inc. All rights reserved.
- * NOTE: Use of this source code is subject to the terms of the FileMaker
- * Software License which accompanies the code. Your use of this source code
- * signifies your agreement to such license terms and conditions. Except as
- * expressly granted in the Software License, no other copyright, patent, or
- * other intellectual property license or right is granted, either expressly or
- * by implication, by FileMaker.
- */
 
 /**
  * Extension of the FileMakerException class that adds information about
@@ -38,7 +28,7 @@ class FileMakerValidationException extends FileMakerException
      *
      * @param Field $field Field object that failed pre-validation.
      * @param integer $rule Pre-validation rule that failed specified as one
-     *        of the FILEMAKER_RULE_* constants.
+     *        of the FileMaker::RULE_* constants.
      * @param string $value Value that failed pre-validation.
      */
     public function addError($field, $rule, $value)
@@ -78,7 +68,7 @@ class FileMakerValidationException extends FileMakerException
      *
      * - 0 => The field object for the field that failed pre-validation.
      * - 1 => The pre-validation rule that failed specified as a
-     *        FILEMAKER_RULE_* constant.
+     *        FileMaker::RULE_* constant.
      * - 2 => The value entered for the field that failed pre-validation.
      *
      * Multiple pre-validation rules can fail on a single field. If you set the

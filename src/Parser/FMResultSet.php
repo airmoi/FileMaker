@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
+ * @licence BSD
+ */
 namespace airmoi\FileMaker\Parser;
 
 use airmoi\FileMaker\FileMaker;
@@ -8,15 +11,24 @@ use airmoi\FileMaker\Object\Layout;
 use airmoi\FileMaker\Object\Field;
 use airmoi\FileMaker\Object\RelatedSet;
 
+/**
+ * Class used to parse FMResultSet structure
+ * @package FileMAker
+ */
 class FMResultSet {
-
+    
+    /**
+     * Array that stores parsed records
+     * @var \airmoi\FileMaker\Object\Record[] 
+     */
+    public $parsedResult = array();
+    
     private $_errorCode;
     private $_serverVersion;
     private $_parsedHead;
     private $_fieldList = array();
     private $_parsedFoundSet;
     private $_relatedSetNames = array();
-    public $parsedResult = array();
     private $_currentRelatedSet;
     private $_currentRecord;
     private $_parentRecord;
@@ -32,6 +44,13 @@ class FMResultSet {
         $this->_fm = $fm;
     }
 
+    /**
+     * Parse the provided xml
+     * 
+     * @param string $xml
+     * @return FileMakerException|boolean
+     * @throws FileMakerException
+     */
     public function parse($xml) {
         if (empty($xml)) {
             $error = new FileMakerException($this->_fm, 'Did not receive an XML document from the server.');
@@ -68,7 +87,15 @@ class FMResultSet {
         return true;
     }
 
-    public function setResult($result, $recordClass = 'airmoi\FileMaker\Object\Record') {
+    /**
+     * Populate a result object with parsed datas
+     * 
+     * @param \airmoi\FileMaker\Object\Result $result
+     * @param string $recordClass string representing the record class name to use
+     * @return FileMakerException|boolean
+     * @throws FileMakerException
+     */
+    public function setResult(\airmoi\FileMaker\Object\Result $result, $recordClass = 'airmoi\FileMaker\Object\Record') {
         if (!$this->_isParsed) {
             $error = new FileMakerException($this->_fm, 'Attempt to get a result object before parsing data.');
             if($this->_fm->getProperty('errorHandling') == 'default') {
@@ -112,6 +139,13 @@ class FMResultSet {
         true;
     }
 
+    /**
+     * Populate a layout object with parsed datas
+     * 
+     * @param Layout $layout
+     * @return FileMakerException|boolean
+     * @throws FileMakerException
+     */
     public function setLayout(Layout $layout) {
         if (!$this->_isParsed) {
             $error = new FileMakerException($this->_fm, 'Attempt to get a layout object before parsing data.');
@@ -120,8 +154,7 @@ class FMResultSet {
             }
             throw $error;
         }
-        if ($this->_layout) {
-            //$layout = & $this->_layout;
+        if ($this->_layout === $layout) {
             return true;
         }
         $layout->name = $this->_parsedHead['layout'];
@@ -222,12 +255,13 @@ class FMResultSet {
         return true;
     }
     /**
+     * xml_parser start element handler
      * 
-     * @param type $unusedVar
-     * @param type $tag
-     * @param type $datas
+     * @param resource $parser
+     * @param string $tag
+     * @param array $datas
      */
-    private function _start($unusedVar, $tag, $datas) {
+    private function _start($parser, $tag, $datas) {
         $datas = $this->_fm->toOutputCharset($datas);
         switch ($tag) {
             case 'error':
@@ -276,11 +310,12 @@ class FMResultSet {
     }
 
     /**
+     * xml_parser end element handler
      * 
-     * @param mixed  $unusedVar
+     * @param mixed $parser
      * @param string $tag
      */
-    private function _end($unusedVar, $tag) {
+    private function _end($parser, $tag) {
         switch ($tag) {
             case 'relatedset-definition':
                 $this->_currentRelatedSet = null;
@@ -309,11 +344,12 @@ class FMResultSet {
     }
 
     /**
+     * xml_parser character data handler (cdata)
      * 
-     * @param type $unusedVar
-     * @param type $data
+     * @param resource $parser
+     * @param string $data
      */
-    private function _cdata($unusedVar, $data) {
+    private function _cdata($parser, $data) {
         $this->_cdata.= $this->_fm->toOutputCharset($data);
     }
 

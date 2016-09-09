@@ -1,22 +1,12 @@
 <?php
+/**
+ * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
+ * @licence BSD
+ */
 namespace airmoi\FileMaker\Object;
 
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
-
-/**
- * FileMaker API for PHP
- *
- * @package FileMaker
- *
- * Copyright © 2005-2007, FileMaker, Inc. All rights reserved.
- * NOTE: Use of this source code is subject to the terms of the FileMaker
- * Software License which accompanies the code. Your use of this source code
- * signifies your agreement to such license terms and conditions. Except as
- * expressly granted in the Software License, no other copyright, patent, or
- * other intellectual property license or right is granted, either expressly or
- * by implication, by FileMaker.
- */
 
 /**
  * Default Record class that represents each record of a result set.
@@ -26,12 +16,10 @@ use airmoi\FileMaker\FileMakerException;
  * records.
  *
  * Instead of this class, you can specify a different class to use for Record
- * objects. To specify the record class to use, open the
- * FileMaker/conf/filemaker-api.php configuration file where the API is
- * installed. Then set $__FM_CONFIG['recordClass'] to the name of the record
- * class to use. The class you specify should be a subclass of the
- * Record base class or encapsulate its functionality. In PHP 5,
- * this class would implement an interface that alternate classes would be
+ * objects. To specify the record class to use, set FileMaker 'recordClass' 
+ * property to the name of the record class to use. The class you specify
+ * should be a subclass of the Record base class or encapsulate its functionality. 
+ * In PHP 5, this class would implement an interface that alternate classes would be
  * required to implement as well.
  *
  * @package FileMaker

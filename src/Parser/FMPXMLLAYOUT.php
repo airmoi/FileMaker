@@ -1,12 +1,19 @@
 <?php
-
+/**
+ * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
+ * @licence BSD
+ */
 namespace airmoi\FileMaker\Parser;
 
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\Object\Layout;
 
-
+/**
+ * Class used to parse FMPXMLLAYOUT structure
+ * 
+ * @package FileMaker
+ */
 class FMPXMLLAYOUT {
 
     private $_fields = [];
@@ -19,6 +26,10 @@ class FMPXMLLAYOUT {
     private $_valueList;
     private $_displayValue;
 
+    /**
+     * 
+     * @param FileMaker $fm
+     */
     public function __construct(FileMaker $fm) {
         $this->_fm = $fm;
     }
@@ -62,7 +73,14 @@ class FMPXMLLAYOUT {
         return true;
     }
 
-    public function setExtendedInfo(Layout &$layout) {
+    /**
+     * Add extended infos to a Layout object
+     * 
+     * @param Layout $layout
+     * @return FileMakerException
+     * @throws FileMakerException
+     */
+    public function setExtendedInfo(Layout $layout) {
         if (!$this->_isParsed) {
             $error = new FileMakerException($this->_fm, 'Attempt to set extended information before parsing data.');
             if($this->_fm->getProperty('errorHandling') == 'default') {
@@ -85,7 +103,14 @@ class FMPXMLLAYOUT {
         }
     }
 
-    private function _start($unusedVar, $type, $datas) {
+    /**
+     * xml_parser start element handler
+     * 
+     * @param resource $parser
+     * @param string $type
+     * @param array $datas
+     */
+    private function _start($parser, $type, $datas) {
         $datas = $this->_fm->toOutputCharset($datas);
         switch ($type) {
             case 'FIELD':
@@ -108,7 +133,13 @@ class FMPXMLLAYOUT {
         $this->inside_data = false;
     }
 
-    private function _end($unusedVar, $type) {
+    /**
+     * xml_parser end element handler
+     * 
+     * @param resource $parser
+     * @param string $type
+     */
+    private function _end($parser, $type) {
         switch ($type) {
             case 'FIELD':
                 $this->_fieldName = null;
@@ -121,7 +152,13 @@ class FMPXMLLAYOUT {
         $this->inside_data = false;
     }
 
-    public function _cdata($unusedVar, $datas) {
+    /**
+     * xml_parser character data handler (cdata)
+     * 
+     * @param resource $parser
+     * @param string $datas
+     */
+    public function _cdata($parser, $datas) {
         if ($this->_valueList !== null && preg_match('|\S|', $datas)) {
 
             if ($this->inside_data) {
@@ -135,6 +172,13 @@ class FMPXMLLAYOUT {
         }
     }
 
+    /**
+     * Add values to an existing array
+     * 
+     * @param array $array
+     * @param array $values
+     * @return boolean
+     */
     public function associative_array_push(&$array, $values) {
         if (is_array($values)) {
             foreach ($values as $key => $value) {
