@@ -13,7 +13,7 @@
  * by implication, by FileMaker.
  */
 
-$__FM_ERRORS = array(
+return array(
     -1 => 'Unknown error',
     0 => 'No error',
     1 => 'User canceled action',

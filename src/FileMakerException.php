@@ -13,7 +13,18 @@ namespace airmoi\FileMaker;
  */
 class FileMakerException extends \Exception
 {
+    /**
+     *
+     * @var FileMaker
+     */
     private $_fm;
+    
+    /**
+     *
+     * @var array
+     */
+    private static $strings;
+    
     /**
      * Overloaded Exception constructor.
      *
@@ -49,12 +60,13 @@ class FileMakerException extends \Exception
             $lang = 'en';
         }
 
-        static $strings = array();
-        if (empty($strings[$lang])) {
-            if (!@include_once dirname(__FILE__) . '/Error/' . $lang . '.php') {
-                include_once dirname(__FILE__) . '/Error/en.php';
+        if (empty(self::$strings[$lang])) {
+            if (file_exists(dirname(__FILE__) . '/Error/' . $lang . '.php')) {
+                $path = dirname(__FILE__) . '/Error/' . $lang . '.php';
+            } else {
+                $path = dirname(__FILE__) . '/Error/en.php';
             }
-            $strings[$lang] = $__FM_ERRORS;
+            $strings[$lang] = require($path);
         }
 
         if (isset($strings[$lang][$code])) {

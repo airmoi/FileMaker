@@ -13,7 +13,7 @@
  * by implication, by FileMaker.
  */
 
-$__FM_ERRORS = array(
+return array(
     -1 => '原因不明のエラー',
     0 => 'エラーなし',
     1 => 'ユーザによるキャンセル',
