@@ -1,6 +1,6 @@
 <?php
 
-namespace airmoi\tests;
+namespace airmoi\FileMaker;
 
 use airmoi\FileMaker\FileMaker;
 
