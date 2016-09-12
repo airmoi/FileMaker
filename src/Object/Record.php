@@ -284,7 +284,7 @@ class Record {
         if( !is_null($this->parent) && !strpos($field, '::')){
             $field = $this->relatedSetName. '::' . $field;
         }
-        if ( array_search($field, $this->getFields()) === false) {
+        if ( !array_key_exists($field, $this->layout->fields)) {
                 $error = new FileMakerException($this->fm, 'Field "'.$field.'" is missing');
                 if($this->fm->getProperty('errorHandling') == 'default') {
                     return $error;
@@ -563,8 +563,11 @@ class Record {
     private function _commitAdd() {
         $addCommand = $this->fm->newAddCommand($this->layout->getName(), $this->fields);
         $result = $addCommand->execute();
-        $records = $result->getRecords();
-        return $this->_updateFrom($records[0]);
+        if(FileMaker::isError($result)){
+            return $result;
+        }
+        $records = $result->getFirstRecord();
+        return $this->_updateFrom($records);
     }
 
     /**
