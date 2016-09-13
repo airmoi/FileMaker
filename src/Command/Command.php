@@ -150,7 +150,7 @@ class Command
      */
     public function validate($fieldName = null)
     {
-        if (!is_a($this, __NAMESPACE__.'\Add') && !is_a($this, __NAMESPACE__.'\Edit')) {
+        if (!is_a($this, Add::class) && !is_a($this, Edit::class)) {
             return true;
         }
         $layout = $this->fm->getLayout($this->_layout);
@@ -193,8 +193,12 @@ class Command
                     }
             }
         }
-        if ( $validationErrors->numErrors() )
+        if ( $validationErrors->numErrors() ) {
+            if($this->fm->getProperty('errorHandling') == 'default') {
+                return $validationErrors;
+            }
             throw $validationErrors;
+        }
         return true;
     }
 

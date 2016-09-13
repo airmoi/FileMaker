@@ -274,7 +274,7 @@ class FMResultSet {
                 $this->_parsedHead = $datas;
                 break;
             case 'relatedset-definition':
-                $this->_relatedSetNames[$datas['table']] = array();
+                $this->_relatedSetNames[$datas['table']] = [];
                 $this->_currentRelatedSet = $datas['table'];
                 break;
             case 'field-definition':

@@ -128,6 +128,7 @@ class Field
                         }
                     }
                     break;
+                case FileMaker::RULE_TIMEOFDAY :
                 case FileMaker::RULE_TIME_FIELD :
                     if (!empty($value)) {
                         if (!$this->checkTimeFormat($value)) {
@@ -200,16 +201,6 @@ class Field
                                     }
                                 }
                                 break;
-                        }
-                    }
-                    break;
-                case FileMaker::RULE_TIMEOFDAY :
-                    if (!empty($value)) {
-                        if ($this->checkTimeFormat($value)) {
-                            $this->checkTimeValidity($value, $rule, $validationError, TRUE);
-                        } else {
-
-                            $validationError->addError($this, $rule, $value);
                         }
                     }
                     break;

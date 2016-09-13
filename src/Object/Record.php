@@ -104,11 +104,11 @@ class Record {
             $field = $this->relatedSetName. '::' . $field;
         }
         if (!isset($this->fields[$field])) {
-            //$this->_fm->log('Field "' . $field . '" not found.', FileMaker::LOG_INFO);
+            $this->fm->log('Field "' . $field . '" not found.', FileMaker::LOG_INFO);
             return null;
         }
         if (!isset($this->fields[$field][$repetition])) {
-            //$this->_fm->log('Repetition "' . (int) $repetition . '" does not exist for "' . $field . '".', FileMaker::LOG_INFO);
+            $this->fm->log('Repetition "' . (int) $repetition . '" does not exist for "' . $field . '".', FileMaker::LOG_INFO);
             return null;
         }
         $format = $this->layout->getField($field)->result;
@@ -156,7 +156,7 @@ class Record {
             $fieldName = $this->relatedSetName. '::' . $fieldName;
         }
         if (!isset($this->fields[$fieldName])) {
-            $this->fm->log('Field "' . $field . '" not found.', FileMaker::LOG_INFO);
+            $this->fm->log('Field "' . $fieldName . '" not found.', FileMaker::LOG_INFO);
             return [];
         }
 
@@ -273,21 +273,21 @@ class Record {
         $format = $this->layout->getField($field)->result;
         if( !empty($value) && $this->fm->getProperty('dateFormat') !== null && ($format == 'date' || $format == 'timestamp')){
             if( $format == 'date' ){
-                if(!$dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value . ' 00:00:00')) {
+                if(!$dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value . ' 00:00:00', new \DateTimeZone(date_default_timezone_get()))) {
                     $error = new FileMakerException($this->fm, $value . ' could not be converted to a valid timestamp for field ' . $field . ' (expected format '. $this->fm->getProperty('dateFormat') .')');
-                if($this->fm->getProperty('errorHandling') == 'default') {
-                    return $error;
-                }
-                throw $error;
+                    if($this->fm->getProperty('errorHandling') == 'default') {
+                        return $error;
+                    }
+                    throw $error;
                 }
                 $value = $dateTime->format('m/d/Y');
             } else {
-                if(!$dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value)) {
+                if(!$dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value, new \DateTimeZone(date_default_timezone_get()))) {
                     $error = new FileMakerException($this->fm, $value . ' could not be converted to a valid timestamp for field ' . $field . ' (expected format '. $this->fm->getProperty('dateFormat') .')');
-                if($this->fm->getProperty('errorHandling') == 'default') {
-                    return $error;
-                }
-                throw $error;
+                    if($this->fm->getProperty('errorHandling') == 'default') {
+                        return $error;
+                    }
+                    throw $error;
                 }
                 $value = $dateTime->format( 'm/d/Y H:i:s' );
             }
@@ -308,6 +308,8 @@ class Record {
      * If layout data for the target of this command has not already
      * been loaded, calling this method loads layout data so that
      * the type of the field can be checked.
+     * 
+     * @todo use DateTime instead of date() to handle pre-epoch timestamps
      *
      * @param string $field Name of the field to set.
      * @param string $timestamp Timestamp value.
@@ -389,6 +391,9 @@ class Record {
      */
     public function newRelatedRecord($relatedSet) {
         $relatedSetInfos = $this->layout->getRelatedSet($relatedSet);
+        if(FileMaker::isError($relatedSetInfos)){
+            return $relatedSetInfos;
+        }
         $record = new Record($relatedSetInfos);
         $record->setParent($this);
         $record->relatedSetName = $relatedSet;
@@ -434,7 +439,7 @@ class Record {
      * @param string $fieldName Name of field to pre-validate. If empty,
      *        pre-validates the entire record.
      *
-     * @return boolean TRUE, if pre-validation passes for $value.
+     * @return boolean|\airmoi\FileMaker\FileMakerValidationException TRUE, if pre-validation passes for $value.
      * @throws \airmoi\FileMaker\FileMakerValidationException
      */
     public function validate($fieldName = null) {
