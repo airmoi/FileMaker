@@ -84,25 +84,12 @@ class Add extends Command {
      * @return string
      */
     public function setField($field, $value, $repetition = 0) {
-        //handle related fields in portals or in model
-        if($pos = strpos($field, ':')){
-            $fieldName = substr($field, 0, strpos($field, '.'));
-            $relationName = substr($field, 0, $pos);
-            if( $this->fm->getLayout($this->_layout)->hasRelatedSet($relationName)) {
-                $Field = $this->fm->getLayout($this->_layout)->getRelatedSet(substr($field, 0, $pos))->getField($fieldName);
-            }
-            else {
-                $Field = $this->fm->getLayout($this->_layout)->getField($field);
-            }
-        }
-        else {
-            $Field = $this->fm->getLayout($this->_layout)->getField($field);
-        }
-        /*if ( array_search($field, $this->fm->getLayout($this->_layout)->listFields()) === false){
-                throw new FileMakerException($this->fm, 'Field "'.$field.'" is missing');
+        $fieldInfos = $this->fm->getLayout($this->_layout)->getField($field);
+        /* if(FileMaker::isError($fieldInfos)){
+            return $fieldInfos;
         }*/
-
-        $format = $Field->result;
+        
+        $format = FileMaker::isError($fieldInfos) ? null : $fieldInfos->result;
         if( !empty($value) && $this->fm->getProperty('dateFormat') !== null && ($format == 'date' || $format == 'timestamp')){
             if( $format == 'date' ){
                 $dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value . ' 00:00:00');
