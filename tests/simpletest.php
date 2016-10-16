@@ -10,8 +10,7 @@ use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\FileMakerValidationException;
 
-require('../autoloader.php');
-require('../FileMaker.php');
+require __DIR__ . '/../autoloader.php';
 
 echo "==========================================" . PHP_EOL;
 echo " FILEMAKER API UNIT TEST" . PHP_EOL;
@@ -372,9 +371,3 @@ try {
     echo "  - Message :" . $e->getMessage() . PHP_EOL;
     echo "  - Stack :" . $e->getTraceAsString() . PHP_EOL;
 }
-
-
-
-
-
-

@@ -1,8 +1,6 @@
 <?php
 namespace airmoi\FileMaker\Command;
 
-use airmoi\FileMaker\FileMaker;
-
 /**
  * FileMaker API for PHP
  *
@@ -16,8 +14,6 @@ use airmoi\FileMaker\FileMaker;
  * other intellectual property license or right is granted, either expressly or
  * by implication, by FileMaker.
  */
-
-
 
 /**
  * Command class that performs multiple find requests, also known as a compound
