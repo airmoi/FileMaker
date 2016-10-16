@@ -429,9 +429,9 @@ class Field
      * If this field is not associated with a value list, this method returns 
      * NULL.
      *
-     * @param string  $recid Record from which to display the value list.
+     * @param string $recid Record from which to display the value list.
      * @throws FileMakerException
-     * @return array Value list array.
+     * @return array|FileMakerException Value list array.
      */
     public function getValueList($listName = null)
     {
@@ -444,7 +444,7 @@ class Field
      * 'EDITTEXT', 'POPUPLIST', 'POPUPMENU', 'CHECKBOX', 'RADIOBUTTONS' or
      * 'CALENDAR'.
      *
-     * @return string Style type.
+     * @return string|FileMakerException Style type.
      * @throws FileMakerException
      */
     public function getStyleType()

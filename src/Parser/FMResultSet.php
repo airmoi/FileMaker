@@ -34,7 +34,11 @@ class FMResultSet {
 
     public function parse($xml) {
         if (empty($xml)) {
-            throw new FileMakerException($this->_fm, 'Did not receive an XML document from the server.');
+            $error = new FileMakerException($this->_fm, 'Did not receive an XML document from the server.');
+            if($this->_fm->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         }
         $this->_xmlParser = xml_parser_create('UTF-8');
         xml_set_object($this->_xmlParser, $this);
@@ -43,14 +47,22 @@ class FMResultSet {
         xml_set_element_handler($this->_xmlParser, '_start', '_end');
         xml_set_character_data_handler($this->_xmlParser, '_cdata');
         if (!@xml_parse($this->_xmlParser, $xml)) {
-            throw new FileMakerException($this->_fm, sprintf('XML error: %s at line %d', xml_error_string(xml_get_error_code($this->_xmlParser)), xml_get_current_line_number($this->_xmlParser)));
+            $error = new FileMakerException($this->_fm, sprintf('XML error: %s at line %d', xml_error_string(xml_get_error_code($this->_xmlParser)), xml_get_current_line_number($this->_xmlParser)));
+            if($this->_fm->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         }
         xml_parser_free($this->_xmlParser);
         if (!empty($this->_errorCode)) {
-            throw new FileMakerException($this->_fm, null, $this->_errorCode);
+            $error = new FileMakerException($this->_fm, null, $this->_errorCode);
         }
         if (version_compare($this->_serverVersion['version'], FileMaker::getMinServerVersion(), '<')) {
-            throw new FileMakerException($this->_fm, 'This API requires at least version ' . FileMaker::getMinServerVersion() . ' of FileMaker Server to run (detected ' . $this->_serverVersion['version'] . ').');
+            $error = new FileMakerException($this->_fm, 'This API requires at least version ' . FileMaker::getMinServerVersion() . ' of FileMaker Server to run (detected ' . $this->_serverVersion['version'] . ').');
+            if($this->_fm->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         }
         $this->_isParsed = true;
         return true;
@@ -58,7 +70,11 @@ class FMResultSet {
 
     public function setResult($result, $recordClass = 'airmoi\FileMaker\Object\Record') {
         if (!$this->_isParsed) {
-            throw new FileMakerException($this->_fm, 'Attempt to get a result object before parsing data.');
+            $error = new FileMakerException($this->_fm, 'Attempt to get a result object before parsing data.');
+            if($this->_fm->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         }
         if ($this->_result) {
             $result = $this->_result;
@@ -98,10 +114,14 @@ class FMResultSet {
 
     public function setLayout(Layout $layout) {
         if (!$this->_isParsed) {
-            throw new FileMakerException($this->_fm, 'Attempt to get a layout object before parsing data.');
+            $error = new FileMakerException($this->_fm, 'Attempt to get a layout object before parsing data.');
+            if($this->_fm->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         }
         if ($this->_layout) {
-            $layout = & $this->_layout;
+            //$layout = & $this->_layout;
             return true;
         }
         $layout->name = $this->_parsedHead['layout'];
