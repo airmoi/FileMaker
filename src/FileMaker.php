@@ -125,7 +125,7 @@ class FileMaker {
      *
      */
     public static function isError($variable) {
-        return is_a($variable, __NAMESPACE__.'FileMakerException');
+        return $variable instanceof FileMakerException;
     }
 
     /**
@@ -186,6 +186,13 @@ class FileMaker {
      * @param string $value Property's new value.
      */
     public function setProperty($prop, $value) {
+        if(!array_key_exists($prop, $this->_properties)) {
+            $error = new FileMakerException($this, 'Unsupported property ' . $prop);
+            if($this->getProperty('errorHandling') === 'default'){
+                return $error;
+            }
+            throw $error;
+        }
         $this->_properties[$prop] = $value;
     }
 
