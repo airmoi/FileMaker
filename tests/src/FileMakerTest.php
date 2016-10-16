@@ -12,14 +12,16 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase {
     /**
      * @var FileMaker
      */
-    protected $object;
+    protected $fm;
+    
+    protected $_recid;
 
     /**
      * Sets up the fixture, for example, opens a network connection.
      * This method is called before a test is executed.
      */
     protected function setUp() {
-        $this->object = new FileMaker($GLOBALS['DB_FILE'], $GLOBALS['DB_HOST'], $GLOBALS['DB_USER'], $GLOBALS['DB_PASSWD']);
+        $this->fm = new FileMaker($GLOBALS['DB_FILE'], $GLOBALS['DB_HOST'], $GLOBALS['DB_USER'], $GLOBALS['DB_PASSWD']);
     }
 
     /**
@@ -31,11 +33,39 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase {
     }
 
     /**
+     * @covers airmoi\FileMaker\FileMaker::listDatabases
+     */
+    public function testListDatabases() {
+        $databases = $this->fm->listDatabases();
+        $this->assertTrue(is_array($databases));
+        
+        $this->assertTrue(in_array($GLOBALS['DB_FILE'], $databases, 'Database ' . $GLOBALS['DB_FILE'] . ' is missing. Test can\'t run'));
+    }
+
+    /**
+     * @covers airmoi\FileMaker\FileMaker::listLayouts
+     */
+    public function testListLayouts() {
+        $layouts = $this->fm->listLayouts();
+        $this->assertTrue(in_array('sample', $layouts));
+    }
+
+    /**
+     * @covers airmoi\FileMaker\FileMaker::getLayout
+     */
+    public function testGetLayout() {
+        $layout = $this->fm->getLayout('sample');
+        $this->assertInstanceOf(\airmoi\FileMaker\Object\Layout::class, $layout);
+        
+        $this->assertEquals('sample', $layout->getName(), 'Layout name missmatch (' . $layout->table . ')');
+    }
+
+    /**
      * @covers airmoi\FileMaker\FileMaker::isError
      */
     public function testIsError() {
-        $error = new \airmoi\FileMaker\FileMakerException($this->object, 'Test FileMaker exception');
-        $record = new \airmoi\FileMaker\Object\Record(new \airmoi\FileMaker\Object\Layout($this->object));
+        $error = new \airmoi\FileMaker\FileMakerException($this->fm, 'Test FileMaker exception');
+        $record = new \airmoi\FileMaker\Object\Record(new \airmoi\FileMaker\Object\Layout($this->fm));
 
         $this->assertTrue(FileMaker::isError($error));
         $this->assertFalse(FileMaker::isError($record));
@@ -46,34 +76,34 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase {
      */
     public function testGetMinServerVersion() {
         // Remove the following lines when you implement this test.
-        $this->assertStringMatchesFormat('%d.%d.%d.%d', $this->object->getMinServerVersion());
+        $this->assertStringMatchesFormat('%d.%d.%d.%d', $this->fm->getMinServerVersion());
     }
 
     /**
      * @covers airmoi\FileMaker\FileMaker::setProperty
      */
     public function testSetProperty() {
-        $this->object->setProperty('logLevel', FileMaker::LOG_INFO);
+        $this->fm->setProperty('logLevel', FileMaker::LOG_INFO);
 
         //Test valid property
-        $this->assertEquals(FileMaker::LOG_INFO, $this->object->getProperty('logLevel'));
+        $this->assertEquals(FileMaker::LOG_INFO, $this->fm->getProperty('logLevel'));
 
         //Test invalid property (should return an error)
-        $this->assertTrue(FileMaker::isError($this->object->setProperty('fakeProperty', FileMaker::LOG_INFO)));
+        $this->assertTrue(FileMaker::isError($this->fm->setProperty('fakeProperty', FileMaker::LOG_INFO)));
     }
 
     /**
      * @covers airmoi\FileMaker\FileMaker::getProperty
      */
     public function testGetProperty() {
-        $this->assertEquals('en', $this->object->getProperty('locale'));
+        $this->assertEquals('en', $this->fm->getProperty('locale'));
     }
 
     /**
      * @covers airmoi\FileMaker\FileMaker::getProperties
      */
     public function testGetProperties() {
-        $this->assertArrayHasKey('locale', $this->object->getProperties());
+        $this->assertArrayHasKey('locale', $this->fm->getProperties());
     }
 
     /**
@@ -91,71 +121,98 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase {
      * @covers airmoi\FileMaker\FileMaker::newAddCommand
      */
     public function testNewAddCommand() {
-        $command = $this->object->newAddCommand('sample');
+        $command = $this->fm->newAddCommand('sample', ['text_field' => 'Test 1']);
         $this->assertInstanceOf(\airmoi\FileMaker\Command\Add::class, $command);
+        
+        $command->setField('date_field', date('m/d/Y'));
+        
+        $result = $command->execute();
+        $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
+        
+        $record = $result->getFirstRecord();
+        $this->assertInstanceOf(\airmoi\FileMaker\Object\Record::class, $record);
+        
+        $this->assertEquals('Test 1', $record->getField('text_field'));
+        
+        return ['recid' => $record->getRecordId(), 'tableCount' => $result->tableCount];
     }
 
     /**
      * @covers airmoi\FileMaker\FileMaker::newEditCommand
+     * @depends testNewAddCommand
      */
-    public function testNewEditCommand() {
-        $command = $this->object->newEditCommand('sample', 1);
-        $this->assertInstanceOf(\airmoi\FileMaker\Command\Edit::class, $this->object->newEditCommand('sample', 1));
-    }
-
-    /**
-     * @covers airmoi\FileMaker\FileMaker::newDeleteCommand
-     * @todo   Implement testNewDeleteCommand().
-     */
-    public function testNewDeleteCommand() {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-                'This test has not been implemented yet.'
-        );
+    public function testNewEditCommand($datas) {
+        $command = $this->fm->newEditCommand('sample', $datas['recid'], ['text_field' => 'Test 2']);
+        $this->assertInstanceOf(\airmoi\FileMaker\Command\Edit::class, $command);
+        
+        $result = $command->execute();
+        $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
+        
+        $record = $result->getFirstRecord();
+        $this->assertInstanceOf(\airmoi\FileMaker\Object\Record::class, $record);
+        
+        $this->assertEquals('Test 2', $record->getField('text_field'));
     }
 
     /**
      * @covers airmoi\FileMaker\FileMaker::newDuplicateCommand
-     * @todo   Implement testNewDuplicateCommand().
+     * @depends testNewAddCommand
      */
-    public function testNewDuplicateCommand() {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-                'This test has not been implemented yet.'
-        );
+    public function testNewDuplicateCommand($datas) {
+        $command = $this->fm->newDuplicateCommand('sample', $datas['recid']);
+        $this->assertInstanceOf(\airmoi\FileMaker\Command\Duplicate::class, $command);
+        
+        $result = $command->execute();
+        $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
+        
+        $record = $result->getFirstRecord();
+        $this->assertInstanceOf(\airmoi\FileMaker\Object\Record::class, $record);
+        
+        $this->assertEquals('Test 2', $record->getField('text_field'));
+        $this->assertNotEquals($datas['recid'], $record->getRecordId());
+    }
+    /**
+     * @covers airmoi\FileMaker\FileMaker::newDeleteCommand
+     * @depends testNewAddCommand
+     */
+    public function testNewDeleteCommand($datas) {
+        $command = $this->fm->newDeleteCommand('sample', $datas['recid']);
+        $this->assertInstanceOf(\airmoi\FileMaker\Command\Delete::class, $command);
+        
+        $result = $command->execute();
+        $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
+        
+        $this->assertEquals($datas['tableCount'] , (int)$result->tableCount);
     }
 
     /**
-     * @covers airmoi\FileMaker\FileMaker::newFindCommand
-     * @todo   Implement testNewFindCommand().
+     * @covers airmoi\FileMaker\FileMaker::listScripts
      */
-    public function testNewFindCommand() {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-                'This test has not been implemented yet.'
-        );
+    public function testListScripts() {
+        $scripts = $this->fm->listScripts();
+        $this->assertTrue( in_array('cleanup db', $scripts ) );
     }
 
     /**
-     * @covers airmoi\FileMaker\FileMaker::newCompoundFindCommand
-     * @todo   Implement testNewCompoundFindCommand().
+     * @covers airmoi\FileMaker\FileMaker::newPerformScriptCommand
+     * @depends testNewAddCommand
      */
-    public function testNewCompoundFindCommand() {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-                'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers airmoi\FileMaker\FileMaker::newFindRequest
-     * @todo   Implement testNewFindRequest().
-     */
-    public function testNewFindRequest() {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-                'This test has not been implemented yet.'
-        );
+    public function testNewPerformScriptCommand() {
+        $command = $this->fm->newPerformScriptCommand('sample', 'cleanup db');
+        $this->assertInstanceOf(\airmoi\FileMaker\Command\PerformScript::class, $command);
+        
+        $result = $command->execute();
+        $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
+        
+        $this->assertEquals( 0 , (int)$result->tableCount);
+        
+        $command = $this->fm->newPerformScriptCommand('sample', 'create sample data', 50 );
+        $result = $command->execute();
+        $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
+        $this->assertEquals( 50 , (int)$result->tableCount);
+        
+        $this->assertRegExp('#(http:\/\/|https:\/\/)?[^:\/]*(:\d{2})?\/fmi\/xml\/fmresultset\.xml\?-db=[^\&]*\&-lay=[^\&]*\&-script=[^\&]*\&-script.param=[^\&]*\&-findany#', $this->fm->lastRequestedUrl);
+        
     }
 
     /**
@@ -163,142 +220,131 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase {
      * @todo   Implement testNewFindAnyCommand().
      */
     public function testNewFindAnyCommand() {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-                'This test has not been implemented yet.'
-        );
+        $command =$this->fm->newFindAnyCommand('sample');
+        $this->assertInstanceOf(\airmoi\FileMaker\Command\FindAny::class, $command);
+        
+        $result = $command->execute();
+        $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
+        
+        $this->assertEquals(1, $result->getFoundSetCount());
+        
+    }
+
+    /**
+     * @covers airmoi\FileMaker\FileMaker::newFindCommand
+     */
+    public function testNewFindCommand() {
+        $command = $this->fm->newFindCommand('sample');
+        $this->assertInstanceOf(\airmoi\FileMaker\Command\Find::class, $command);
+        
+        $command->addFindCriterion('id', FileMaker::FIND_GT . '25');
+        $result = $command->execute();
+        $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
+        
+        $this->assertEquals(25, $result->getFoundSetCount());
+        
+    }
+
+    /**
+     * @covers airmoi\FileMaker\FileMaker::newCompoundFindCommand
+     */
+    public function testNewCompoundFindCommand() {
+        $command = $this->fm->newCompoundFindCommand('sample');
+        $this->assertInstanceOf(\airmoi\FileMaker\Command\CompoundFind::class, $command);
+        
+        $request1 = $this->fm->newFindRequest('sample');
+        $this->assertInstanceOf(\airmoi\FileMaker\Command\FindRequest::class, $request1);
+        
+        $request1->addFindCriterion('id', "1...10");
+        $command->add(1, $request1);
+        
+        $request2 = $this->fm->newFindRequest('sample');
+        $this->assertInstanceOf(\airmoi\FileMaker\Command\FindRequest::class, $request2);
+        
+        $request2->addFindCriterion('id', "40...50");
+        $command->add(2, $request2);
+        
+        $request3 = $this->fm->newFindRequest('sample');
+        $this->assertInstanceOf(\airmoi\FileMaker\Command\FindRequest::class, $request3);
+        
+        $request3->addFindCriterion('id', "45");
+        $request3->setOmit(true);
+        $command->add(3, $request3);
+        
+        $result = $command->execute();
+        $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
+        
+        $this->assertEquals(20, $result->getFoundSetCount());
     }
 
     /**
      * @covers airmoi\FileMaker\FileMaker::newFindAllCommand
-     * @todo   Implement testNewFindAllCommand().
      */
     public function testNewFindAllCommand() {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-                'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers airmoi\FileMaker\FileMaker::newPerformScriptCommand
-     * @todo   Implement testNewPerformScriptCommand().
-     */
-    public function testNewPerformScriptCommand() {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-                'This test has not been implemented yet.'
-        );
+        $command =$this->fm->newFindAllCommand('sample');
+        $this->assertInstanceOf(\airmoi\FileMaker\Command\FindAll::class, $command);
+        
+        $result = $command->execute();
+        $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
+        
+        $this->assertEquals(50, $result->getFoundSetCount());
     }
 
     /**
      * @covers airmoi\FileMaker\FileMaker::createRecord
-     * @todo   Implement testCreateRecord().
      */
     public function testCreateRecord() {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-                'This test has not been implemented yet.'
-        );
+        $record = $this->fm->createRecord('sample', [ 'text_field' => __METHOD__]);
+        $this->assertInstanceOf(\airmoi\FileMaker\Object\Record::class, $record);
+        
+        $result = $record->commit();
+        
+        $this->assertTrue($result);
+        return $record->getRecordId();
     }
 
     /**
      * @covers airmoi\FileMaker\FileMaker::getRecordById
-     * @todo   Implement testGetRecordById().
+     * @depends testCreateRecord
      */
-    public function testGetRecordById() {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-                'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers airmoi\FileMaker\FileMaker::getLayout
-     * @todo   Implement testGetLayout().
-     */
-    public function testGetLayout() {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-                'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers airmoi\FileMaker\FileMaker::listDatabases
-     * @todo   Implement testListDatabases().
-     */
-    public function testListDatabases() {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-                'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers airmoi\FileMaker\FileMaker::listScripts
-     * @todo   Implement testListScripts().
-     */
-    public function testListScripts() {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-                'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers airmoi\FileMaker\FileMaker::listLayouts
-     * @todo   Implement testListLayouts().
-     */
-    public function testListLayouts() {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-                'This test has not been implemented yet.'
-        );
+    public function testGetRecordById($recId) {
+        $record = $this->fm->getRecordById('sample', $recId);
+        $this->assertInstanceOf(\airmoi\FileMaker\Object\Record::class, $record);
+        
+        $this->assertStringEndsWith('testCreateRecord', $record->getField('text_field'));
+        $this->fm->newDeleteCommand('sample', $record->getRecordId())->execute();
     }
 
     /**
      * @covers airmoi\FileMaker\FileMaker::getContainerData
-     * @todo   Implement testGetContainerData().
      */
     public function testGetContainerData() {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-                'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers airmoi\FileMaker\FileMaker::execute
-     * @todo   Implement testExecute().
-     */
-    public function testExecute() {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-                'This test has not been implemented yet.'
-        );
+        $record = $this->fm->newFindAnyCommand('sample')->execute()->getFirstRecord();
+        
+        $datas = $this->fm->getContainerData($record->getField('container_field'));
+        $this->assertEquals(18556, strlen($datas));
     }
 
     /**
      * @covers airmoi\FileMaker\FileMaker::getContainerDataURL
-     * @todo   Implement testGetContainerDataURL().
      */
     public function testGetContainerDataURL() {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-                'This test has not been implemented yet.'
-        );
+        $record = $this->fm->newFindAnyCommand('sample')->execute()->getFirstRecord();
+        
+        $url = $this->fm->getContainerDataURL($record->getField('container_field'));
+        $this->assertStringEndsWith('/fmi/xml/cnt/fms.png?-db=filemaker-test&-lay=sample&-recid='.$record->getRecordId().'&-field=container_field(1)', $url);
     }
 
     /**
      * @covers airmoi\FileMaker\FileMaker::__set
-     * @todo   Implement test__set().
      */
     public function test__set() {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-                'This test has not been implemented yet.'
-        );
+        $this->fm->logLevel = 5;
+        $this->assertEquals(5, $this->fm->getProperty('logLevel'));
+        try {
+            $this->fm->fakeVar = "Hello World";
+        } catch (\airmoi\FileMaker\FileMakerException $e) {
+        }
     }
 
     /**
@@ -311,38 +357,4 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase {
                 'This test has not been implemented yet.'
         );
     }
-
-    /**
-     * @covers airmoi\FileMaker\FileMaker::getLastRequestedUrl
-     * @todo   Implement testGetLastRequestedUrl().
-     */
-    public function testGetLastRequestedUrl() {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-                'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers airmoi\FileMaker\FileMaker::dateConvertInput
-     * @todo   Implement testDateConvertInput().
-     */
-    public function testDateConvertInput() {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-                'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers airmoi\FileMaker\FileMaker::dateConvertOutput
-     * @todo   Implement testDateConvertOutput().
-     */
-    public function testDateConvertOutput() {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-                'This test has not been implemented yet.'
-        );
-    }
-
 }
