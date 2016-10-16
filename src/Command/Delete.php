@@ -43,12 +43,16 @@ class Delete extends Command
     
     /**
      * 
-     * @return \airmoi\FileMaker\Object\Result
+     * @return \airmoi\FileMaker\Object\Result|FileMakerException
      * @throws FileMakerException
      */
     public function execute() {
         if (empty($this->recordId)) {
-            throw new FileMakerException($this->fm, 'Delete commands require a record id.');
+            $error = new FileMakerException($this->fm, 'Delete commands require a record id.');
+            if($this->fm->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         }
         $params = $this->_getCommandParams();
         $params['-delete'] = true;

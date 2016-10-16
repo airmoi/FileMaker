@@ -46,12 +46,16 @@ class Duplicate extends Command
      * Return a Result object with the duplicated record
      * use Result->getFirstRecord() to get the record
      * 
-     * @return Result
+     * @return Result|FileMakerException
      * @throws FileMakerException
      */
     public function execute() {
         if (empty($this->recordId)) {
-            throw new FileMakerException($this->fm, 'Duplicate commands require a record id.');
+            $error = new FileMakerException($this->fm, 'Duplicate commands require a record id.');
+            if($this->fm->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         }
         $params = $this->_getCommandParams();
         $params['-dup'] = true;

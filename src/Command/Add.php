@@ -53,7 +53,7 @@ class Add extends Command {
 
     /**
      *
-     * @return \airmoi\FileMaker\Object\Result
+     * @return \airmoi\FileMaker\Object\Result|FileMakerException
      * @throws FileMakerException
      */
     public function execute() {
@@ -144,7 +144,7 @@ class Add extends Command {
      * @param integer $repetition Field repetition number to set.
      *        Defaults to the first repetition.
      *
-     * @return string
+     * @return string|FileMakerException
      * @throws FileMakerException
      */
     public function setFieldFromTimestamp($field, $timestamp, $repetition = 0) {
@@ -158,7 +158,11 @@ class Add extends Command {
             case 'timestamp':
                 return $this->setField($field, date('m/d/Y H:i:s', $timestamp), $repetition);
         }
-        throw new FileMakerException($this->fm, 'Only time, date, and timestamp fields can be set to the value of a timestamp.');
+        $error = new FileMakerException($this->fm, 'Only time, date, and timestamp fields can be set to the value of a timestamp.');
+        if($this->fm->getProperty('errorHandling') == 'default') {
+            return $error;
+        }
+        throw $error;
     }
 
 }

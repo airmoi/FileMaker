@@ -45,7 +45,7 @@ class Result
      * @param FileMaker $fm FileMaker object
      *        that this result came from.
      */
-    public function __construct(FileMaker &$fm)
+    public function __construct(FileMaker $fm)
     {
         $this->fm = $fm;
     }

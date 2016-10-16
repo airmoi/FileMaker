@@ -27,7 +27,7 @@ class FindAll extends Find
 {
     /**
      *
-     * @return Result
+     * @return Result|\airmoi\FileMaker\FileMakerException
      * @throws \airmoi\FileMaker\FileMakerException
      */
     public function execute() {

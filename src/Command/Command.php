@@ -36,7 +36,7 @@ class Command
      * command base.
      *
      * @var FileMaker
-     * @access protected
+     * @access public
      */
     public $fm;
     
@@ -248,7 +248,7 @@ class Command
     /**
      * 
      * @param string $xml
-     * @return Result
+     * @return Result|FileMakerException
      * @throws FileMakerException
      */
     protected function _getResult($xml) {

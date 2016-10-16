@@ -23,9 +23,19 @@ class FMPXMLLAYOUT {
         $this->_fm = $fm;
     }
 
+    /**
+     * 
+     * @param string $xmlResponse
+     * @return boolean|FileMakerException
+     * @throws FileMakerException
+     */
     public function parse($xmlResponse) {
         if (empty($xmlResponse)) {
-             throw new FileMakerException($this->_fm, 'Did not receive an XML document from the server.');
+            $error = new FileMakerException($this->_fm, 'Did not receive an XML document from the server.');
+            if($this->_fm->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         }
         $this->_xmlParser = xml_parser_create();
         xml_set_object($this->_xmlParser, $this);
@@ -34,11 +44,19 @@ class FMPXMLLAYOUT {
         xml_set_element_handler($this->_xmlParser, '_start', '_end');
         xml_set_character_data_handler($this->_xmlParser, '_cdata');
         if (!@xml_parse($this->_xmlParser, $xmlResponse)) {
-             throw new FileMakerException($this->_fm, sprintf('XML error: %s at line %d', xml_error_string(xml_get_error_code($this->_xmlParser)), xml_get_current_line_number($this->_xmlParser)));
+             $error = new FileMakerException($this->_fm, sprintf('XML error: %s at line %d', xml_error_string(xml_get_error_code($this->_xmlParser)), xml_get_current_line_number($this->_xmlParser)));
+            if($this->_fm->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         }
         xml_parser_free($this->_xmlParser);
         if (!empty($this->errorCode)) {
-            throw new FileMakerException($this->_fm, null, $this->errorCode);
+            $error = new FileMakerException($this->_fm, null, $this->errorCode);
+            if($this->_fm->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         }
         $this->_isParsed = true;
         return true;
@@ -46,17 +64,23 @@ class FMPXMLLAYOUT {
 
     public function setExtendedInfo(Layout &$layout) {
         if (!$this->_isParsed) {
-             throw new FileMakerException($this->_fm, 'Attempt to set extended information before parsing data.');
+            $error = new FileMakerException($this->_fm, 'Attempt to set extended information before parsing data.');
+            if($this->_fm->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         }
         $layout->valueLists = $this->_valueLists;
         $layout->valueListTwoFields = $this->_valueListTwoFields;
         foreach ($this->_fields as $fieldName => $fieldInfos) {
             try {
                 $field = $layout->getField($fieldName);
-                $field->styleType = $fieldInfos['styleType'];
-                $field->valueList = $fieldInfos['valueList'] ? $fieldInfos['valueList'] : null;
+                if(!FileMaker::isError($field)) {
+                    $field->styleType = $fieldInfos['styleType'];
+                    $field->valueList = $fieldInfos['valueList'] ? $fieldInfos['valueList'] : null;
+                }
             } catch ( \Exception $e ) {
-                //Field may be missing when it is stored in a portal
+                //Field may be missing when it is stored in a portal, ommit error
             }
         }
     }

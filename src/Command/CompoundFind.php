@@ -84,7 +84,7 @@ class CompoundFind extends Command
 
     /**
      *
-     * @return \airmoi\FileMaker\Object\Result
+     * @return \airmoi\FileMaker\Object\Result|\airmoi\FileMaker\FileMakerException
      * @throws \airmoi\FileMaker\FileMakerException
      */
     public function execute() {
