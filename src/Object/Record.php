@@ -572,8 +572,8 @@ class Record {
         if (FileMaker::isError($result)) {
             return $result;
         }
-        $records = $result->getRecords();
-        return $this->_updateFrom($records[0]);
+        $records = $result->getFirstRecord();
+        return $this->_updateFrom($records);
     }
 
      /**
