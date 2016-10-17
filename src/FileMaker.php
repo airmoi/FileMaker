@@ -164,7 +164,7 @@ class FileMaker {
      * @param string $username Account name to log into database.
      * @param string $password Password for account.
      */
-    public function __construct($database = NULL, $hostspec = NULL, $username = NULL, $password = NULL) {
+    public function __construct($database = NULL, $hostspec = NULL, $username = NULL, $password = NULL, $options = []) {
         if (!is_null($hostspec)) {
             $this->setProperty('hostspec', $hostspec);
         }
@@ -176,6 +176,10 @@ class FileMaker {
         }
         if (!is_null($password)) {
             $this->setProperty('password', $password);
+        }
+        
+        foreach($options as $key => $value) {
+            $this->setProperty($key, $value);
         }
     }
 
