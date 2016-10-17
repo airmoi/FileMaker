@@ -3,7 +3,6 @@
  * FileMaker API for PHP
  *
  * @package FileMaker
- * @version 2.0.5
  * 
  * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
  * @licence BSD
