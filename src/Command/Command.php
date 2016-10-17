@@ -68,6 +68,7 @@ class Command
     public function setResultLayout($layout)
     {
         $this->_resultLayout = $layout;
+        return $this;
     }
 
     /**
@@ -81,6 +82,7 @@ class Command
     {
         $this->_script = $scriptName;
         $this->_scriptParams = $scriptParameters;
+        return $this;
     }
 
     /**
@@ -93,6 +95,7 @@ class Command
     {
         $this->_preReqScript = $scriptName;
         $this->_preReqScriptParams = $scriptParameters;
+        return $this;
     }
 
     /**
@@ -104,8 +107,9 @@ class Command
      */
     public function setPreSortScript($scriptName, $scriptParameters = null)
     {
-         $this->_preSortScript = $scriptName;
+        $this->_preSortScript = $scriptName;
         $this->_preSortScriptParams = $scriptParameters;
+        return $this;
     }
 
     /**
@@ -123,6 +127,7 @@ class Command
     public function setRecordClass($className)
     {
         $this->_recordClass = $className;
+        return $this;
     }
 
     /**
@@ -224,6 +229,7 @@ class Command
     public function setRecordId($recordId)
     {
         $this->recordId = $recordId;
+        return $this;
     }
 
     /**
@@ -236,6 +242,7 @@ class Command
     public function setGlobal($fieldName, $fieldValue)
     {
         $this->_globals[$fieldName] = $fieldValue;
+        return $this;
     }
 
     /**
