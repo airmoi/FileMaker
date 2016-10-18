@@ -204,20 +204,20 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase {
         $result = $command->execute();
         $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
         
-        $this->assertEquals( 0 , (int)$result->tableCount);
+        $this->assertEquals( 0 , (int)$result->getFoundSetCount());
         
         $command = $this->fm->newPerformScriptCommand('sample', 'create sample data', 50 );
+        $command->setRange(5, 25);
         $result = $command->execute();
         $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
-        $this->assertEquals( 50 , (int)$result->tableCount);
+        $this->assertEquals( 50 , (int)$result->getFoundSetCount());
+        $this->assertEquals( 25 , (int)$result->getFetchCount());
         
         $this->assertRegExp('#(http:\/\/|https:\/\/)?[^:\/]*(:\d{2})?\/fmi\/xml\/fmresultset\.xml\?-db=[^\&]*\&-lay=[^\&]*\&-script=[^\&]*\&-script.param=[^\&]*\&-findany#', $this->fm->lastRequestedUrl);
-        
     }
 
     /**
      * @covers airmoi\FileMaker\FileMaker::newFindAnyCommand
-     * @todo   Implement testNewFindAnyCommand().
      */
     public function testNewFindAnyCommand() {
         $command =$this->fm->newFindAnyCommand('sample');
@@ -344,6 +344,7 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase {
         try {
             $this->fm->fakeVar = "Hello World";
         } catch (\airmoi\FileMaker\FileMakerException $e) {
+            $this->assertTrue(FileMaker::isError($e));
         }
     }
 
