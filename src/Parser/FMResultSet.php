@@ -75,6 +75,10 @@ class FMResultSet {
         xml_parser_free($this->_xmlParser);
         if (!empty($this->_errorCode)) {
             $error = new FileMakerException($this->_fm, null, $this->_errorCode);
+            if($this->_fm->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         }
         if (version_compare($this->_serverVersion['version'], FileMaker::getMinServerVersion(), '<')) {
             $error = new FileMakerException($this->_fm, 'This API requires at least version ' . FileMaker::getMinServerVersion() . ' of FileMaker Server to run (detected ' . $this->_serverVersion['version'] . ').');

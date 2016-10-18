@@ -44,11 +44,14 @@ class PerformScript extends Command
      * @param integer $skip Number of records to skip past. Default is 0.
      * @param integer $max Maximum number of records to return.
      *        Default is all.
+     * 
+     * @return self
      */
     public function setRange($skip = 0, $max = null)
     {
-         $this->_skip = $skip;
+        $this->_skip = $skip;
         $this->_max = $max;
+        return $this;
     }
 
     /**

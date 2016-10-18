@@ -36,10 +36,13 @@ class FindRequest
      * An omit request removes the matching records from the final result set.
      *
      * @param boolean $value TRUE if this is an omit request. Otherwise, FALSE.
+     * 
+     * @return self
      */
     public function setOmit($value)
     {
         $this->omit = $value;
+        return $this;
     }
 
     /**
@@ -47,18 +50,24 @@ class FindRequest
      *
      * @param string $fieldname Name of the field being tested.
      * @param string $testvalue Value of the field to test against.
+     * 
+     * @return self
      */
     public function addFindCriterion($fieldname, $testvalue)
     {
         $this->findCriteria[$fieldname] = $testvalue;
+        return $this;
     }
     
     /**
      * Clears all existing criteria from this find request.
+     * 
+     * @return self
      */
     public function clearFindCriteria()
     {
         $this->findCriteria = array();
+        return $this;
     }
     
     /**
