@@ -37,7 +37,7 @@ STEP4 : use it quite the same way you would use the offical API...
 
 ...And enjoy code completion using your favorite IDE
 
-You may also find sample usage by reading the `sampletest.php` file located in the "demo" folder 
+You may also find sample usage by reading the `simpletest.php` file located in the "demo" folder 
 
 ## Important notice
 
@@ -47,7 +47,7 @@ However, you will need to changes few things in your code in order to use it
 The major changes compared to the official package are : 
 
 * Call autoloader.php instead of FileMaker.php to load the API
-* API now support Exceptions error handling, you may switch between those behaviors by changing property 'errorHandeling' to 'default' or 'exception'
-* There is no more 'conf.php' use "setProperty" to define specifics API's settings. You may also use an array of properties on FileMaker instanciation, ie : new FileMaker( db, host, user, pass, ['property' => 'value'])
+* API now support Exceptions error handling, you may switch between those behaviors by changing property 'errorHandeling' to 'default' or 'exception' (default value is 'exception')
+* There is no more 'conf.php' use "setProperty" to define specifics API's settings. You may also use an array of properties on FileMaker instanciation, ie : new FileMaker( $db, $host, $user, $pass, ['property' => 'value'])
 
 You can use the offical [PHP-API guide](https://fmhelp.filemaker.com/docs/14/fr/fms14_cwp_guide.pdf) provided by FieMaker® for everything else.
