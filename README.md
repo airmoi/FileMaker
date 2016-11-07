@@ -1,5 +1,11 @@
 # FileMaker® PHP-API
-FileMaker® PHP API rewrited for PHP 5.5+
+FileMaker® PHP API rewrited for PHP 5.5+.
+It is compatible with PHP 7.0+ and use PSR-4 autoloading specifications
+
+## Requirements
+
+* PHP >= 5.5
+* (optional) PHPUnit to run tests.
 
 ## Installation
 
@@ -20,24 +26,51 @@ You can also manually install the API easily to your project. Just download the 
 
 ## Usage
 
-STEP 1 : include the API autoload
+STEP 1 : Read the 'Important Notice' below
 
+STEP 2 : include the API autoload
+
+```php
+require('/path/to/autoloader.php');
+```
 *This step is facultative if you are using composer*
 
-STEP2 : Create a FileMaker instance
+STEP 3 : Create a FileMaker instance
 ```php
 use airmoi\FileMaker\FileMaker;
 
 $fm = new FileMaker($database, $host, $username, $password, $options);
 ```
 
-STEP3 : Read the 'Important Notice' below
+STEP 4 : use it quite the same way you would use the offical API...
 
-STEP4 : use it quite the same way you would use the offical API...
+...And enjoy code completion using your favorite IDE and php 7 support without notice/warnings
 
-...And enjoy code completion using your favorite IDE
+You may also find sample usage by reading the `sampletest.php` file located in the "demo" folder 
 
-You may also find sample usage by reading the `simpletest.php` file located in the "demo" folder 
+### Sample demo code
+
+```php
+use airmoi\FileMaker\FileMaker;
+use airmoi\FileMaker\FileMakerException;
+
+require('/path/to/autoloader.php');
+
+$fm = new FileMaker('database', 'localhost', 'filemaker', 'filemaker', ['prevalidate' => true]);
+
+try {
+    $command = $fm->newFindCommand('layout_name');
+    $records = $command->execute()->getRecords(); 
+    
+    foreach($records as $record) {
+        echo $record->getField('fieldname');
+        ...
+    }
+} 
+catch (FileMakerException $e) {
+    echo 'An error occured ' . $e->getMessage() . ' - Code : ' . $e->getCode();
+}
+```
 
 ## Important notice
 
@@ -51,3 +84,12 @@ The major changes compared to the official package are :
 * There is no more 'conf.php' use "setProperty" to define specifics API's settings. You may also use an array of properties on FileMaker instanciation, ie : new FileMaker( $db, $host, $user, $pass, ['property' => 'value'])
 
 You can use the offical [PHP-API guide](https://fmhelp.filemaker.com/docs/14/fr/fms14_cwp_guide.pdf) provided by FieMaker® for everything else.
+
+## License
+FileMaker PHP API is licensed under the BSD License - see the LICENSE file for detail
+
+## Credits
+
+### Contributors
+
+- Thanks to [Matthias Kühne](https://github.com/MatthiasKuehneEllerhold) for PSR-4 implementation and code doc fixes.
