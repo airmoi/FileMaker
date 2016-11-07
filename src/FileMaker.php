@@ -21,8 +21,10 @@ use airmoi\FileMaker\Object\Layout;
  * 
  * @author Romain Dunand <airmoi@gmail.com>
  */
-class FileMaker {
-
+class FileMaker 
+{
+    private static $_apiVersion = '2.1.0';
+    private static $_minServerVersion = '10.0.0.0';
     /**
      *
      * @var array The FileMaker connection properties
@@ -123,7 +125,8 @@ class FileMaker {
      * @const
      *
      */
-    public static function isError($variable) {
+    public static function isError($variable)
+    {
         return $variable instanceof FileMakerException;
     }
 
@@ -133,8 +136,9 @@ class FileMaker {
      * @return string API version.
      * @const
      */
-    public function getAPIVersion() {
-        return '2.0.5';
+    public static function getAPIVersion()
+    {
+        return self::$_apiVersion;
     }
 
     /**
@@ -143,8 +147,9 @@ class FileMaker {
      * @return string Minimum FileMaker Server version.
      * @const
      */
-    public static function getMinServerVersion() {
-        return '10.0.0.0';
+    public static function getMinServerVersion()
+    {
+        return self::$_minServerVersion;
     }
 
     /**
@@ -162,8 +167,10 @@ class FileMaker {
      *        deployment. Defaults to http://localhost, if set to NULL.
      * @param string $username Account name to log into database.
      * @param string $password Password for account.
+     * @param array $options An array of options.
      */
-    public function __construct($database = NULL, $hostspec = NULL, $username = NULL, $password = NULL, $options = []) {
+    public function __construct($database = NULL, $hostspec = NULL, $username = NULL, $password = NULL, $options = [])
+    {
         if (!is_null($hostspec)) {
             $this->setProperty('hostspec', $hostspec);
         }
@@ -187,8 +194,11 @@ class FileMaker {
      *
      * @param string $prop Name of the property to set.
      * @param string $value Property's new value.
+     * @return FileMakerException|null
+     * @throws FileMakerException
      */
-    public function setProperty($prop, $value) {
+    public function setProperty($prop, $value)
+    {
         if(!array_key_exists($prop, $this->_properties)) {
             $error = new FileMakerException($this, 'Unsupported property ' . $prop);
             if($this->getProperty('errorHandling') === 'default'){
@@ -204,9 +214,10 @@ class FileMaker {
      *
      * @param string $prop Name of the property.
      *
-     * @return string Property's current value.
+     * @return string|array Property's current value.
      */
-    public function getProperty($prop) {
+    public function getProperty($prop)
+    {
         return isset($this->_properties[$prop]) ? $this->_properties[$prop] : null;
     }
 
@@ -218,7 +229,8 @@ class FileMaker {
      *
      * @return array All current properties.
      */
-    public function getProperties() {
+    public function getProperties()
+    {
         return $this->_properties;
     }
 
@@ -227,15 +239,17 @@ class FileMaker {
      * and responses.
      *
      * @param \Log|FileMakerException $logger PEAR Log object.
+     * @return FileMakerException|void
      * @throws FileMakerException
      */
-    public function setLogger($logger) {
+    public function setLogger($logger)
+    {
         /**
          * @todo handle generic logger ?
          */
         if (!is_a($logger, 'Log')) {
             $error = new FileMakerException($this, 'setLogger() must be passed an instance of PEAR::Log');
-            if($this->fm->getProperty('errorHandling') == 'default') {
+            if($this->getProperty('errorHandling') == 'default') {
                 return $error;
             }
             throw $error;
@@ -254,7 +268,8 @@ class FileMaker {
      *
      * @return Command\Add New Add command object.
      */
-    public function newAddCommand($layout, $values = array()) {
+    public function newAddCommand($layout, $values = array())
+    {
         return new Command\Add($this, $layout, $values);
     }
 
@@ -271,7 +286,8 @@ class FileMaker {
      *
      * @return Command\Edit New Edit command object.
      */
-    public function newEditCommand($layout, $recordId, $updatedValues = array()) {
+    public function newEditCommand($layout, $recordId, $updatedValues = array())
+    {
         return new Command\Edit($this, $layout, $recordId, $updatedValues);
     }
 
@@ -283,7 +299,8 @@ class FileMaker {
      *
      * @return Command\Delete New Delete command object.
      */
-    public function newDeleteCommand($layout, $recordId) {
+    public function newDeleteCommand($layout, $recordId)
+    {
         return new Command\Delete($this, $layout, $recordId);
     }
 
@@ -295,7 +312,8 @@ class FileMaker {
      *
      * @return Command\Duplicate New Duplicate command object.
      */
-    public function newDuplicateCommand($layout, $recordId) {
+    public function newDuplicateCommand($layout, $recordId)
+    {
         return new Command\Duplicate($this, $layout, $recordId);
     }
 
@@ -306,7 +324,8 @@ class FileMaker {
      *
      * @return Command\Find New Find command object.
      */
-    public function newFindCommand($layout) {
+    public function newFindCommand($layout)
+    {
         return new Command\Find($this,$layout);
     }
 
@@ -319,7 +338,8 @@ class FileMaker {
      * @return Command\CompoundFind New Compound Find Set command
      *         object.
      */
-    public function newCompoundFindCommand($layout) {
+    public function newCompoundFindCommand($layout)
+    {
         return new Command\CompoundFind($this, $layout);
     }
 
@@ -333,7 +353,8 @@ class FileMaker {
      *
      * @return Command\FindRequest New Find Request command object.
      */
-    public function newFindRequest($layout) {
+    public function newFindRequest($layout)
+    {
         return new Command\FindRequest($this, $layout);
     }
 
@@ -344,7 +365,8 @@ class FileMaker {
      *
      * @return Command\FindAny New Find Any command object.
      */
-    public function newFindAnyCommand($layout) {
+    public function newFindAnyCommand($layout)
+    {
         return new Command\FindAny($this, $layout);
     }
 
@@ -355,7 +377,8 @@ class FileMaker {
      *
      * @return Command\FindAll New Find All command object.
      */
-    public function newFindAllCommand($layout) {
+    public function newFindAllCommand($layout)
+    {
         return new Command\FindAll($this, $layout);
     }
 
@@ -369,7 +392,8 @@ class FileMaker {
      * @return Command\PerformScript New Perform Script command
      *         object.
      */
-    public function newPerformScriptCommand($layout, $scriptName, $scriptParameters = null) {
+    public function newPerformScriptCommand($layout, $scriptName, $scriptParameters = null)
+    {
         return new Command\PerformScript($this, $layout, $scriptName, $scriptParameters);
     }
 
@@ -432,7 +456,7 @@ class FileMaker {
         $record = $result->getRecords();
         if (!$record) {
             $error = new FileMakerException($this, 'Record . ' . $recordId . ' not found in layout "' . $layout . '".');
-            if($this->fm->getProperty('errorHandling') == 'default') {
+            if($this->getProperty('errorHandling') == 'default') {
                 return $error;
             }
             throw $error;
@@ -462,8 +486,16 @@ class FileMaker {
         
         $parser = new FMResultSet($this);
         $result = $parser->parse($request);
+        if(FileMaker::isError($result)){
+            return $result;
+        }
+
         $layout = new Layout($this);
         $result = $parser->setLayout($layout);
+        if(FileMaker::isError($result)){
+            return $result;
+        }
+
         self::$_layouts[$layoutName] = $layout;
         return $layout;
     }
@@ -509,6 +541,9 @@ class FileMaker {
         
         $parser = new FMResultSet($this);
         $result = $parser->parse($request);
+        if(FileMaker::isError($result)){
+            return $result;
+        }
 
         $list = array();
         foreach ($parser->parsedResult as $data) {
@@ -534,6 +569,9 @@ class FileMaker {
         
         $parser = new FMResultSet($this);
         $result = $parser->parse($request);
+        if(FileMaker::isError($result)){
+            return $result;
+        }
 
         $list = array();
         foreach ($parser->parsedResult as $data) {
@@ -639,7 +677,7 @@ class FileMaker {
         $this->log($curlResponse, FileMaker::LOG_DEBUG);
         if ($curlError = curl_errno($curl)) {
             $error = new FileMakerException($this, 'cURL Communication Error: (' . $curlError . ') ' . curl_error($curl));
-            if($this->fm->getProperty('errorHandling') == 'default') {
+            if($this->getProperty('errorHandling') == 'default') {
                 return $error;
             }
             throw $error;
@@ -660,7 +698,7 @@ class FileMaker {
     public function execute($params, $grammar = 'fmresultset') {
         if (!function_exists('curl_init')) {
             $error = new FileMakerException($this, 'cURL is required to use the FileMaker API.');
-            if($this->fm->getProperty('errorHandling') == 'default') {
+            if($this->getProperty('errorHandling') == 'default') {
                 return $error;
             }
             throw $error;
@@ -849,6 +887,7 @@ class FileMaker {
      * @param mixed $value
      *
      * @return boolean
+     * @throws FileMakerException
      */
     public function __set($name, $value) {
         if (array_key_exists($name, $this->_properties)) {
@@ -858,6 +897,10 @@ class FileMaker {
         }
     }
 
+    /**
+     * @param array|string $value
+     * @return array|string
+     */
     public function toOutputCharset($value) {
         if (strtolower($this->getProperty('charset')) != 'iso-8859-1') {
             return $value;
@@ -891,7 +934,7 @@ class FileMaker {
         try {
             $date = \DateTime::createFromFormat($this->getProperty('dateFormat'), $value);
             return $date->format('m/d/Y');
-        }  catch (Exception $e) {
+        }  catch (\Exception $e) {
             $this->log('Could not convert string to a valid DateTime : ' . $e->getMessage(), FileMaker::LOG_ERR);
             return $value;
         }
@@ -904,7 +947,7 @@ class FileMaker {
         try {
             $date = \DateTime::createFromFormat('m/d/Y', $value);
             return $date->format($this->getProperty('dateFormat'));
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->log('Could not convert string to a valid DateTime : ' . $e->getMessage(), FileMaker::LOG_ERR);
             return $value;
         }

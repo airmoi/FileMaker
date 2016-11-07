@@ -64,6 +64,7 @@ class Command
      * from the current layout.
      *
      * @param string $layout Layout to return results in.
+     * @return self
      */
     public function setResultLayout($layout)
     {
@@ -77,6 +78,7 @@ class Command
      *
      * @param string $scriptName Name of the ScriptMaker script to run.
      * @param string $scriptParameters Any parameters to pass to the script.
+     * @return self
      */
     public function setScript($scriptName, $scriptParameters = null)
     {
@@ -90,6 +92,7 @@ class Command
      *
      * @param string $scriptName Name of the ScriptMaker script to run.
      * @param string $scriptParameters Any parameters to pass to the script.
+     * @return self
      */
     public function setPreCommandScript($scriptName, $scriptParameters = null)
     {
@@ -104,6 +107,7 @@ class Command
      *
      * @param string $scriptName Name of the ScriptMaker script to run.
      * @param string $scriptParameters Any parameters to pass to the script.
+     * @return self
      */
     public function setPreSortScript($scriptName, $scriptParameters = null)
     {
@@ -123,6 +127,7 @@ class Command
      * needs to instantiate it.
      *
      * @param string $className Name of the class to represent records.
+     * @return self
      */
     public function setRecordClass($className)
     {
@@ -225,6 +230,7 @@ class Command
      * ID. This method is ignored by Add and FindAny commands.
      *
      * @param string $recordId ID of record this command acts upon.
+     * @return self
      */
     public function setRecordId($recordId)
     {
@@ -238,6 +244,7 @@ class Command
      *
      * @param string $fieldName the global field name.
      * @param string $fieldValue value to be set.
+     * @return self
      */
     public function setGlobal($fieldName, $fieldValue)
     {

@@ -410,7 +410,7 @@ class Field
      * If this field is not associated with a value list, this method returns 
      * NULL.
      *
-     * @param string $recid Record from which to display the value list.
+     * @param string $listName Name of the value list.
      * @throws FileMakerException
      * @return array|FileMakerException Value list array.
      */
@@ -478,7 +478,6 @@ class Field
     }
 
     public function checkTimeValidity($value, $rule, FileMakerValidationException $validationError, $shortHoursFormat) {
-        $format = 0;
         if ($shortHoursFormat) {
             $format = 12;
         } else {

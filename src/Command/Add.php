@@ -48,6 +48,9 @@ class Add extends Command {
     public function execute() {
         if ($this->fm->getProperty('prevalidate')) {
             $validation = $this->validate();
+            if(FileMaker::isError($validation)) {
+                return $validation;
+            }
         }
         $layout = $this->fm->getLayout($this->_layout);
         $params = $this->_getCommandParams();

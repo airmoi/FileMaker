@@ -148,7 +148,7 @@ class Record {
      * Returns the two field value list associated with the given field in Record's layout.
      *
      * @param string $fieldName Field's Name
-     * @return array|\airmoi\FileMaker\FileMakerError
+     * @return array|\airmoi\FileMaker\FileMakerException
      * @see Layout::getValueListTwoFields
      */
     public function getFieldValueListTwoFields($fieldName) {
@@ -208,9 +208,9 @@ class Record {
      * @param string $field Name of the field.
      * @param integer $repetition Field repetition number to get.
      *        Defaults to the first repetition.
-     *
-     * @return integer|FileMakerException Timestamp value.
+     * @return FileMakerException|int Timestamp value.
      * @throws FileMakerException
+     * @throws null
      */
     public function getFieldAsTimestamp($field, $repetition = 0) {
         $value = $this->getField($field, $repetition);
@@ -487,9 +487,10 @@ class Record {
     public function delete() {
         if (empty($this->recordId)) {
             $error = new FileMakerException($this->fm, 'You cannot delete a record that does not exist on the server.');
-            if (FileMaker::isError($ExtendedInfos)) {
-                return $ExtendedInfos;
+            if ($this->fm->getProperty('errorHandling') == 'default') {
+                return $error;
             }
+            throw $error;
         }
         if ($this->parent) {
             $editCommand = $this->fm->newEditCommand($this->parent->layout->getName(), $this->parent->recordId, []);
@@ -521,9 +522,10 @@ class Record {
         }
         catch (FileMakerException $e) {
             $error = new FileMakerException($this->fm, 'Related set "' . $relatedSetName . '" not present.');
-            if (FileMaker::isError($ExtendedInfos)) {
-                return $ExtendedInfos;
+            if ($this->fm->getProperty('errorHandling') == 'default') {
+                return $error;
             }
+            throw $error;
         }
 
         foreach ($relatedSet as $record) {

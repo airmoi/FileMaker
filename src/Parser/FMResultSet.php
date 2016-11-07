@@ -10,7 +10,7 @@ use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\Object\Layout;
 use airmoi\FileMaker\Object\Field;
 use airmoi\FileMaker\Object\RelatedSet;
-
+use airmoi\FileMaker\Object\Result;
 /**
  * Class used to parse FMResultSet structure
  * @package FileMAker
@@ -99,7 +99,7 @@ class FMResultSet {
      * @return FileMakerException|boolean
      * @throws FileMakerException
      */
-    public function setResult(\airmoi\FileMaker\Object\Result $result, $recordClass = 'airmoi\FileMaker\Object\Record') {
+    public function setResult(Result $result, $recordClass = 'airmoi\FileMaker\Object\Record') {
         if (!$this->_isParsed) {
             $error = new FileMakerException($this->_fm, 'Attempt to get a result object before parsing data.');
             if($this->_fm->getProperty('errorHandling') == 'default') {
@@ -140,7 +140,7 @@ class FMResultSet {
         }
         $result->records = & $records;
         $this->_result = & $result;
-        true;
+        return true;
     }
 
     /**
