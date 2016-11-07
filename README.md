@@ -2,6 +2,18 @@
 FileMaker® PHP API rewrited for PHP 5.5+.
 It is compatible with PHP 7.0+ and use PSR-4 autoloading specifications
 
+## Features
+This version of the PHP-API add the following feature to the offical API :
+* Error handling using Exception (you can restore the original behavior using option 'errorHandeling' => 'default')
+* PSR-4 autoloading and installation using composer
+* PHP 7.0+ compatibility
+* 'dateFormat' option to select the input/output date format (not compatible with find requets yet)
+* 'emptyAsNull' option to return empty value as null
+* Support setRange() method with PerformScript command (as supported by CWP)
+* A method to get the url of your last CWP call ($fm->getLastRequestedUrl())
+* A method to check if a findRequest is empty ($request->isEmpty())
+* A method to get the value list associated to a field from a Record ($record->getValueListTwoField('my_field'))
+
 ## Requirements
 
 * PHP >= 5.5
@@ -16,7 +28,7 @@ You can use the `composer` package manager to install. Either run:
 
 or add:
 
-    "airmoi/filemaker": "*"
+    "airmoi/filemaker": "~2.1.0"
 
 to your composer.json file
 
@@ -84,6 +96,14 @@ The major changes compared to the official package are :
 * There is no more 'conf.php' use "setProperty" to define specifics API's settings. You may also use an array of properties on FileMaker instanciation, ie : new FileMaker( $db, $host, $user, $pass, ['property' => 'value'])
 
 You can use the offical [PHP-API guide](https://fmhelp.filemaker.com/docs/14/fr/fms14_cwp_guide.pdf) provided by FieMaker® for everything else.
+
+## TODO
+* Finish PHPunit test
+* Add functionnal tests
+* Support dateFormat option in requests
+* Improve parsers
+* Add new parsers
+* Documentation
 
 ## License
 FileMaker PHP API is licensed under the BSD License - see the LICENSE file for detail
