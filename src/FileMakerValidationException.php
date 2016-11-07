@@ -65,10 +65,10 @@ class FileMakerValidationException extends FileMakerException
                 $message = 'Please enter a valid timestamp in field %1$s';
                 break;
             default:
-                $message = 'Incorrect value for field %1$s (%2$s)';
+                $message = 'Incorrect value for field %1$s (%3$s)';
         }
         
-        return sprintf($message, $field->getName(), $field->maxCharacters);
+        return sprintf($message, $field->getName(), $field->maxCharacters, $value);
     }
 
     /**

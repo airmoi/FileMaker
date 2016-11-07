@@ -89,7 +89,6 @@ class Edit extends Command
                     list ($fieldname, $infos) = explode('.', $fieldname, 2);
                     $infos = '.' . $infos;
                 } else {
-                    $fieldname = $fieldname;
                     $infos = $layout->getField($fieldname);
                     if ($infos->isGlobal()) {
                         $infos = '.global';

@@ -50,6 +50,7 @@ class FileMakerException extends \Exception
      * You should call getMessage() in most cases, if you are not sure whether
      * the error is a FileMaker Web Publishing Engine error with an error code.
      *
+     * @param int $code Error code
      * @return string Error description.
      */
     public function getErrorString($code)
