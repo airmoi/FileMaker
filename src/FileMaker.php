@@ -725,7 +725,7 @@ class FileMaker {
             } else {
                 $error = new FileMakerException( $this, 'cURL Communication Error: (' . $curlError . ') ' . curl_error($curl), $curlError);
             }
-            if($this->fm->getProperty('errorHandling') == 'default') {
+            if($this->getProperty('errorHandling') == 'default') {
                 return $error;
             }
             throw $error;
