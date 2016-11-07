@@ -1,21 +1,12 @@
 <?php
+/**
+ * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
+ * @licence BSD
+ */
 namespace airmoi\FileMaker\Object;
 
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
-/**
- * FileMaker API for PHP
- *
- * @package FileMaker
- *
- * Copyright � 2005-2007, FileMaker, Inc. All rights reserved.
- * NOTE: Use of this source code is subject to the terms of the FileMaker
- * Software License which accompanies the code. Your use of this source code
- * signifies your agreement to such license terms and conditions. Except as
- * expressly granted in the Software License, no other copyright, patent, or
- * other intellectual property license or right is granted, either expressly or
- * by implication, by FileMaker.
- */
 
 /**
  * Portal description class. Contains all the information about a
@@ -42,8 +33,7 @@ class RelatedSet
     /**
      * Portal constructor.
      *
-     * @param Layout &$layout Layout object that this 
-     * portal is on.
+     * @param Layout $layout Layout object where this portal is located.
      */
     public function __construct($layout)
     {
@@ -77,7 +67,7 @@ class RelatedSet
      *
      * @param string $fieldName Name of field.
      * 
-     * @return Field Field object, if successful. 
+     * @return Field|FileMakerException Field object, if successful. 
      * @throws FileMakerException
      */
     public function getField($fieldName)
@@ -85,7 +75,11 @@ class RelatedSet
         if (isset($this->fields[$fieldName])) {
             return $this->fields[$fieldName];
         }
-        throw new FileMakerException($this->fm, 'Field '.$fieldName.' Not Found in Layout '. $this->layout->getName());
+        $error = new FileMakerException($this->fm, 'Field '.$fieldName.' Not Found in Layout '. $this->layout->getName());
+        if($this->fm->getProperty('errorHandling') == 'default') {
+            return $error;
+        }
+        throw $error;
     }
 
     /**
@@ -104,12 +98,16 @@ class RelatedSet
      *
      * @access private
      *
-     * @return boolean TRUE, if successful.
+     * @return boolean|FileMakerException TRUE, if successful.
      * @throws FileMakerException
      */
     public function loadExtendedInfo()
     {
-        throw new FileMakerException($this->fm, 'Related sets do not support extended information.');
+        $error = new FileMakerException($this->fm, 'Related sets do not support extended information.');
+        if($this->fm->getProperty('errorHandling') == 'default') {
+            return $error;
+        }
+        throw $error;
     }
 
 }

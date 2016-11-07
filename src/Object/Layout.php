@@ -1,23 +1,13 @@
 <?php
+/**
+ * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
+ * @licence BSD
+ */
 namespace airmoi\FileMaker\Object;
 
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\Parser\FMPXMLLAYOUT;
-
-/**
- * FileMaker API for PHP
- *
- * @package FileMaker
- *
- * Copyright � 2005-2009, FileMaker, Inc. All rights reserved.
- * NOTE: Use of this source code is subject to the terms of the FileMaker
- * Software License which accompanies the code. Your use of this source code
- * signifies your agreement to such license terms and conditions. Except as
- * expressly granted in the Software License, no other copyright, patent, or
- * other intellectual property license or right is granted, either expressly or
- * by implication, by FileMaker.
- */
 
 /**
  * Layout description class. Contains all the information about a
@@ -88,7 +78,7 @@ class Layout
      *
      * @param string $fieldName Name of field.
      *
-     * @return Field Field object, if successful. 
+     * @return Field|FileMakerException Field object, if successful. 
      * @throws FileMakerException
      */
     public function getField($fieldName)
@@ -101,7 +91,11 @@ class Layout
             //$fieldName = substr($fieldName, $pos+1, strlen($fieldName));
             return $this->getRelatedSet($relatedSet)->getField($fieldName);
         }
-        throw new FileMakerException($this->fm, 'Field "'.$fieldName.'" Not Found');
+        $error = new FileMakerException($this->fm, 'Field "'.$fieldName.'" Not Found');
+        if($this->fm->getProperty('errorHandling') == 'default') {
+            return $error;
+        }
+        throw $error;
     }
 
     /**
@@ -130,7 +124,7 @@ class Layout
      * Returns a RelatedSet object that describes the specified 
      * portal.
      *
-     * @param string $relatedSet Name of the related table for a portal.
+     * @param string|FileMakerException $relatedSet Name of the related table for a portal.
      * @throws FileMakerException
      *
      * @return RelatedSet a RelatedSet object
@@ -140,7 +134,11 @@ class Layout
          if (isset($this->relatedSets[$relatedSet])) {
             return $this->relatedSets[$relatedSet];
         }
-        throw new FileMakerException($this->fm, 'RelatedSet "'.$relatedSet.'" Not Found in layout '. $this->getName());
+        $error = new FileMakerException($this->fm, 'RelatedSet "'.$relatedSet.'" Not Found in layout '. $this->getName());
+        if($this->fm->getProperty('errorHandling') == 'default') {
+            return $error;
+        }
+        throw $error;
     }
     
     /**
@@ -167,12 +165,15 @@ class Layout
      * Returns the names of any value lists associated with this
      * layout.
      *
-     * @return array List of value list names as strings.
+     * @return array|FileMakerException List of value list names as strings.
      * @throws FileMakerException
      */
     public function listValueLists()
     {
         $ExtendedInfos = $this->loadExtendedInfo();
+        if (FileMaker::isError($ExtendedInfos)) {
+            return $ExtendedInfos;
+        }
         if($this->valueLists !== null)
             return array_keys($this->valueLists);
         
@@ -186,7 +187,7 @@ class Layout
      * @param string $recid Record from which the value list should be 
      *        displayed.
      *
-     * @return array List of defined values.
+     * @return array|FileMakerException List of defined values.
 
      * @throws FileMakerException
      * @deprecated Use getValueListTwoFields instead.
@@ -196,6 +197,9 @@ class Layout
     public function getValueList($listName, $recid = null)
     {
         $ExtendedInfos = $this->loadExtendedInfo($recid);
+        if (FileMaker::isError($ExtendedInfos)) {
+            return $ExtendedInfos;
+        }
         return isset($this->valueLists[$listName]) ?
                 $this->valueLists[$listName] : null;
     }
@@ -210,13 +214,16 @@ class Layout
      * @param string  $recid Record from which the value list should be 
      *        displayed.
      *
-     * @return array of display names and its corresponding value from the value list
+     * @return array|FileMakerException of display names and its corresponding value from the value list
      * @throws FileMakerException
      */
     public function getValueListTwoFields($valueList, $recid = null)
     {
 
         $ExtendedInfos = $this->loadExtendedInfo($recid);
+        if (FileMaker::isError($ExtendedInfos)) {
+            return $ExtendedInfos;
+        }
         return isset($this->valueLists[$valueList]) ?
                 $this->valueListTwoFields[$valueList] : [];
 
@@ -231,7 +238,7 @@ class Layout
      * @param string  $recid Record from which the value list should be 
      *        displayed.
      * 
-     * @return array Array of value-list arrays.
+     * @return array|FileMakerException Array of value-list arrays.
      * @throws FileMakerException
      * @deprecated Use getValueListTwoFields instead.
      * @see getValueListsTwoFields
@@ -239,6 +246,9 @@ class Layout
     public function getValueLists($recid = null)
     {
         $ExtendedInfos = $this->loadExtendedInfo($recid);
+        if (FileMaker::isError($ExtendedInfos)) {
+            return $ExtendedInfos;
+        }
         return $this->valueLists;
     }
 
@@ -248,7 +258,7 @@ class Layout
      * values. The second level associative arrays are lists of display name and its corresponding 
      * value from the value list.
      *
-     * @param string  $recid Record from which the value list should be 
+     * @param string|FileMakerException $recid Record from which the value list should be 
      *        displayed.
      * @throws FileMakerException
      * 
@@ -257,6 +267,9 @@ class Layout
     public function getValueListsTwoFields($recid = null)
     {
         $ExtendedInfos = $this->loadExtendedInfo($recid);
+        if (FileMaker::isError($ExtendedInfos)) {
+            return $ExtendedInfos;
+        }
         return $this->valueListTwoFields;
     }
 
@@ -286,6 +299,10 @@ class Layout
             }
             $parser = new FMPXMLLAYOUT($this->fm);
             $parseResult = $parser->parse($result);
+            if (FileMaker::isError($parseResult)) {
+                return $parseResult;
+            }
+            
             $parser->setExtendedInfo($this);
             $this->extended = true;
         }

@@ -1,23 +1,12 @@
 <?php
-
+/**
+ * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
+ * @licence BSD
+ */
 namespace airmoi\FileMaker\Command;
 
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
-
-/**
- * FileMaker API for PHP
- *
- * @package FileMaker
- *
- * Copyright © 2005-2007, FileMaker, Inc. All rights reserved.
- * NOTE: Use of this source code is subject to the terms of the FileMaker
- * Software License which accompanies the code. Your use of this source code
- * signifies your agreement to such license terms and conditions. Except as
- * expressly granted in the Software License, no other copyright, patent, or
- * other intellectual property license or right is granted, either expressly or
- * by implication, by FileMaker.
- */
 
 /**
  * Command class that adds a new record.
@@ -53,12 +42,15 @@ class Add extends Command {
 
     /**
      *
-     * @return \airmoi\FileMaker\Object\Result
+     * @return \airmoi\FileMaker\Object\Result|FileMakerException
      * @throws FileMakerException
      */
     public function execute() {
         if ($this->fm->getProperty('prevalidate')) {
             $validation = $this->validate();
+            if(FileMaker::isError($validation)) {
+                return $validation;
+            }
         }
         $layout = $this->fm->getLayout($this->_layout);
         $params = $this->_getCommandParams();
@@ -95,25 +87,12 @@ class Add extends Command {
      * @return string
      */
     public function setField($field, $value, $repetition = 0) {
-        //handle related fields in portals or in model
-        if($pos = strpos($field, ':')){
-            $fieldName = substr($field, 0, strpos($field, '.'));
-            $relationName = substr($field, 0, $pos);
-            if( $this->fm->getLayout($this->_layout)->hasRelatedSet($relationName)) {
-                $Field = $this->fm->getLayout($this->_layout)->getRelatedSet(substr($field, 0, $pos))->getField($fieldName);
-            }
-            else {
-                $Field = $this->fm->getLayout($this->_layout)->getField($field);
-            }
-        }
-        else {
-            $Field = $this->fm->getLayout($this->_layout)->getField($field);
-        }
-        /*if ( array_search($field, $this->fm->getLayout($this->_layout)->listFields()) === false){
-                throw new FileMakerException($this->fm, 'Field "'.$field.'" is missing');
+        $fieldInfos = $this->fm->getLayout($this->_layout)->getField($field);
+        /* if(FileMaker::isError($fieldInfos)){
+            return $fieldInfos;
         }*/
-
-        $format = $Field->result;
+        
+        $format = FileMaker::isError($fieldInfos) ? null : $fieldInfos->result;
         if( !empty($value) && $this->fm->getProperty('dateFormat') !== null && ($format == 'date' || $format == 'timestamp')){
             if( $format == 'date' ){
                 $dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value . ' 00:00:00');
@@ -144,7 +123,7 @@ class Add extends Command {
      * @param integer $repetition Field repetition number to set.
      *        Defaults to the first repetition.
      *
-     * @return string
+     * @return string|FileMakerException
      * @throws FileMakerException
      */
     public function setFieldFromTimestamp($field, $timestamp, $repetition = 0) {
@@ -158,7 +137,11 @@ class Add extends Command {
             case 'timestamp':
                 return $this->setField($field, date('m/d/Y H:i:s', $timestamp), $repetition);
         }
-        throw new FileMakerException($this->fm, 'Only time, date, and timestamp fields can be set to the value of a timestamp.');
+        $error = new FileMakerException($this->fm, 'Only time, date, and timestamp fields can be set to the value of a timestamp.');
+        if($this->fm->getProperty('errorHandling') == 'default') {
+            return $error;
+        }
+        throw $error;
     }
 
 }

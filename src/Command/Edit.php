@@ -1,24 +1,13 @@
 <?php
+/**
+ * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
+ * @licence BSD
+ */
 namespace airmoi\FileMaker\Command;
 
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\FileMakerValidationException;
-
-/**
- * FileMaker API for PHP
- *
- * @package FileMaker
- *
- * Copyright © 2005-2009, FileMaker, Inc. All rights reserved.
- * NOTE: Use of this source code is subject to the terms of the FileMaker
- * Software License which accompanies the code. Your use of this source code
- * signifies your agreement to such license terms and conditions. Except as
- * expressly granted in the Software License, no other copyright, patent, or
- * other intellectual property license or right is granted, either expressly or
- * by implication, by FileMaker.
- */
-
 
 /**
  * Command class that edits a single record.
@@ -62,32 +51,33 @@ class Edit extends Command
     
     /**
      * 
-     * @return \airmoi\FileMaker\Object\Result
+     * @return \airmoi\FileMaker\Object\Result|FileMakerException|FileMakerValidationException
      * @throws FileMakerException|FileMakerValidationException
      */
     public function execute() {
         $params = $this->_getCommandParams();
         if (empty($this->recordId)) {
-            throw new FileMakerException ($this->fm, 'Edit commands require a record id.');
+            $error = new FileMakerException ($this->fm, 'Edit commands require a record id.');
+            if($this->fm->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         }
         if (!count($this->_fields)) {
             if ($this->_deleteRelated == null) {
-                throw new FileMakerException ($this->fm, 'There are no changes to make.');
+                $error = new FileMakerException ($this->fm, 'There are no changes to make.');
+                if($this->fm->getProperty('errorHandling') == 'default') {
+                    return $error;
+                }
+                throw $error;
             }
         }
 
         if ($this->fm->getProperty('prevalidate')) {
             $validation = $this->validate();
-            /*$layout = $this->fm->getLayout($this->_layout);
-            $validationError = new FileMakerValidationException($this->fm);
-            foreach ($layout->getFields() as $field => $infos) {
-                if (isset($this->_fields[$field])) {
-                    $infos = $this->_fields[$field];
-                    foreach ($infos as $values) {
-                        $validationError = $infos->validate($values);
-                    }
-                }
-            }*/
+            if(FileMaker::isError($validation)) {
+                return $validation;
+            }
         }
 
         $layout = $this->fm->getLayout($this->_layout);
@@ -99,7 +89,6 @@ class Edit extends Command
                     list ($fieldname, $infos) = explode('.', $fieldname, 2);
                     $infos = '.' . $infos;
                 } else {
-                    $fieldname = $fieldname;
                     $infos = $layout->getField($fieldname);
                     if ($infos->isGlobal()) {
                         $infos = '.global';
@@ -131,30 +120,18 @@ class Edit extends Command
      * @param integer $repetition Field repetition number to set,
      *        Defaults to the first repetition.
      *                            
-     * @return string
+     * @return string|FileMakerException
      * @throws FileMakerException
      */
     public function setField($field, $value, $repetition = 0)
     {
-        //handle related fields in portals or in model
-        if($pos = strpos($field, ':')){
-            $fieldName = substr($field, 0, strpos($field, '.'));
-            $relationName = substr($field, 0, $pos);
-            if( $this->fm->getLayout($this->_layout)->hasRelatedSet($relationName)) {
-                $Field = $this->fm->getLayout($this->_layout)->getRelatedSet(substr($field, 0, $pos))->getField($fieldName);
-            }
-            else {
-                $Field = $this->fm->getLayout($this->_layout)->getField($field);
-            }
-        }
-        else {
-            $Field = $this->fm->getLayout($this->_layout)->getField($field);
-        }
-        /*if ( array_search($field, $this->fm->getLayout($this->_layout)->listFields()) === false){
-                throw new FileMakerException($this->fm, 'Field "'.$field.'" is missing');
+        $fieldInfos = $this->fm->getLayout($this->_layout)->getField($field);
+        /*if(FileMaker::isError($fieldInfos)){
+            return $fieldInfos;
         }*/
         
-        $format = $Field->result; 
+        $format = FileMaker::isError($fieldInfos) ? null : $fieldInfos->result;
+        
         if( !empty($value) && $this->fm->getProperty('dateFormat') !== null && ($format == 'date' || $format == 'timestamp')){ 
             if( $format == 'date' ){
                 $dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value . ' 00:00:00');
@@ -185,17 +162,17 @@ class Edit extends Command
      * @param integer $repetition Field repetition number to set. 
      *        Defaults to the first repetition.
      *                            
-     * @return string
+     * @return string|FileMakerException
      * @throws FileMakerException
      */
     public function setFieldFromTimestamp($field, $timestamp, $repetition = 0)
     {
         $layout = & $this->fm->getLayout($this->_layout);
-        if (FileMaker :: isError($layout)) {
+        if (FileMaker::isError($layout)) {
             return $layout;
         }
         $field = & $layout->getField($field);
-        if (FileMaker :: isError($field)) {
+        if (FileMaker::isError($field)) {
             return $field;
         }
         switch ($field->getResult()) {
@@ -206,7 +183,11 @@ class Edit extends Command
             case 'timestamp' :
                 return $this->setField($field, date('m/d/Y H:i:s', $timestamp), $repetition);
         }
-        throw new FileMakerException($this->fm, 'Only time, date, and timestamp fields can be set to the value of a timestamp.');
+        $error = new FileMakerException($this->fm, 'Only time, date, and timestamp fields can be set to the value of a timestamp.');
+        if($this->fm->getProperty('errorHandling') == 'default') {
+            return $error;
+        }
+        throw $error;
     }
 
     /**

@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
+ * @licence BSD
+ */
 namespace airmoi\FileMaker\Parser;
 
 use airmoi\FileMaker\FileMaker;
@@ -7,16 +10,25 @@ use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\Object\Layout;
 use airmoi\FileMaker\Object\Field;
 use airmoi\FileMaker\Object\RelatedSet;
-
+use airmoi\FileMaker\Object\Result;
+/**
+ * Class used to parse FMResultSet structure
+ * @package FileMAker
+ */
 class FMResultSet {
-
+    
+    /**
+     * Array that stores parsed records
+     * @var \airmoi\FileMaker\Object\Record[] 
+     */
+    public $parsedResult = array();
+    
     private $_errorCode;
     private $_serverVersion;
     private $_parsedHead;
     private $_fieldList = array();
     private $_parsedFoundSet;
     private $_relatedSetNames = array();
-    public $parsedResult = array();
     private $_currentRelatedSet;
     private $_currentRecord;
     private $_parentRecord;
@@ -32,9 +44,20 @@ class FMResultSet {
         $this->_fm = $fm;
     }
 
+    /**
+     * Parse the provided xml
+     * 
+     * @param string $xml
+     * @return FileMakerException|boolean
+     * @throws FileMakerException
+     */
     public function parse($xml) {
         if (empty($xml)) {
-            throw new FileMakerException($this->_fm, 'Did not receive an XML document from the server.');
+            $error = new FileMakerException($this->_fm, 'Did not receive an XML document from the server.');
+            if($this->_fm->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         }
         $this->_xmlParser = xml_parser_create('UTF-8');
         xml_set_object($this->_xmlParser, $this);
@@ -43,22 +66,46 @@ class FMResultSet {
         xml_set_element_handler($this->_xmlParser, '_start', '_end');
         xml_set_character_data_handler($this->_xmlParser, '_cdata');
         if (!@xml_parse($this->_xmlParser, $xml)) {
-            throw new FileMakerException($this->_fm, sprintf('XML error: %s at line %d', xml_error_string(xml_get_error_code($this->_xmlParser)), xml_get_current_line_number($this->_xmlParser)));
+            $error = new FileMakerException($this->_fm, sprintf('XML error: %s at line %d', xml_error_string(xml_get_error_code($this->_xmlParser)), xml_get_current_line_number($this->_xmlParser)));
+            if($this->_fm->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         }
         xml_parser_free($this->_xmlParser);
         if (!empty($this->_errorCode)) {
-            throw new FileMakerException($this->_fm, null, $this->_errorCode);
+            $error = new FileMakerException($this->_fm, null, $this->_errorCode);
+            if($this->_fm->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         }
         if (version_compare($this->_serverVersion['version'], FileMaker::getMinServerVersion(), '<')) {
-            throw new FileMakerException($this->_fm, 'This API requires at least version ' . FileMaker::getMinServerVersion() . ' of FileMaker Server to run (detected ' . $this->_serverVersion['version'] . ').');
+            $error = new FileMakerException($this->_fm, 'This API requires at least version ' . FileMaker::getMinServerVersion() . ' of FileMaker Server to run (detected ' . $this->_serverVersion['version'] . ').');
+            if($this->_fm->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         }
         $this->_isParsed = true;
         return true;
     }
 
-    public function setResult($result, $recordClass = 'airmoi\FileMaker\Object\Record') {
+    /**
+     * Populate a result object with parsed datas
+     * 
+     * @param \airmoi\FileMaker\Object\Result $result
+     * @param string $recordClass string representing the record class name to use
+     * @return FileMakerException|boolean
+     * @throws FileMakerException
+     */
+    public function setResult(Result $result, $recordClass = 'airmoi\FileMaker\Object\Record') {
         if (!$this->_isParsed) {
-            throw new FileMakerException($this->_fm, 'Attempt to get a result object before parsing data.');
+            $error = new FileMakerException($this->_fm, 'Attempt to get a result object before parsing data.');
+            if($this->_fm->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         }
         if ($this->_result) {
             $result = $this->_result;
@@ -93,15 +140,25 @@ class FMResultSet {
         }
         $result->records = & $records;
         $this->_result = & $result;
-        true;
+        return true;
     }
 
+    /**
+     * Populate a layout object with parsed datas
+     * 
+     * @param Layout $layout
+     * @return FileMakerException|boolean
+     * @throws FileMakerException
+     */
     public function setLayout(Layout $layout) {
         if (!$this->_isParsed) {
-            throw new FileMakerException($this->_fm, 'Attempt to get a layout object before parsing data.');
+            $error = new FileMakerException($this->_fm, 'Attempt to get a layout object before parsing data.');
+            if($this->_fm->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         }
-        if ($this->_layout) {
-            $layout = & $this->_layout;
+        if ($this->_layout === $layout) {
             return true;
         }
         $layout->name = $this->_parsedHead['layout'];
@@ -202,12 +259,13 @@ class FMResultSet {
         return true;
     }
     /**
+     * xml_parser start element handler
      * 
-     * @param type $unusedVar
-     * @param type $tag
-     * @param type $datas
+     * @param resource $parser
+     * @param string $tag
+     * @param array $datas
      */
-    private function _start($unusedVar, $tag, $datas) {
+    private function _start($parser, $tag, $datas) {
         $datas = $this->_fm->toOutputCharset($datas);
         switch ($tag) {
             case 'error':
@@ -220,7 +278,7 @@ class FMResultSet {
                 $this->_parsedHead = $datas;
                 break;
             case 'relatedset-definition':
-                $this->_relatedSetNames[$datas['table']] = array();
+                $this->_relatedSetNames[$datas['table']] = [];
                 $this->_currentRelatedSet = $datas['table'];
                 break;
             case 'field-definition':
@@ -256,11 +314,12 @@ class FMResultSet {
     }
 
     /**
+     * xml_parser end element handler
      * 
-     * @param mixed  $unusedVar
+     * @param mixed $parser
      * @param string $tag
      */
-    private function _end($unusedVar, $tag) {
+    private function _end($parser, $tag) {
         switch ($tag) {
             case 'relatedset-definition':
                 $this->_currentRelatedSet = null;
@@ -289,11 +348,12 @@ class FMResultSet {
     }
 
     /**
+     * xml_parser character data handler (cdata)
      * 
-     * @param type $unusedVar
-     * @param type $data
+     * @param resource $parser
+     * @param string $data
      */
-    private function _cdata($unusedVar, $data) {
+    private function _cdata($parser, $data) {
         $this->_cdata.= $this->_fm->toOutputCharset($data);
     }
 

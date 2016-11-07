@@ -1,22 +1,11 @@
 <?php
+/**
+ * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
+ * @licence BSD
+ */
 namespace airmoi\FileMaker\Command;
 
 use airmoi\FileMaker\FileMaker;
-
-/**
- * FileMaker API for PHP
- *
- * @package FileMaker
- *
- * Copyright © 2005-2007, FileMaker, Inc. All rights reserved.
- * NOTE: Use of this source code is subject to the terms of the FileMaker
- * Software License which accompanies the code. Your use of this source code
- * signifies your agreement to such license terms and conditions. Except as
- * expressly granted in the Software License, no other copyright, patent, or
- * other intellectual property license or right is granted, either expressly or
- * by implication, by FileMaker.
- */
-
 
 /**
  * Command class that finds records using the specified criteria.
@@ -41,18 +30,24 @@ class Find extends Command
      *
      * @param string $fieldname Name of the field being tested.
      * @param string $testvalue Value of field to test against.
+     * 
+     * @return self
      */
     public function addFindCriterion($fieldname, $testvalue)
     {
         $this->_findCriteria[$fieldname] = $testvalue;
+        return $this;
     }
 
     /**
      * Clears all existing criteria from this Find command.
+     * 
+     * @return self
      */
     public function clearFindCriteria()
     {
         $this->_findCriteria = [];
+        return $this;
     }
 
     /**
@@ -67,6 +62,8 @@ class Find extends Command
      * @param mixed $order Direction of the sort. Specify the 
      *        FileMaker::SORT_ASCEND constant, the FileMaker::SORT_DESCEND 
      *        constant, or the name of a value list specified as a string.
+     * 
+     * @return self
      */
     public function addSortRule($fieldname, $precedence, $order = null)
     {
@@ -74,15 +71,19 @@ class Find extends Command
         if ($order !== null) {
             $this->_sortOrders[$precedence] = $order;
         }
+        return $this;
     }
 
     /**
      * Clears all existing sorting rules from this Find command.
+     * 
+     * @return self
      */
     public function clearSortRules()
     {
-         $this->_sortRules = array();
+        $this->_sortRules = array();
         $this->_sortOrders = array();
+        return $this;
     }
     
     public function execute() {
@@ -119,6 +120,8 @@ class Find extends Command
      *
      * @param integer $operator Specify the FileMaker::FIND_AND or 
      *        FileMaker::FIND_OR constant.
+     * 
+     * @return self
      */
     public function setLogicalOperator($operator)
     {
@@ -128,6 +131,7 @@ class Find extends Command
                 $this->_operator = $operator;
                 break;
         }
+        return $this;
     }
 
     /**
@@ -136,11 +140,14 @@ class Find extends Command
      * @param integer $skip Number of records to skip past. Default is 0.
      * @param integer $max Maximum number of records to return. 
      *        Default is all.
+     * 
+     * @return self
      */
     public function setRange($skip = 0, $max = null)
     {
-         $this->_skip = $skip;
+        $this->_skip = $skip;
         $this->_max = $max;
+        return $this;
     }
 
     /**
@@ -183,11 +190,14 @@ class Find extends Command
      *                 If "Show vertical scroll bar" is disabled, the Portal 
      *                 Setup dialog box's "Number of rows" setting determines 
      *                 the maximum number of related records to return. 
+     * 
+     * @return self
      */
     public function setRelatedSetsFilters($relatedsetsfilter, $relatedsetsmax = null)
     {
         $this->_relatedsetsfilter = $relatedsetsfilter;
         $this->_relatedsetsmax = $relatedsetsmax;
+        return $this;
     }
     
     /**

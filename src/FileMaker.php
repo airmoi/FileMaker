@@ -1,4 +1,12 @@
 <?php
+/**
+ * FileMaker API for PHP
+ *
+ * @package FileMaker
+ * 
+ * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
+ * @licence BSD
+ */
 
 namespace airmoi\FileMaker;
 
@@ -6,27 +14,23 @@ use airmoi\FileMaker\Parser\FMResultSet;
 use airmoi\FileMaker\Object\Layout;
 
 /**
- * FileMaker API for PHP
- *
- * @package FileMaker
- *
- * Copyright © 2005-2007, FileMaker, Inc. All rights reserved.
- * NOTE: Use of this source code is subject to the terms of the FileMaker
- * Software License which accompanies the code. Your use of this source code
- * signifies your agreement to such license terms and conditions. Except as
- * expressly granted in the Software License, no other copyright, patent, or
- * other intellectual property license or right is granted, either expressly or
- * by implication, by FileMaker.
- */
-
-/**
  * Base FileMaker class. Defines database properties, connects to a database,
  * and gets information about the API.
  *
  * @package FileMaker
+ * 
+ * @author Romain Dunand <airmoi@gmail.com>
  */
-class FileMaker {
-
+class FileMaker 
+{
+    private static $_apiVersion = '2.1.0';
+    private static $_minServerVersion = '10.0.0.0';
+    /**
+     *
+     * @var array The FileMaker connection properties
+     * You may access and manipulate thoes properties using 
+     * [[getProperty()]] and [[setPropety()]] methods
+     */
     private $_properties = [
         'charset' => 'utf-8',
         'locale' => 'en',
@@ -41,10 +45,22 @@ class FileMaker {
         'dateFormat' => null,
         'useCookieSession' => false,
         'emptyAsNull' => false, //Returns null value instead of empty strings on empty field value
+        'errorHandling' => 'exception', //Default to use old school FileMaker Errors trapping, 'exception' to handle errors as exceptions
     ];
+    
+    /**
+     * @var \Log PEAR Log object
+     */
     private $_logger = null;
+    
+    /**
+     * @var Layout[] a pseudo cache for layouts to prevent unnecessary call's to Custom Web Publishing engine 
+     */
     private static $_layouts = [];
 
+    /**
+     * @var string Store the last URL call to Custom Web Publishing engine
+     */
     public $lastRequestedUrl;
 
     /**
@@ -104,15 +120,14 @@ class FileMaker {
     /**
      * Tests whether a variable is a FileMaker API Error.
      *
-     * @deprecated since version 2.0a use Exceptions nows
-     *
      * @param mixed $variable Variable to test.
      * @return boolean TRUE, if the variable is a {@link FileMakerException} object.
      * @const
      *
      */
-    public static function isError($variable) {
-        return is_a($variable, __NAMESPACE__.'FileMakerException');
+    public static function isError($variable)
+    {
+        return $variable instanceof FileMakerException;
     }
 
     /**
@@ -121,8 +136,9 @@ class FileMaker {
      * @return string API version.
      * @const
      */
-    public function getAPIVersion() {
-        return '2.0.5-beta';
+    public static function getAPIVersion()
+    {
+        return self::$_apiVersion;
     }
 
     /**
@@ -131,29 +147,30 @@ class FileMaker {
      * @return string Minimum FileMaker Server version.
      * @const
      */
-    public static function getMinServerVersion() {
-        return '10.0.0.0';
+    public static function getMinServerVersion()
+    {
+        return self::$_minServerVersion;
     }
 
     /**
      * FileMaker object constructor.
      *
      * If you want to use the constructor without specifying all the
-     *  parameters, pass in NULL for the parameters you want to omit.
+     * parameters, pass in NULL for the parameters you want to omit.
      * For example, to specify only the database name, username, and
      * password, but omit the hostspec, call the constructor as follows:
      *
-     * <samp>
-     * new FileMaker('DatabaseName', NULL, 'username', 'password');
-     * </samp>
+     * @example new FileMaker('DatabaseName', NULL, 'username', 'password');
      *
      * @param string $database Name of the database to connect to.
      * @param string $hostspec Hostspec of web server in FileMaker Server
      *        deployment. Defaults to http://localhost, if set to NULL.
      * @param string $username Account name to log into database.
      * @param string $password Password for account.
+     * @param array $options An array of options.
      */
-    public function __construct($database = NULL, $hostspec = NULL, $username = NULL, $password = NULL) {
+    public function __construct($database = NULL, $hostspec = NULL, $username = NULL, $password = NULL, $options = [])
+    {
         if (!is_null($hostspec)) {
             $this->setProperty('hostspec', $hostspec);
         }
@@ -166,6 +183,10 @@ class FileMaker {
         if (!is_null($password)) {
             $this->setProperty('password', $password);
         }
+        
+        foreach($options as $key => $value) {
+            $this->setProperty($key, $value);
+        }
     }
 
     /**
@@ -173,8 +194,18 @@ class FileMaker {
      *
      * @param string $prop Name of the property to set.
      * @param string $value Property's new value.
+     * @return FileMakerException|null
+     * @throws FileMakerException
      */
-    public function setProperty($prop, $value) {
+    public function setProperty($prop, $value)
+    {
+        if(!array_key_exists($prop, $this->_properties)) {
+            $error = new FileMakerException($this, 'Unsupported property ' . $prop);
+            if($this->getProperty('errorHandling') === 'default'){
+                return $error;
+            }
+            throw $error;
+        }
         $this->_properties[$prop] = $value;
     }
 
@@ -183,9 +214,10 @@ class FileMaker {
      *
      * @param string $prop Name of the property.
      *
-     * @return string Property's current value.
+     * @return string|array Property's current value.
      */
-    public function getProperty($prop) {
+    public function getProperty($prop)
+    {
         return isset($this->_properties[$prop]) ? $this->_properties[$prop] : null;
     }
 
@@ -197,7 +229,8 @@ class FileMaker {
      *
      * @return array All current properties.
      */
-    public function getProperties() {
+    public function getProperties()
+    {
         return $this->_properties;
     }
 
@@ -205,15 +238,21 @@ class FileMaker {
      * Associates a PEAR Log object with the API for logging requests
      * and responses.
      *
-     * @param \Log $logger PEAR Log object.
+     * @param \Log|FileMakerException $logger PEAR Log object.
+     * @return FileMakerException|void
      * @throws FileMakerException
      */
-    public function setLogger($logger) {
+    public function setLogger($logger)
+    {
         /**
          * @todo handle generic logger ?
          */
         if (!is_a($logger, 'Log')) {
-            throw new FileMakerException($this, 'setLogger() must be passed an instance of PEAR::Log');
+            $error = new FileMakerException($this, 'setLogger() must be passed an instance of PEAR::Log');
+            if($this->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         }
         $this->_logger = $logger;
     }
@@ -229,7 +268,8 @@ class FileMaker {
      *
      * @return Command\Add New Add command object.
      */
-    public function newAddCommand($layout, $values = array()) {
+    public function newAddCommand($layout, $values = array())
+    {
         return new Command\Add($this, $layout, $values);
     }
 
@@ -246,7 +286,8 @@ class FileMaker {
      *
      * @return Command\Edit New Edit command object.
      */
-    public function newEditCommand($layout, $recordId, $updatedValues = array()) {
+    public function newEditCommand($layout, $recordId, $updatedValues = array())
+    {
         return new Command\Edit($this, $layout, $recordId, $updatedValues);
     }
 
@@ -258,7 +299,8 @@ class FileMaker {
      *
      * @return Command\Delete New Delete command object.
      */
-    public function newDeleteCommand($layout, $recordId) {
+    public function newDeleteCommand($layout, $recordId)
+    {
         return new Command\Delete($this, $layout, $recordId);
     }
 
@@ -270,7 +312,8 @@ class FileMaker {
      *
      * @return Command\Duplicate New Duplicate command object.
      */
-    public function newDuplicateCommand($layout, $recordId) {
+    public function newDuplicateCommand($layout, $recordId)
+    {
         return new Command\Duplicate($this, $layout, $recordId);
     }
 
@@ -281,7 +324,8 @@ class FileMaker {
      *
      * @return Command\Find New Find command object.
      */
-    public function newFindCommand($layout) {
+    public function newFindCommand($layout)
+    {
         return new Command\Find($this,$layout);
     }
 
@@ -294,7 +338,8 @@ class FileMaker {
      * @return Command\CompoundFind New Compound Find Set command
      *         object.
      */
-    public function newCompoundFindCommand($layout) {
+    public function newCompoundFindCommand($layout)
+    {
         return new Command\CompoundFind($this, $layout);
     }
 
@@ -308,7 +353,8 @@ class FileMaker {
      *
      * @return Command\FindRequest New Find Request command object.
      */
-    public function newFindRequest($layout) {
+    public function newFindRequest($layout)
+    {
         return new Command\FindRequest($this, $layout);
     }
 
@@ -319,7 +365,8 @@ class FileMaker {
      *
      * @return Command\FindAny New Find Any command object.
      */
-    public function newFindAnyCommand($layout) {
+    public function newFindAnyCommand($layout)
+    {
         return new Command\FindAny($this, $layout);
     }
 
@@ -330,7 +377,8 @@ class FileMaker {
      *
      * @return Command\FindAll New Find All command object.
      */
-    public function newFindAllCommand($layout) {
+    public function newFindAllCommand($layout)
+    {
         return new Command\FindAll($this, $layout);
     }
 
@@ -344,7 +392,8 @@ class FileMaker {
      * @return Command\PerformScript New Perform Script command
      *         object.
      */
-    public function newPerformScriptCommand($layout, $scriptName, $scriptParameters = null) {
+    public function newPerformScriptCommand($layout, $scriptName, $scriptParameters = null)
+    {
         return new Command\PerformScript($this, $layout, $scriptName, $scriptParameters);
     }
 
@@ -361,7 +410,7 @@ class FileMaker {
      * @param string $layoutName Layout name to create a new record for.
      * @param array $fieldValues Initial values for the new record's fields.
      *
-     * @return Object\Record New Record object.
+     * @return Object\Record|FileMakerException New Record object or a FileMakerError.
      * @throws FileMakerException
      */
     public function createRecord($layoutName, $fieldValues = array()) {
@@ -372,10 +421,13 @@ class FileMaker {
             foreach ($fieldValues as $fieldName => $fieldValue) {
                 if (is_array($fieldValue)) {
                     foreach ($fieldValue as $repetition => $value) {
-                        $record->setField($fieldName, $value, $repetition);
+                        $error = $record->setField($fieldName, $value, $repetition);
                     }
                 } else {
-                    $record->setField($fieldName, $fieldValue);
+                    $error = $record->setField($fieldName, $fieldValue);
+                }
+                if(FileMaker::isError($error)){
+                    return $error;
                 }
             }
         }
@@ -390,17 +442,24 @@ class FileMaker {
      * @param string $layout Layout that $recordId is in.
      * @param string $recordId ID of the record to get.
      *
-     * @return Object\Record
+     * @return Object\Record|FileMakerException
      * @throws FileMakerException
      */
     public function getRecordById($layout, $recordId) {
         $request = $this->newFindCommand($layout);
         $request->setRecordId($recordId);
         $result = $request->execute();
-
+        if (FileMaker::isError($result)) {
+            return $request;
+        }
+        
         $record = $result->getRecords();
         if (!$record) {
-            throw new FileMakerException($this, 'Record . ' . $recordId . ' not found in layout "' . $layout . '".');
+            $error = new FileMakerException($this, 'Record . ' . $recordId . ' not found in layout "' . $layout . '".');
+            if($this->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         }
         return $record[0];
     }
@@ -410,22 +469,33 @@ class FileMaker {
      *
      * @param string $layoutName Name of the layout to describe.
      *
-     * @return Layout Layout.
+     * @return Layout|FileMakerException Layout.
      * @throws FileMakerException
      */
     public function getLayout($layoutName) {
-        static $_layouts = array();
         if (isset(self::$_layouts[$layoutName]) ) {
             return self::$_layouts[$layoutName];
         }
+        
         $request = $this->execute(array('-db' => $this->getProperty('database'),
             '-lay' => $layoutName,
             '-view' => true));
-
+        if (FileMaker::isError($request)) {
+            return $request;
+        }
+        
         $parser = new FMResultSet($this);
         $result = $parser->parse($request);
+        if(FileMaker::isError($result)){
+            return $result;
+        }
+
         $layout = new Layout($this);
         $result = $parser->setLayout($layout);
+        if(FileMaker::isError($result)){
+            return $result;
+        }
+
         self::$_layouts[$layoutName] = $layout;
         return $layout;
     }
@@ -435,11 +505,15 @@ class FileMaker {
      * server settings and the current user name and password
      * credentials.
      *
-     * @return array List of database names.
+     * @return array|FileMakerException List of database names.
      * @throws FileMakerException
      */
     public function listDatabases() {
         $request = $this->execute(array('-dbnames' => true));
+        if (FileMaker::isError($request)) {
+            return $request;
+        }
+        
         $parser = new FMResultSet($this);
         $result = $parser->parse($request);
 
@@ -455,14 +529,21 @@ class FileMaker {
      * are available with the current server settings and the current user
      * name and password credentials.
      *
-     * @return array List of script names.
+     * @return array|FileMakerException List of script names.
      * @throws FileMakerException
      */
     public function listScripts() {
         $request = $this->execute(array('-db' => $this->getProperty('database'),
             '-scriptnames' => true));
+        if (FileMaker::isError($request)) {
+            return $request;
+        }
+        
         $parser = new FMResultSet($this);
         $result = $parser->parse($request);
+        if(FileMaker::isError($result)){
+            return $result;
+        }
 
         $list = array();
         foreach ($parser->parsedResult as $data) {
@@ -476,14 +557,21 @@ class FileMaker {
      * available with the current server settings and the current
      * user name and password credentials.
      *
-     * @return array List of layout names.
+     * @return array|FileMakerException List of layout names.
      * @throws FileMakerException
      */
     public function listLayouts() {
         $request = $this->execute(array('-db' => $this->getProperty('database'),
             '-layoutnames' => true));
+        if (FileMaker::isError($request)) {
+            return $request;
+        }
+        
         $parser = new FMResultSet($this);
         $result = $parser->parse($request);
+        if(FileMaker::isError($result)){
+            return $result;
+        }
 
         $list = array();
         foreach ($parser->parsedResult as $data) {
@@ -491,6 +579,29 @@ class FileMaker {
         }
         return $list;
     }
+    
+    function log($message, $level)
+    {
+        if ($this->_logger === null) {
+            return;
+        }
+        
+        $logLevel = $this->getProperty('logLevel');
+        if ($logLevel === null || $level > $logLevel) {
+            return;
+        }
+        switch ($level) {
+            case self::LOG_DEBUG:
+                $this->_logger->log($message, PEAR_LOG_DEBUG);
+                break;
+            case self::LOG_INFO:
+                $this->_logger->log($message, PEAR_LOG_INFO);
+                break;
+            case self::LOG_ERR:
+                $this->_logger->log($message, PEAR_LOG_ERR);
+                break;
+       }
+}
 
     /**
      * Returns the data for the specified container field.
@@ -499,28 +610,32 @@ class FileMaker {
      * named 'Cover Image'. For a Object\Record object named $record,
      * URL-encode the path returned by the getField() method.  For example:
      *
-     * <samp>
-     * <IMG src="img.php?-url=<?php echo urlencode($record->getField('Cover Image')); ?>">
-     * </samp>
+     * @example <IMG src="img.php?-url=<?php echo urlencode($record->getField('Cover Image')); ?>">
      *
      * Then as shown below in a line from img.php, pass the URL into
      * getContainerData() for the FileMaker object named $fm:
      *
-     * <samp>
-     * echo $fm->getContainerData($_GET['-url']);
-     * </samp>
+     * @example echo $fm->getContainerData($_GET['-url']);
      *
      * @param string $url URL of the container field contents to get.
      *
-     * @return string Raw field data.
+     * @return string|FileMakerException Raw field data.
      * @throws FileMakerException if remote container field or curl not active.
      */
     public function getContainerData($url) {
         if (!function_exists('curl_init')) {
-            throw new FileMakerException($this, 'cURL is required to use the FileMaker API.');
+            $error = new FileMakerException($this, 'cURL is required to use the FileMaker API.');
+            if($this->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         }
         if (strncasecmp($url, '/fmi/xml/cnt', 11) != 0) {
-            throw new FileMakerException($this, 'getContainerData() does not support remote containers');
+            $error = new FileMakerException($this, 'getContainerData() does not support remote containers');
+            if($this->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         } else {
             $hostspec = $this->getProperty('hostspec');
             if (substr($hostspec, -1, 1) == '/') {
@@ -530,7 +645,7 @@ class FileMaker {
             $hostspec = htmlspecialchars_decode($hostspec);
             $hostspec = str_replace(" ", "%20", $hostspec);
         }
-        //$this->log('Request for ' . $hostspec, self::LOG_INFO);
+        $this->log('Request for ' . $hostspec, self::LOG_INFO);
         $curl = curl_init($hostspec);
 
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
@@ -559,9 +674,13 @@ class FileMaker {
         if ($isHeadersSent) {
             $curlResponse = $this->_eliminateContainerHeader($curlResponse);
         }
-        //$this->log($curlResponse, FileMaker::LOG_DEBUG);
+        $this->log($curlResponse, FileMaker::LOG_DEBUG);
         if ($curlError = curl_errno($curl)) {
-            throw new FileMakerException($this, 'Communication Error: (' . $curlError . ') ' . curl_error($curl));
+            $error = new FileMakerException($this, 'cURL Communication Error: (' . $curlError . ') ' . curl_error($curl));
+            if($this->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         }
         curl_close($curl);
         return $curlResponse;
@@ -573,14 +692,18 @@ class FileMaker {
      * @param array $params
      * @param string $grammar fm xml grammar
      *
-     * @return string the cUrl response
+     * @return string|FileMakerException the cUrl response
      * @throws FileMakerException
-     * @throws \Exception
      */
     public function execute($params, $grammar = 'fmresultset') {
         if (!function_exists('curl_init')) {
-            throw new FileMakerException($this, 'cURL is required to use the FileMaker API.');
+            $error = new FileMakerException($this, 'cURL is required to use the FileMaker API.');
+            if($this->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         }
+        
         $RESTparams = array();
         foreach ($params as $option => $value) {
             if (strtolower($this->getProperty('charset')) != 'utf-8' && $value !== true) {
@@ -588,12 +711,14 @@ class FileMaker {
             }
             $RESTparams[] = urlencode($option) . ($value === true ? '' : '=' . urlencode($value));
         }
+        
         $host = $this->getProperty('hostspec');
         if (substr($host, -1, 1) != '/') {
             $host .= '/';
         }
         $host .= 'fmi/xml/' . $grammar . '.xml';
-       // $this->log('Request for ' . $host, FileMaker::LOG_INFO);
+        $this->log('Request for ' . $host, FileMaker::LOG_INFO);
+        
         $curl = curl_init($host);
         curl_setopt($curl, CURLOPT_POST, true);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
@@ -620,22 +745,28 @@ class FileMaker {
             }
         }
         $this->lastRequestedUrl = $host . '?' . implode('&', $RESTparams);
+        $this->log($this->lastRequestedUrl, FileMaker::LOG_DEBUG);
+        
         $curlResponse = curl_exec($curl);
-
-        //$this->log($curlResponse, FileMaker::LOG_DEBUG);
+        $this->log($curlResponse, FileMaker::LOG_DEBUG);
         if ($curlError = curl_errno($curl)) {
 
             if ($curlError == 52) {
-                throw new \Exception( 'Communication Error: (' . $curlError . ') ' . curl_error($curl) . ' - The Web Publishing Core and/or FileMaker Server services are not running.', $curlError);
+                $error = new FileMakerException( $this, 'cURL Communication Error: (' . $curlError . ') ' . curl_error($curl) . ' - The Web Publishing Core and/or FileMaker Server services are not running.', $curlError);
+
             } else if ($curlError == 22) {
                 if (stristr("50", curl_error($curl))) {
-                    throw new \Exception( 'Communication Error: (' . $curlError . ') ' . curl_error($curl) . ' - The Web Publishing Core and/or FileMaker Server services are not running.', $curlError);
+                    $error = new FileMakerException( $this, 'cURL Communication Error: (' . $curlError . ') ' . curl_error($curl) . ' - The Web Publishing Core and/or FileMaker Server services are not running.', $curlError);
                 } else {
-                    throw new \Exception( 'Communication Error: (' . $curlError . ') ' . curl_error($curl) . ' - This can be due to an invalid username or password, or if the FMPHP privilege is not enabled for that user.', $curlError);
+                    $error = new FileMakerException( $this, 'cURL Communication Error: (' . $curlError . ') ' . curl_error($curl) . ' - This can be due to an invalid username or password, or if the FMPHP privilege is not enabled for that user.', $curlError);
                 }
             } else {
-                throw new \Exception( 'Communication Error: (' . $curlError . ') ' . curl_error($curl), $curlError);
+                $error = new FileMakerException( $this, 'cURL Communication Error: (' . $curlError . ') ' . curl_error($curl), $curlError);
             }
+            if($this->getProperty('errorHandling') == 'default') {
+                return $error;
+            }
+            throw $error;
         }
         curl_close($curl);
 
@@ -653,9 +784,7 @@ class FileMaker {
      * field contents. For example, get the URL for a container field
      * named 'Cover Image'.  For example:
      *
-     * <samp>
-     * <IMG src="<?php echo $fm->getContainerDataURL($record->getField('Cover Image')); ?>">
-     * </samp>
+     * @example <IMG src="<?php echo $fm->getContainerDataURL($record->getField('Cover Image')); ?>">
      *
      * @param string $url URL of the container field contents to get.
      *
@@ -758,18 +887,20 @@ class FileMaker {
      * @param mixed $value
      *
      * @return boolean
+     * @throws FileMakerException
      */
     public function __set($name, $value) {
         if (array_key_exists($name, $this->_properties)) {
             $this->_properties[$name] = $value;
         } else {
-            /**
-             * @todo throw Exception
-             */
-            return false;
+            throw new FileMakerException($this, 'Attempt to set an unsupported property (' . $name . ')');
         }
     }
 
+    /**
+     * @param array|string $value
+     * @return array|string
+     */
     public function toOutputCharset($value) {
         if (strtolower($this->getProperty('charset')) != 'iso-8859-1') {
             return $value;
@@ -800,16 +931,26 @@ class FileMaker {
         if($this->getProperty('dateFormat') === null){
             return $value;
         }
-        $date = \DateTime::createFromFormat($this->getProperty('dateFormat'), $value);
-        return $date->format('m/d/Y');
+        try {
+            $date = \DateTime::createFromFormat($this->getProperty('dateFormat'), $value);
+            return $date->format('m/d/Y');
+        }  catch (\Exception $e) {
+            $this->log('Could not convert string to a valid DateTime : ' . $e->getMessage(), FileMaker::LOG_ERR);
+            return $value;
+        }
     }
 
     public function dateConvertOutput($value) {
         if($this->getProperty('dateFormat') === null){
             return $value;
         }
-        $date = \DateTime::createFromFormat('m/d/Y', $value);
-        return $date->format($this->getProperty('dateFormat'));
+        try {
+            $date = \DateTime::createFromFormat('m/d/Y', $value);
+            return $date->format($this->getProperty('dateFormat'));
+        } catch (\Exception $e) {
+            $this->log('Could not convert string to a valid DateTime : ' . $e->getMessage(), FileMaker::LOG_ERR);
+            return $value;
+        }
     }
 
 }

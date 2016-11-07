@@ -1,22 +1,12 @@
 <?php
+/**
+ * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
+ * @licence BSD
+ */
 namespace airmoi\FileMaker\Command;
 
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\Object\Result;
-
-/**
- * FileMaker API PHP
- *
- * @package FileMaker
- *
- * Copyright © 2005-2007, FileMaker, Inc. All rights reserved.
- * NOTE: Use of this source code is subject to the terms of the FileMaker
- * Software License which accompanies the code. Your use of this source code
- * signifies your agreement to such license terms and conditions. Except as
- * expressly granted in the Software License, no other copyright, patent, or
- * other intellectual property license or right is granted, either expressly or
- * by implication, by FileMaker.
- */
 
 /**
  * Command class that performs a ScriptMaker script.
@@ -54,11 +44,14 @@ class PerformScript extends Command
      * @param integer $skip Number of records to skip past. Default is 0.
      * @param integer $max Maximum number of records to return.
      *        Default is all.
+     * 
+     * @return self
      */
     public function setRange($skip = 0, $max = null)
     {
-         $this->_skip = $skip;
+        $this->_skip = $skip;
         $this->_max = $max;
+        return $this;
     }
 
     /**

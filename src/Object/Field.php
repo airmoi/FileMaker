@@ -1,23 +1,13 @@
 <?php
+/**
+ * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
+ * @licence BSD
+ */
 namespace airmoi\FileMaker\Object;
 
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\FileMakerValidationException;
-
-/**
- * FileMaker API for PHP
- *
- * @package FileMaker
- *
- * Copyright � 2005-2009, FileMaker, Inc. All rights reserved.
- * NOTE: Use of this source code is subject to the terms of the FileMaker
- * Software License which accompanies the code. Your use of this source code
- * signifies your agreement to such license terms and conditions. Except as
- * expressly granted in the Software License, no other copyright, patent, or
- * other intellectual property license or right is granted, either expressly or
- * by implication, by FileMaker.
- */
 
 /**
  * Field description class. Contains all the information about a
@@ -138,6 +128,7 @@ class Field
                         }
                     }
                     break;
+                case FileMaker::RULE_TIMEOFDAY :
                 case FileMaker::RULE_TIME_FIELD :
                     if (!empty($value)) {
                         if (!$this->checkTimeFormat($value)) {
@@ -210,16 +201,6 @@ class Field
                                     }
                                 }
                                 break;
-                        }
-                    }
-                    break;
-                case FileMaker::RULE_TIMEOFDAY :
-                    if (!empty($value)) {
-                        if ($this->checkTimeFormat($value)) {
-                            $this->checkTimeValidity($value, $rule, $validationError, TRUE);
-                        } else {
-
-                            $validationError->addError($this, $rule, $value);
                         }
                     }
                     break;
@@ -429,9 +410,9 @@ class Field
      * If this field is not associated with a value list, this method returns 
      * NULL.
      *
-     * @param string  $recid Record from which to display the value list.
+     * @param string $listName Name of the value list.
      * @throws FileMakerException
-     * @return array Value list array.
+     * @return array|FileMakerException Value list array.
      */
     public function getValueList($listName = null)
     {
@@ -444,7 +425,7 @@ class Field
      * 'EDITTEXT', 'POPUPLIST', 'POPUPMENU', 'CHECKBOX', 'RADIOBUTTONS' or
      * 'CALENDAR'.
      *
-     * @return string Style type.
+     * @return string|FileMakerException Style type.
      * @throws FileMakerException
      */
     public function getStyleType()
@@ -497,7 +478,6 @@ class Field
     }
 
     public function checkTimeValidity($value, $rule, FileMakerValidationException $validationError, $shortHoursFormat) {
-        $format = 0;
         if ($shortHoursFormat) {
             $format = 12;
         } else {

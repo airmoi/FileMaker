@@ -1,4 +1,8 @@
 <?php
+/**
+ * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
+ * @licence BSD
+ */
 namespace airmoi\FileMaker\Command;
 
 use airmoi\FileMaker\FileMaker;
@@ -6,21 +10,6 @@ use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\FileMakerValidationException;
 use airmoi\FileMaker\Parser\FMResultSet;
 use airmoi\FileMaker\Object\Result;
-
-/**
- * FileMaker API for PHP
- *
- * @package FileMaker
- *
- * Copyright © 2005-2009, FileMaker, Inc. All rights reserved.
- * NOTE: Use of this source code is subject to the terms of the FileMaker
- * Software License which accompanies the code. Your use of this source code
- * signifies your agreement to such license terms and conditions. Except as
- * expressly granted in the Software License, no other copyright, patent, or
- * other intellectual property license or right is granted, either expressly or
- * by implication, by FileMaker.
- */
-
 
 /**
  * Base Command class. Represents commands that add records, delete records, 
@@ -36,7 +25,7 @@ class Command
      * command base.
      *
      * @var FileMaker
-     * @access protected
+     * @access public
      */
     public $fm;
     
@@ -75,10 +64,12 @@ class Command
      * from the current layout.
      *
      * @param string $layout Layout to return results in.
+     * @return self
      */
     public function setResultLayout($layout)
     {
         $this->_resultLayout = $layout;
+        return $this;
     }
 
     /**
@@ -87,11 +78,13 @@ class Command
      *
      * @param string $scriptName Name of the ScriptMaker script to run.
      * @param string $scriptParameters Any parameters to pass to the script.
+     * @return self
      */
     public function setScript($scriptName, $scriptParameters = null)
     {
         $this->_script = $scriptName;
         $this->_scriptParams = $scriptParameters;
+        return $this;
     }
 
     /**
@@ -99,11 +92,13 @@ class Command
      *
      * @param string $scriptName Name of the ScriptMaker script to run.
      * @param string $scriptParameters Any parameters to pass to the script.
+     * @return self
      */
     public function setPreCommandScript($scriptName, $scriptParameters = null)
     {
         $this->_preReqScript = $scriptName;
         $this->_preReqScriptParams = $scriptParameters;
+        return $this;
     }
 
     /**
@@ -112,11 +107,13 @@ class Command
      *
      * @param string $scriptName Name of the ScriptMaker script to run.
      * @param string $scriptParameters Any parameters to pass to the script.
+     * @return self
      */
     public function setPreSortScript($scriptName, $scriptParameters = null)
     {
-         $this->_preSortScript = $scriptName;
+        $this->_preSortScript = $scriptName;
         $this->_preSortScriptParams = $scriptParameters;
+        return $this;
     }
 
     /**
@@ -130,10 +127,12 @@ class Command
      * needs to instantiate it.
      *
      * @param string $className Name of the class to represent records.
+     * @return self
      */
     public function setRecordClass($className)
     {
         $this->_recordClass = $className;
+        return $this;
     }
 
     /**
@@ -161,7 +160,7 @@ class Command
      */
     public function validate($fieldName = null)
     {
-        if (!is_a($this, __NAMESPACE__.'\Add') && !is_a($this, __NAMESPACE__.'\Edit')) {
+        if (!is_a($this, Add::class) && !is_a($this, Edit::class)) {
             return true;
         }
         $layout = $this->fm->getLayout($this->_layout);
@@ -204,8 +203,12 @@ class Command
                     }
             }
         }
-        if ( $validationErrors->numErrors() )
+        if ( $validationErrors->numErrors() ) {
+            if($this->fm->getProperty('errorHandling') == 'default') {
+                return $validationErrors;
+            }
             throw $validationErrors;
+        }
         return true;
     }
 
@@ -227,10 +230,12 @@ class Command
      * ID. This method is ignored by Add and FindAny commands.
      *
      * @param string $recordId ID of record this command acts upon.
+     * @return self
      */
     public function setRecordId($recordId)
     {
         $this->recordId = $recordId;
+        return $this;
     }
 
     /**
@@ -239,23 +244,32 @@ class Command
      *
      * @param string $fieldName the global field name.
      * @param string $fieldValue value to be set.
+     * @return self
      */
     public function setGlobal($fieldName, $fieldValue)
     {
         $this->_globals[$fieldName] = $fieldValue;
+        return $this;
     }
 
     /**
      * 
      * @param string $xml
-     * @return Result
+     * @return Result|FileMakerException
      * @throws FileMakerException
      */
     protected function _getResult($xml) {
         $parser      = new FMResultSet($this->fm);
         $parseResult = $parser->parse($xml);
+        if(FileMaker::isError($parseResult)){
+            return $parseResult;
+        }
+        
         $result      = new Result($this->fm);
         $parseResult = $parser->setResult($result, $this->_recordClass);
+        if(FileMaker::isError($parseResult)){
+            return $parseResult;
+        }
         
         return $result;
     }

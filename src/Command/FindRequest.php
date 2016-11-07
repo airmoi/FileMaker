@@ -1,21 +1,9 @@
 <?php
-namespace airmoi\FileMaker\Command;
-
 /**
- * FileMaker API for PHP
- *
- * @package FileMaker
- *
- * Copyright © 2005-2007, FileMaker, Inc. All rights reserved.
- * NOTE: Use of this source code is subject to the terms of the FileMaker
- * Software License which accompanies the code. Your use of this source code
- * signifies your agreement to such license terms and conditions. Except as
- * expressly granted in the Software License, no other copyright, patent, or
- * other intellectual property license or right is granted, either expressly or
- * by implication, by FileMaker.
+ * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
+ * @licence BSD
  */
-
-
+namespace airmoi\FileMaker\Command;
 
 /**
  * Find Request class. Contains all the information about a single find request 
@@ -48,10 +36,13 @@ class FindRequest
      * An omit request removes the matching records from the final result set.
      *
      * @param boolean $value TRUE if this is an omit request. Otherwise, FALSE.
+     * 
+     * @return self
      */
     public function setOmit($value)
     {
         $this->omit = $value;
+        return $this;
     }
 
     /**
@@ -59,18 +50,24 @@ class FindRequest
      *
      * @param string $fieldname Name of the field being tested.
      * @param string $testvalue Value of the field to test against.
+     * 
+     * @return self
      */
     public function addFindCriterion($fieldname, $testvalue)
     {
         $this->findCriteria[$fieldname] = $testvalue;
+        return $this;
     }
     
     /**
      * Clears all existing criteria from this find request.
+     * 
+     * @return self
      */
     public function clearFindCriteria()
     {
         $this->findCriteria = array();
+        return $this;
     }
     
     /**

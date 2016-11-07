@@ -13,7 +13,7 @@
  * by implication, by FileMaker.
  */
 
-$__FM_ERRORS = array(
+return array(
     -1 => 'Okänt fel',
     0 => 'Inget fel',
     1 => 'Användaren har avbrutit åtgärden',

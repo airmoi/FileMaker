@@ -1,19 +1,9 @@
 <?php
-namespace airmoi\FileMaker\Command;
-
 /**
- * FileMaker API for PHP
- *
- * @package FileMaker
- *
- * Copyright © 2005-2007, FileMaker, Inc. All rights reserved.
- * NOTE: Use of this source code is subject to the terms of the FileMaker
- * Software License which accompanies the code. Your use of this source code
- * signifies your agreement to such license terms and conditions. Except as
- * expressly granted in the Software License, no other copyright, patent, or
- * other intellectual property license or right is granted, either expressly or
- * by implication, by FileMaker.
+ * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
+ * @licence BSD
  */
+namespace airmoi\FileMaker\Command;
 
 /**
  * Command class that performs multiple find requests, also known as a compound
@@ -84,7 +74,7 @@ class CompoundFind extends Command
 
     /**
      *
-     * @return \airmoi\FileMaker\Object\Result
+     * @return \airmoi\FileMaker\Object\Result|\airmoi\FileMaker\FileMakerException
      * @throws \airmoi\FileMaker\FileMakerException
      */
     public function execute() {
