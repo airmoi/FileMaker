@@ -24,7 +24,7 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase {
         if( $GLOBALS['OFFICIAL_API'] == 1 ) {
             $this->fm = new \FileMaker($GLOBALS['DB_FILE'], $GLOBALS['DB_HOST'], $GLOBALS['DB_USER'], $GLOBALS['DB_PASSWD']);
         } else {
-            $this->fm = new FileMaker($GLOBALS['DB_FILE'], $GLOBALS['DB_HOST'], $GLOBALS['DB_USER'], $GLOBALS['DB_PASSWD']);
+            $this->fm = new FileMaker($GLOBALS['DB_FILE'], $GLOBALS['DB_HOST'], $GLOBALS['DB_USER'], $GLOBALS['DB_PASSWD'], ['errorHandling' => 'exception']);
         }
         //$this->fm->newPerformScriptCommand('sample', 'cleanup db')->execute();
     }
@@ -103,7 +103,8 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase {
 
         //Test invalid property (should return an error)
         if( !$GLOBALS['OFFICIAL_API'] ) {
-            $this->assertTrue(FileMaker::isError($this->fm->setProperty('fakeProperty', FileMaker::LOG_INFO)));
+            $this->setExpectedException(FileMakerException::class);
+            $this->fm->setProperty('fakeProperty', FileMaker::LOG_INFO);
         }
     }
 
