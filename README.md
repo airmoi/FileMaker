@@ -46,7 +46,7 @@ STEP 4 : use it quite the same way you would use the offical API...
 
 ...And enjoy code completion using your favorite IDE and php 7 support without notice/warnings
 
-You may also find sample usage by reading the `sampletest.php` file located in the "demo" folder 
+You may also find sample usage by reading the `sample.php` file located in the "demo" folder 
 
 ### Sample demo code
 
