@@ -43,7 +43,7 @@ class FileMaker {
         'dateFormat' => null,
         'useCookieSession' => false,
         'emptyAsNull' => false, //Returns null value instead of empty strings on empty field value
-        'errorHandling' => 'default', //Default to use old school FileMaker Errors trapping, 'exception' to handle errors as exceptions
+        'errorHandling' => 'exception', //Default to use old school FileMaker Errors trapping, 'exception' to handle errors as exceptions
     ];
     
     /**
