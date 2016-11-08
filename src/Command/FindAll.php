@@ -20,13 +20,12 @@ class FindAll extends Find
      * @return Result|\airmoi\FileMaker\FileMakerException
      * @throws \airmoi\FileMaker\FileMakerException
      */
-    public function execute() {
-        $params = $this->_getCommandParams();
+    public function execute()
+    {
+        $params             = $this->_getCommandParams();
         $params['-findall'] = true;
         $this->_setSortParams($params);
         $this->_setRangeParams($params);
-        $result = $this->fm->execute($params);
-        return $this->_getResult($result);
+        return $this->_getResult($this->fm->execute($params));
     }
-
 }

@@ -14,8 +14,8 @@ use airmoi\FileMaker\FileMakerException;
  *
  * @package FileMaker
  */
-class Add extends Command {
-
+class Add extends Command
+{
     /**
      * Add command constructor.
      *
@@ -26,14 +26,14 @@ class Add extends Command {
      * use a numerically indexed array for the value of a field, with the numeric keys
      * corresponding to the repetition number to set.
      */
-    public function __construct(FileMaker $fm, $layout, $values = array()) {
+    public function __construct(FileMaker $fm, $layout, $values = array())
+    {
         parent::__construct($fm, $layout);
         foreach ($values as $fieldname => $value) {
             if (!is_array($value)) {
                 $this->setField($fieldname, $value, 0);
-            }
-            else {
-                foreach ( $value as $repetition => $repetitionValue ){
+            } else {
+                foreach ($value as $repetition => $repetitionValue) {
                     $this->setField($fieldname, $repetitionValue, $repetition) ;
                 }
             }
@@ -45,10 +45,11 @@ class Add extends Command {
      * @return \airmoi\FileMaker\Object\Result|FileMakerException
      * @throws FileMakerException
      */
-    public function execute() {
+    public function execute()
+    {
         if ($this->fm->getProperty('prevalidate')) {
             $validation = $this->validate();
-            if(FileMaker::isError($validation)) {
+            if (FileMaker::isError($validation)) {
                 return $validation;
             }
         }
@@ -86,20 +87,26 @@ class Add extends Command {
      *
      * @return string
      */
-    public function setField($field, $value, $repetition = 0) {
+    public function setField($field, $value, $repetition = 0)
+    {
         $fieldInfos = $this->fm->getLayout($this->_layout)->getField($field);
         /* if(FileMaker::isError($fieldInfos)){
             return $fieldInfos;
         }*/
-        
+
         $format = FileMaker::isError($fieldInfos) ? null : $fieldInfos->result;
-        if( !empty($value) && $this->fm->getProperty('dateFormat') !== null && ($format == 'date' || $format == 'timestamp')){
-            if( $format == 'date' ){
-                $dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value . ' 00:00:00');
+        if (!empty($value) && $this->fm->getProperty('dateFormat') !== null
+            && ($format === 'date' || $format === 'timestamp')
+        ) {
+            if ($format === 'date') {
+                $dateTime = \DateTime::createFromFormat(
+                    $this->fm->getProperty('dateFormat') . ' H:i:s',
+                    $value . ' 00:00:00'
+                );
                 $value = $dateTime->format('m/d/Y');
             } else {
-                $dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value );
-                $value = $dateTime->format( 'm/d/Y H:i:s' );
+                $dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value);
+                $value = $dateTime->format('m/d/Y H:i:s');
             }
         }
 
@@ -126,7 +133,8 @@ class Add extends Command {
      * @return string|FileMakerException
      * @throws FileMakerException
      */
-    public function setFieldFromTimestamp($field, $timestamp, $repetition = 0) {
+    public function setFieldFromTimestamp($field, $timestamp, $repetition = 0)
+    {
         $layout = $this->fm->getLayout($this->_layout);
         $fieldInfos = $layout->getField($field);
         switch ($fieldInfos->getResult()) {
@@ -137,11 +145,13 @@ class Add extends Command {
             case 'timestamp':
                 return $this->setField($field, date('m/d/Y H:i:s', $timestamp), $repetition);
         }
-        $error = new FileMakerException($this->fm, 'Only time, date, and timestamp fields can be set to the value of a timestamp.');
-        if($this->fm->getProperty('errorHandling') == 'default') {
+        $error = new FileMakerException(
+            $this->fm,
+            'Only time, date, and timestamp fields can be set to the value of a timestamp.'
+        );
+        if ($this->fm->getProperty('errorHandling') === 'default') {
             return $error;
         }
         throw $error;
     }
-
 }

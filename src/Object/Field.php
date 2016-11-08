@@ -35,7 +35,7 @@ class Field
      *
      * @param Layout $layout Parent Layout object.
      */
-    public function __construct(Layout &$layout)
+    public function __construct(Layout $layout)
     {
         $this->layout = $layout;
     }
@@ -61,7 +61,7 @@ class Field
     }
 
     /**
-     * Returns TRUE if data in this field is auto-entered or FALSE 
+     * Returns TRUE if data in this field is auto-entered or FALSE
      * if it is entered manually.
      *
      * @return boolean Auto-entered status of this field.
@@ -105,7 +105,7 @@ class Field
     {
         $isValid = false;
         $validationError = new FileMakerValidationException($this->layout->fm);
-       
+
         foreach ($this->getValidationRules() as $rule) {
             switch ($rule) {
                 case FileMaker::RULE_NOTEMPTY:
@@ -113,14 +113,14 @@ class Field
                         $validationError->addError($this, $rule, $value);
                     }
                     break;
-                case FileMaker::RULE_NUMERICONLY :
+                case FileMaker::RULE_NUMERICONLY:
                     if (!empty($value)) {
                         if ($this->checkNumericOnly($value)) {
                             $validationError->addError($this, $rule, $value);
                         }
                     }
                     break;
-                case FileMaker::RULE_MAXCHARACTERS :
+                case FileMaker::RULE_MAXCHARACTERS:
                     if (!empty($value)) {
                         $strlen = strlen($value);
                         if ($strlen > $this->maxCharacters) {
@@ -128,67 +128,70 @@ class Field
                         }
                     }
                     break;
-                case FileMaker::RULE_TIMEOFDAY :
-                case FileMaker::RULE_TIME_FIELD :
+                case FileMaker::RULE_TIMEOFDAY:
+                case FileMaker::RULE_TIME_FIELD:
                     if (!empty($value)) {
                         if (!$this->checkTimeFormat($value)) {
-
                             $validationError->addError($this, $rule, $value);
                         } else {
-                            $this->checkTimeValidity($value, $rule, $validationError, FALSE);
+                            $this->checkTimeValidity($value, $rule, $validationError, false);
                         }
                     }
                     break;
-                case FileMaker::RULE_TIMESTAMP_FIELD :
+                case FileMaker::RULE_TIMESTAMP_FIELD:
                     if (!empty($value)) {
                         if (!$this->checkTimeStampFormat($value)) {
-
                             $validationError->addError($this, $rule, $value);
                         } else {
                             $this->checkDateValidity($value, $rule, $validationError);
-                            $this->checkTimeValidity($value, $rule, $validationError, FALSE);
+                            $this->checkTimeValidity($value, $rule, $validationError, false);
                         }
                     }
                     break;
-                case FileMaker::RULE_DATE_FIELD :
+                case FileMaker::RULE_DATE_FIELD:
                     if (!empty($value)) {
                         if (!$this->checkDateFormat($value)) {
-
                             $validationError->addError($this, $rule, $value);
                         } else {
                             $this->checkDateValidity($value, $rule, $validationError);
                         }
                     }
                     break;
-                case FileMaker::RULE_FOURDIGITYEAR :
+                case FileMaker::RULE_FOURDIGITYEAR:
                     if (!empty($value)) {
                         switch ($this->result) {
-                            case 'timestamp' :
+                            case 'timestamp':
                                 if ($this->checkTimeStampFormatFourDigitYear($value)) {
-                                    preg_match('#^([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})[-,/,\\\\]([0-9]{4})#', $value, $matches);
+                                    preg_match(
+                                        '#^([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})[-,/,\\\\]([0-9]{4})#',
+                                        $value,
+                                        $matches
+                                    );
                                     $month = $matches[1];
                                     $day = $matches[2];
                                     $year = $matches[3];
                                     if ($year < 1 || $year > 4000) {
                                         $validationError->addError($this, $rule, $value);
-                                    } else
-                                    if (!checkdate($month, $day, $year)) {
+                                    } elseif (!checkdate($month, $day, $year)) {
                                         $validationError->addError($this, $rule, $value);
                                     } else {
-                                        $this->checkTimeValidity($value, $rule, $validationError, FALSE);
+                                        $this->checkTimeValidity($value, $rule, $validationError, false);
                                     }
                                 } else {
-
                                     $validationError->addError($this, $rule, $value);
                                 }
                                 break;
-                            default :
-                                preg_match('#([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})[-,/,\\\\]([0-9]{1,4})#', $value, $matches);
-                                if (count($matches) != 3) {
+                            default:
+                                preg_match(
+                                    '#([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})[-,/,\\\\]([0-9]{1,4})#',
+                                    $value,
+                                    $matches
+                                );
+                                if (count($matches) !== 3) {
                                     $validationError->addError($this, $rule, $value);
                                 } else {
                                     $strlen = strlen($matches[2]);
-                                    if ($strlen != 4) {
+                                    if ($strlen !== 4) {
                                         $validationError->addError($this, $rule, $value);
                                     } else {
                                         if ($matches[2] < 1 || $matches[2] > 4000) {
@@ -214,41 +217,41 @@ class Field
     }
 
     /**
-     * Returns an array of FileMaker::RULE_* constants for each rule 
-     * set on this field that can be evaluated by the PHP engine. 
-     * 
-     * Rules such as "unique" and "exists" can only be pre-validated on the 
+     * Returns an array of FileMaker::RULE_* constants for each rule
+     * set on this field that can be evaluated by the PHP engine.
+     *
+     * Rules such as "unique" and "exists" can only be pre-validated on the
      * Database Server and are not included in this list.
      *
      * @return array Local rule array.
      */
     public function getLocalValidationRules()
     {
-       $rules = array();
+        $rules = array();
         foreach (array_keys($this->validationRules) as $rule) {
             switch ($rule) {
-                case FileMaker::RULE_NOTEMPTY :
+                case FileMaker::RULE_NOTEMPTY:
                     $rules[] = $rule;
                     break;
-                case FileMaker::RULE_NUMERICONLY :
+                case FileMaker::RULE_NUMERICONLY:
                     $rules[] = $rule;
                     break;
-                case FileMaker::RULE_MAXCHARACTERS :
+                case FileMaker::RULE_MAXCHARACTERS:
                     $rules[] = $rule;
                     break;
-                case FileMaker::RULE_FOURDIGITYEAR :
+                case FileMaker::RULE_FOURDIGITYEAR:
                     $rules[] = $rule;
                     break;
-                case FileMaker::RULE_TIMEOFDAY :
+                case FileMaker::RULE_TIMEOFDAY:
                     $rules[] = $rule;
                     break;
-                case FileMaker::RULE_TIMESTAMP_FIELD :
+                case FileMaker::RULE_TIMESTAMP_FIELD:
                     $rules[] = $rule;
                     break;
-                case FileMaker::RULE_DATE_FIELD :
+                case FileMaker::RULE_DATE_FIELD:
                     $rules[] = $rule;
                     break;
-                case FileMaker::RULE_TIME_FIELD :
+                case FileMaker::RULE_TIME_FIELD:
                     $rules[] = $rule;
                     break;
             }
@@ -265,9 +268,9 @@ class Field
     {
         return $this->maxCharacters;
     }
-    
+
     /**
-     * Returns an array of FileMaker::RULE_* constants for each rule 
+     * Returns an array of FileMaker::RULE_* constants for each rule
      * set on this field.
      *
      * @return array Rule array.
@@ -302,15 +305,15 @@ class Field
     }
 
     /**
-     * Returns any additional information for the specified pre-validation 
-     * rule. 
+     * Returns any additional information for the specified pre-validation
+     * rule.
      *
-     * Used for range rules and other rules that have additional 
+     * Used for range rules and other rules that have additional
      * pre-validation parameters.
      *
-     * @param integer $validationRule FileMaker::RULE_* constant 
-     *        to get information for. 
-     * 
+     * @param integer $validationRule FileMaker::RULE_* constant
+     *        to get information for.
+     *
      * @return array Any extra information for $validationRule.
      */
     public function describeValidationRule($validationRule)
@@ -322,17 +325,17 @@ class Field
     }
 
     /**
-     * Return an array of arrays containing the extra information for 
-     * all pre-validation rules on this field that can be evaluated by the 
-     * PHP engine. 
-     * 
-     * Rules such as "unique" and "exists" can be validated only 
-     * on the Database Server and are not included in this list. 
-     * Indexes of the outer array are FileMaker::RULE_* constants, 
+     * Return an array of arrays containing the extra information for
+     * all pre-validation rules on this field that can be evaluated by the
+     * PHP engine.
+     *
+     * Rules such as "unique" and "exists" can be validated only
+     * on the Database Server and are not included in this list.
+     * Indexes of the outer array are FileMaker::RULE_* constants,
      * and values are the same array returned by describeValidationRule().
      *
-     * @return array An associative array of all extra pre-validation 
-     *         information, with rule constants as indexes and extra 
+     * @return array An associative array of all extra pre-validation
+     *         information, with rule constants as indexes and extra
      *         information as the values.
      */
     public function describeLocalValidationRules()
@@ -340,28 +343,28 @@ class Field
         $rules = array();
         foreach ($this->validationRules as $rule => $description) {
             switch ($rule) {
-                case FileMaker::RULE_NOTEMPTY :
+                case FileMaker::RULE_NOTEMPTY:
                     $rules[$rule] = $description;
                     break;
-                case FileMaker::RULE_NUMERICONLY :
+                case FileMaker::RULE_NUMERICONLY:
                     $rules[$rule] = $description;
                     break;
-                case FileMaker::RULE_MAXCHARACTERS :
+                case FileMaker::RULE_MAXCHARACTERS:
                     $rules[$rule] = $description;
                     break;
-                case FileMaker::RULE_FOURDIGITYEAR :
+                case FileMaker::RULE_FOURDIGITYEAR:
                     $rules[$rule] = $description;
                     break;
-                case FileMaker::RULE_TIMEOFDAY :
+                case FileMaker::RULE_TIMEOFDAY:
                     $rules[$rule] = $description;
                     break;
-                case FileMaker::RULE_TIMESTAMP_FIELD :
+                case FileMaker::RULE_TIMESTAMP_FIELD:
                     $rules[$rule] = $description;
                     break;
-                case FileMaker::RULE_DATE_FIELD :
+                case FileMaker::RULE_DATE_FIELD:
                     $rules[$rule] = $description;
                     break;
-                case FileMaker::RULE_TIME_FIELD :
+                case FileMaker::RULE_TIME_FIELD:
                     $rules[$rule] = $description;
                     break;
             }
@@ -372,8 +375,8 @@ class Field
     /**
      * Returns any additional information for all pre-validation rules.
      *
-     * @return array An associative array of all extra pre-validation 
-     *         information, with FileMaker::RULE_* constants 
+     * @return array An associative array of all extra pre-validation
+     *         information, with FileMaker::RULE_* constants
      *         as keys and extra information as the values.
      */
     public function describeValidationRules()
@@ -404,10 +407,10 @@ class Field
     }
 
     /**
-     * Returns the list of choices from the value list associated with this 
-     * field. 
+     * Returns the list of choices from the value list associated with this
+     * field.
      *
-     * If this field is not associated with a value list, this method returns 
+     * If this field is not associated with a value list, this method returns
      * NULL.
      *
      * @param string $listName Name of the value list.
@@ -421,7 +424,7 @@ class Field
     }
 
     /**
-     * Returns the control style type of this field -- for example, 
+     * Returns the control style type of this field -- for example,
      * 'EDITTEXT', 'POPUPLIST', 'POPUPMENU', 'CHECKBOX', 'RADIOBUTTONS' or
      * 'CALENDAR'.
      *
@@ -433,28 +436,40 @@ class Field
         $extendedInfos = $this->layout->loadExtendedInfo();
         return $this->styleType;
     }
-    
-    public function checkTimeStampFormatFourDigitYear($value) {
-        return (preg_match('#^[ ]*([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})[-,/,\\\\]([0-9]{4})[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#', $value));
+
+    public function checkTimeStampFormatFourDigitYear($value)
+    {
+        return preg_match(
+            '#^[ ]*([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})[-,/,\\\\]([0-9]{4})[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#',
+            $value
+        );
     }
 
-    public function checkTimeStampFormat($value) {
-        return (preg_match('#^[ ]*([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})([-,/,\\\\]([0-9]{1,4}))?[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#', $value));
+    public function checkTimeStampFormat($value)
+    {
+        return preg_match(
+            '#^[ ]*([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})([-,/,\\\\]([0-9]{1,4}))?[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#',
+            $value
+        );
     }
 
-    public function checkDateFormat($value) {
-        return (preg_match('#^[ ]*([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})([-,/,\\\\]([0-9]{1,4}))?[ ]*$#', $value));
+    public function checkDateFormat($value)
+    {
+        return preg_match('#^[ ]*([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})([-,/,\\\\]([0-9]{1,4}))?[ ]*$#', $value);
     }
 
-    public function checkTimeFormat($value) {
-        return (preg_match('#^[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#', $value));
+    public function checkTimeFormat($value)
+    {
+        return preg_match('#^[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#', $value);
     }
 
-    public function checkNumericOnly($value) {
+    public function checkNumericOnly($value)
+    {
         return (!is_numeric($value));
     }
 
-    public function checkDateValidity($value, $rule, FileMakerValidationException $validationError) {
+    public function checkDateValidity($value, $rule, FileMakerValidationException $validationError)
+    {
         preg_match('#([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})([-,/,\\\\]([0-9]{1,4}))?#', $value, $matches);
         if ($matches[4]) {
             $strlen = strlen($matches[4]);
@@ -477,7 +492,8 @@ class Field
         }
     }
 
-    public function checkTimeValidity($value, $rule, FileMakerValidationException $validationError, $shortHoursFormat) {
+    public function checkTimeValidity($value, $rule, FileMakerValidationException $validationError, $shortHoursFormat)
+    {
         if ($shortHoursFormat) {
             $format = 12;
         } else {
@@ -491,13 +507,12 @@ class Field
         }
         if ($hours < 0 || $hours > $format) {
             $validationError->addError($this, $rule, $value);
-        } else if ($minutes < 0 || $minutes > 59) {
+        } elseif ($minutes < 0 || $minutes > 59) {
             $validationError->addError($this, $rule, $value);
-        } else
-        if (isset($seconds)) {
-            if ($seconds < 0 || $seconds > 59)
+        } elseif (isset($seconds)) {
+            if ($seconds < 0 || $seconds > 59) {
                 $validationError->addError($this, $rule, $value);
+            }
         }
     }
-
 }

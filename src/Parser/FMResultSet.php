@@ -11,18 +11,20 @@ use airmoi\FileMaker\Object\Layout;
 use airmoi\FileMaker\Object\Field;
 use airmoi\FileMaker\Object\RelatedSet;
 use airmoi\FileMaker\Object\Result;
+
 /**
  * Class used to parse FMResultSet structure
  * @package FileMAker
  */
-class FMResultSet {
-    
+class FMResultSet
+{
+
     /**
      * Array that stores parsed records
-     * @var \airmoi\FileMaker\Object\Record[] 
+     * @var \airmoi\FileMaker\Object\Record[]
      */
     public $parsedResult = array();
-    
+
     private $_errorCode;
     private $_serverVersion;
     private $_parsedHead;
@@ -40,21 +42,23 @@ class FMResultSet {
     private $_result;
     private $_layout;
 
-    public function __construct(FileMaker $fm) {
+    public function __construct(FileMaker $fm)
+    {
         $this->_fm = $fm;
     }
 
     /**
      * Parse the provided xml
-     * 
+     *
      * @param string $xml
      * @return FileMakerException|boolean
      * @throws FileMakerException
      */
-    public function parse($xml) {
+    public function parse($xml)
+    {
         if (empty($xml)) {
             $error = new FileMakerException($this->_fm, 'Did not receive an XML document from the server.');
-            if($this->_fm->getProperty('errorHandling') == 'default') {
+            if ($this->_fm->getProperty('errorHandling') === 'default') {
                 return $error;
             }
             throw $error;
@@ -66,8 +70,15 @@ class FMResultSet {
         xml_set_element_handler($this->_xmlParser, '_start', '_end');
         xml_set_character_data_handler($this->_xmlParser, '_cdata');
         if (!@xml_parse($this->_xmlParser, $xml)) {
-            $error = new FileMakerException($this->_fm, sprintf('XML error: %s at line %d', xml_error_string(xml_get_error_code($this->_xmlParser)), xml_get_current_line_number($this->_xmlParser)));
-            if($this->_fm->getProperty('errorHandling') == 'default') {
+            $error = new FileMakerException(
+                $this->_fm,
+                sprintf(
+                    'XML error: %s at line %d',
+                    xml_error_string(xml_get_error_code($this->_xmlParser)),
+                    xml_get_current_line_number($this->_xmlParser)
+                )
+            );
+            if ($this->_fm->getProperty('errorHandling') === 'default') {
                 return $error;
             }
             throw $error;
@@ -75,14 +86,18 @@ class FMResultSet {
         xml_parser_free($this->_xmlParser);
         if (!empty($this->_errorCode)) {
             $error = new FileMakerException($this->_fm, null, $this->_errorCode);
-            if($this->_fm->getProperty('errorHandling') == 'default') {
+            if ($this->_fm->getProperty('errorHandling') === 'default') {
                 return $error;
             }
             throw $error;
         }
         if (version_compare($this->_serverVersion['version'], FileMaker::getMinServerVersion(), '<')) {
-            $error = new FileMakerException($this->_fm, 'This API requires at least version ' . FileMaker::getMinServerVersion() . ' of FileMaker Server to run (detected ' . $this->_serverVersion['version'] . ').');
-            if($this->_fm->getProperty('errorHandling') == 'default') {
+            $error = new FileMakerException(
+                $this->_fm,
+                'This API requires at least version ' . FileMaker::getMinServerVersion()
+                . ' of FileMaker Server to run (detected ' . $this->_serverVersion['version'] . ').'
+            );
+            if ($this->_fm->getProperty('errorHandling') === 'default') {
                 return $error;
             }
             throw $error;
@@ -93,16 +108,17 @@ class FMResultSet {
 
     /**
      * Populate a result object with parsed datas
-     * 
+     *
      * @param \airmoi\FileMaker\Object\Result $result
      * @param string $recordClass string representing the record class name to use
      * @return FileMakerException|boolean
      * @throws FileMakerException
      */
-    public function setResult(Result $result, $recordClass = 'airmoi\FileMaker\Object\Record') {
+    public function setResult(Result $result, $recordClass = 'airmoi\FileMaker\Object\Record')
+    {
         if (!$this->_isParsed) {
             $error = new FileMakerException($this->_fm, 'Attempt to get a result object before parsing data.');
-            if($this->_fm->getProperty('errorHandling') == 'default') {
+            if ($this->_fm->getProperty('errorHandling') === 'default') {
                 return $error;
             }
             throw $error;
@@ -145,15 +161,16 @@ class FMResultSet {
 
     /**
      * Populate a layout object with parsed datas
-     * 
+     *
      * @param Layout $layout
      * @return FileMakerException|boolean
      * @throws FileMakerException
      */
-    public function setLayout(Layout $layout) {
+    public function setLayout(Layout $layout)
+    {
         if (!$this->_isParsed) {
             $error = new FileMakerException($this->_fm, 'Attempt to get a layout object before parsing data.');
-            if($this->_fm->getProperty('errorHandling') == 'default') {
+            if ($this->_fm->getProperty('errorHandling') === 'default') {
                 return $error;
             }
             throw $error;
@@ -167,16 +184,16 @@ class FMResultSet {
         foreach ($this->_fieldList as $fieldInfos) {
             $field = new Field($layout);
             $field->name = $fieldInfos['name'];
-            $field->autoEntered = (bool) ($fieldInfos['auto-enter'] == 'yes');
-            $field->global = (bool) ($fieldInfos['global'] == 'yes');
+            $field->autoEntered = (bool) ($fieldInfos['auto-enter'] === 'yes');
+            $field->global = (bool) ($fieldInfos['global'] === 'yes');
             $field->maxRepeat = (int) $fieldInfos['max-repeat'];
             $field->result = $fieldInfos['result'];
             $field->type = $fieldInfos['type'];
-            if ($fieldInfos['not-empty'] == 'yes') {
+            if ($fieldInfos['not-empty'] === 'yes') {
                 $field->validationRules[FileMaker::RULE_NOTEMPTY] = true;
                 $field->validationMask |= FileMaker::RULE_NOTEMPTY;
             }
-            if ($fieldInfos['numeric-only'] == 'yes') {
+            if ($fieldInfos['numeric-only'] === 'yes') {
                 $field->validationRules[FileMaker::RULE_NUMERICONLY] = true;
                 $field->validationMask |= FileMaker::RULE_NUMERICONLY;
             }
@@ -185,23 +202,23 @@ class FMResultSet {
                 $field->validationRules[FileMaker::RULE_MAXCHARACTERS] = true;
                 $field->validationMask |= FileMaker::RULE_MAXCHARACTERS;
             }
-            if ($fieldInfos['four-digit-year'] == 'yes') {
+            if ($fieldInfos['four-digit-year'] === 'yes') {
                 $field->validationRules[FileMaker::RULE_FOURDIGITYEAR] = true;
                 $field->validationMask |= FileMaker::RULE_FOURDIGITYEAR;
             }
-            if ($fieldInfos['time-of-day'] == 'yes') {
+            if ($fieldInfos['time-of-day'] === 'yes') {
                 $field->validationRules[FileMaker::RULE_TIMEOFDAY] = true;
                 $field->validationMask |= FileMaker::RULE_TIMEOFDAY;
             }
-            if ($fieldInfos['four-digit-year'] == 'no' && $fieldInfos['result'] == 'timestamp') {
+            if ($fieldInfos['four-digit-year'] === 'no' && $fieldInfos['result'] === 'timestamp') {
                 $field->validationRules[FileMaker::RULE_TIMESTAMP_FIELD] = true;
                 $field->validationMask |= FileMaker::RULE_TIMESTAMP_FIELD;
             }
-            if ($fieldInfos['four-digit-year'] == 'no' && $fieldInfos['result'] == 'date') {
+            if ($fieldInfos['four-digit-year'] === 'no' && $fieldInfos['result'] === 'date') {
                 $field->validationRules[FileMaker::RULE_DATE_FIELD] = true;
                 $field->validationMask |= FileMaker::RULE_DATE_FIELD;
             }
-            if ($fieldInfos['time-of-day'] == 'no' && $fieldInfos['result'] == 'time') {
+            if ($fieldInfos['time-of-day'] === 'no' && $fieldInfos['result'] === 'time') {
                 $field->validationRules[FileMaker::RULE_TIME_FIELD] = true;
                 $field->validationMask |= FileMaker::RULE_TIME_FIELD;
             }
@@ -213,16 +230,16 @@ class FMResultSet {
             foreach ($fields as $fieldInfos) {
                 $field = new Field($layout);
                 $field->name = $fieldInfos['name'];
-                $field->autoEntered = (bool) ($fieldInfos['auto-enter'] == 'yes');
-                $field->global = (bool) ($fieldInfos['global'] == 'yes');
+                $field->autoEntered = (bool) ($fieldInfos['auto-enter'] === 'yes');
+                $field->global = (bool) ($fieldInfos['global'] === 'yes');
                 $field->maxRepeat = (int) $fieldInfos['max-repeat'];
                 $field->result = $fieldInfos['result'];
                 $field->type = $fieldInfos['type'];
-                if ($fieldInfos['not-empty'] == 'yes') {
+                if ($fieldInfos['not-empty'] === 'yes') {
                     $field->validationRules[FileMaker::RULE_NOTEMPTY] = true;
                     $field->validationMask |= FileMaker::RULE_NOTEMPTY;
                 }
-                if ($fieldInfos['numeric-only'] == 'yes') {
+                if ($fieldInfos['numeric-only'] === 'yes') {
                     $field->validationRules[FileMaker::RULE_NUMERICONLY] = true;
                     $field->validationMask |= FileMaker::RULE_NUMERICONLY;
                 }
@@ -231,23 +248,23 @@ class FMResultSet {
                     $field->validationRules[FileMaker::RULE_MAXCHARACTERS] = true;
                     $field->validationMask |= FileMaker::RULE_MAXCHARACTERS;
                 }
-                if ($fieldInfos['four-digit-year'] == 'yes') {
+                if ($fieldInfos['four-digit-year'] === 'yes') {
                     $field->validationRules[FileMaker::RULE_FOURDIGITYEAR] = true;
                     $field->validationMask |= FileMaker::RULE_FOURDIGITYEAR;
                 }
-                if ($fieldInfos['time-of-day'] == 'yes' || $fieldInfos['result'] == 'time') {
+                if ($fieldInfos['time-of-day'] === 'yes' || $fieldInfos['result'] === 'time') {
                     $field->validationRules[FileMaker::RULE_TIMEOFDAY] = true;
                     $field->validationMask |= FileMaker::RULE_TIMEOFDAY;
                 }
-                if ($fieldInfos['four-digit-year'] == 'no' && $fieldInfos['result'] == 'timestamp') {
+                if ($fieldInfos['four-digit-year'] === 'no' && $fieldInfos['result'] === 'timestamp') {
                     $field->validationRules[FileMaker::RULE_TIMESTAMP_FIELD] = true;
                     $field->validationMask |= FileMaker::RULE_TIMESTAMP_FIELD;
                 }
-                if ($fieldInfos['four-digit-year'] == 'no' && $fieldInfos['result'] == 'date') {
+                if ($fieldInfos['four-digit-year'] === 'no' && $fieldInfos['result'] === 'date') {
                     $field->validationRules[FileMaker::RULE_DATE_FIELD] = true;
                     $field->validationMask |= FileMaker::RULE_DATE_FIELD;
                 }
-                if ($fieldInfos['time-of-day'] == 'no' && $fieldInfos['result'] == 'time') {
+                if ($fieldInfos['time-of-day'] === 'no' && $fieldInfos['result'] === 'time') {
                     $field->validationRules[FileMaker::RULE_TIME_FIELD] = true;
                     $field->validationMask |= FileMaker::RULE_TIME_FIELD;
                 }
@@ -260,12 +277,13 @@ class FMResultSet {
     }
     /**
      * xml_parser start element handler
-     * 
+     *
      * @param resource $parser
      * @param string $tag
      * @param array $datas
      */
-    private function _start($parser, $tag, $datas) {
+    private function _start($parser, $tag, $datas)
+    {
         $datas = $this->_fm->toOutputCharset($datas);
         switch ($tag) {
             case 'error':
@@ -298,10 +316,12 @@ class FMResultSet {
                 $this->_currentRecord = null;
                 break;
             case 'record':
-                $this->_currentRecord = array('record-id' => $datas['record-id'],
-                            'mod-id' => $datas['mod-id'],
-                            'fields' => array(),
-                            'children' => array());
+                $this->_currentRecord = array(
+                    'record-id' => $datas['record-id'],
+                    'mod-id'    => $datas['mod-id'],
+                    'fields'    => array(),
+                    'children'  => array(),
+                );
                 break;
             case 'field':
                 $this->_currentField = $datas['name'];
@@ -315,11 +335,12 @@ class FMResultSet {
 
     /**
      * xml_parser end element handler
-     * 
+     *
      * @param mixed $parser
      * @param string $tag
      */
-    private function _end($parser, $tag) {
+    private function _end($parser, $tag)
+    {
         switch ($tag) {
             case 'relatedset-definition':
                 $this->_currentRelatedSet = null;
@@ -349,12 +370,12 @@ class FMResultSet {
 
     /**
      * xml_parser character data handler (cdata)
-     * 
+     *
      * @param resource $parser
      * @param string $data
      */
-    private function _cdata($parser, $data) {
-        $this->_cdata.= $this->_fm->toOutputCharset($data);
+    private function _cdata($parser, $data)
+    {
+        $this->_cdata .= $this->_fm->toOutputCharset($data);
     }
-
 }

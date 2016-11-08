@@ -146,5 +146,4 @@ class Result
     {
         return $this->records[sizeof($this->records) - 1];
     }
-
 }

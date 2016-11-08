@@ -11,10 +11,11 @@ use airmoi\FileMaker\Object\Layout;
 
 /**
  * Class used to parse FMPXMLLAYOUT structure
- * 
+ *
  * @package FileMaker
  */
-class FMPXMLLAYOUT {
+class FMPXMLLAYOUT
+{
 
     private $_fields = [];
     private $_valueLists;
@@ -27,23 +28,25 @@ class FMPXMLLAYOUT {
     private $_displayValue;
 
     /**
-     * 
+     *
      * @param FileMaker $fm
      */
-    public function __construct(FileMaker $fm) {
+    public function __construct(FileMaker $fm)
+    {
         $this->_fm = $fm;
     }
 
     /**
-     * 
+     *
      * @param string $xmlResponse
      * @return boolean|FileMakerException
      * @throws FileMakerException
      */
-    public function parse($xmlResponse) {
+    public function parse($xmlResponse)
+    {
         if (empty($xmlResponse)) {
             $error = new FileMakerException($this->_fm, 'Did not receive an XML document from the server.');
-            if($this->_fm->getProperty('errorHandling') == 'default') {
+            if ($this->_fm->getProperty('errorHandling') === 'default') {
                 return $error;
             }
             throw $error;
@@ -55,8 +58,15 @@ class FMPXMLLAYOUT {
         xml_set_element_handler($this->_xmlParser, '_start', '_end');
         xml_set_character_data_handler($this->_xmlParser, '_cdata');
         if (!@xml_parse($this->_xmlParser, $xmlResponse)) {
-             $error = new FileMakerException($this->_fm, sprintf('XML error: %s at line %d', xml_error_string(xml_get_error_code($this->_xmlParser)), xml_get_current_line_number($this->_xmlParser)));
-            if($this->_fm->getProperty('errorHandling') == 'default') {
+             $error = new FileMakerException(
+                 $this->_fm,
+                 sprintf(
+                     'XML error: %s at line %d',
+                     xml_error_string(xml_get_error_code($this->_xmlParser)),
+                     xml_get_current_line_number($this->_xmlParser)
+                 )
+             );
+            if ($this->_fm->getProperty('errorHandling') === 'default') {
                 return $error;
             }
             throw $error;
@@ -64,7 +74,7 @@ class FMPXMLLAYOUT {
         xml_parser_free($this->_xmlParser);
         if (!empty($this->errorCode)) {
             $error = new FileMakerException($this->_fm, null, $this->errorCode);
-            if($this->_fm->getProperty('errorHandling') == 'default') {
+            if ($this->_fm->getProperty('errorHandling') === 'default') {
                 return $error;
             }
             throw $error;
@@ -75,15 +85,16 @@ class FMPXMLLAYOUT {
 
     /**
      * Add extended infos to a Layout object
-     * 
+     *
      * @param Layout $layout
      * @return FileMakerException
      * @throws FileMakerException
      */
-    public function setExtendedInfo(Layout $layout) {
+    public function setExtendedInfo(Layout $layout)
+    {
         if (!$this->_isParsed) {
             $error = new FileMakerException($this->_fm, 'Attempt to set extended information before parsing data.');
-            if($this->_fm->getProperty('errorHandling') == 'default') {
+            if ($this->_fm->getProperty('errorHandling') === 'default') {
                 return $error;
             }
             throw $error;
@@ -93,11 +104,11 @@ class FMPXMLLAYOUT {
         foreach ($this->_fields as $fieldName => $fieldInfos) {
             try {
                 $field = $layout->getField($fieldName);
-                if(!FileMaker::isError($field)) {
+                if (!FileMaker::isError($field)) {
                     $field->styleType = $fieldInfos['styleType'];
                     $field->valueList = $fieldInfos['valueList'] ? $fieldInfos['valueList'] : null;
                 }
-            } catch ( \Exception $e ) {
+            } catch (\Exception $e) {
                 //Field may be missing when it is stored in a portal, ommit error
             }
         }
@@ -105,12 +116,13 @@ class FMPXMLLAYOUT {
 
     /**
      * xml_parser start element handler
-     * 
+     *
      * @param resource $parser
      * @param string $type
      * @param array $datas
      */
-    private function _start($parser, $type, $datas) {
+    private function _start($parser, $type, $datas)
+    {
         $datas = $this->_fm->toOutputCharset($datas);
         switch ($type) {
             case 'FIELD':
@@ -135,11 +147,12 @@ class FMPXMLLAYOUT {
 
     /**
      * xml_parser end element handler
-     * 
+     *
      * @param resource $parser
      * @param string $type
      */
-    private function _end($parser, $type) {
+    private function _end($parser, $type)
+    {
         switch ($type) {
             case 'FIELD':
                 $this->_fieldName = null;
@@ -154,13 +167,13 @@ class FMPXMLLAYOUT {
 
     /**
      * xml_parser character data handler (cdata)
-     * 
+     *
      * @param resource $parser
      * @param string $datas
      */
-    public function _cdata($parser, $datas) {
+    public function _cdata($parser, $datas)
+    {
         if ($this->_valueList !== null && preg_match('|\S|', $datas)) {
-
             if ($this->inside_data) {
                 $value = $this->_valueListTwoFields[$this->_valueList][$this->_displayValue];
                 $datas = $value . $datas;
@@ -174,12 +187,13 @@ class FMPXMLLAYOUT {
 
     /**
      * Add values to an existing array
-     * 
+     *
      * @param array $array
      * @param array $values
      * @return boolean
      */
-    public function associative_array_push(&$array, $values) {
+    public function associative_array_push(&$array, $values)
+    {
         if (is_array($values)) {
             foreach ($values as $key => $value) {
                 $array[$key] = $value;
@@ -188,5 +202,4 @@ class FMPXMLLAYOUT {
         }
         return false;
     }
-
 }
