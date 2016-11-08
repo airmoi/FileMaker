@@ -95,7 +95,7 @@ The major changes compared to the official package are :
 * API now support Exceptions error handling, you may switch between those behaviors by changing property 'errorHandeling' to 'default' or 'exception' (default value is 'exception')
 * There is no more 'conf.php' use "setProperty" to define specifics API's settings. You may also use an array of properties on FileMaker instanciation, ie : new FileMaker( $db, $host, $user, $pass, ['property' => 'value'])
 
-You can use the offical [PHP-API guide](https://fmhelp.filemaker.com/docs/14/fr/fms14_cwp_guide.pdf) provided by FieMaker® for everything else.
+You can use the offical [PHP-API guide](https://fmhelp.filemaker.com/docs/14/fr/fms14_cwp_guide.pdf) provided by FileMaker® for everything else.
 
 ## TODO
 * Finish PHPunit test
