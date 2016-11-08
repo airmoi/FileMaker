@@ -216,40 +216,57 @@ class Record
      *        Defaults to the first repetition.
      * @return FileMakerException|int Timestamp value.
      * @throws FileMakerException
-     * @throws null
      */
     public function getFieldAsTimestamp($field, $repetition = 0)
     {
-        $value = $this->getField($field, $repetition);
-        $fieldType = $this->layout->getField($field);
-        $error = null;
-        $dateFormat = $this->fm->getProperty('dateFormat') !== null ? $this->fm->getProperty('dateFormat') : "m/d/Y";
+        $value      = $this->getField($field, $repetition);
+        $fieldType  = $this->layout->getField($field);
+        $error      = null;
+        $dateFormat = $this->fm->getProperty('dateFormat') !== null ? $this->fm->getProperty('dateFormat') : 'm/d/Y';
         switch ($fieldType->getResult()) {
             case 'date':
+                // e. g. "12/24/2016"
                 if (!$dateTime = \DateTime::createFromFormat($dateFormat . ' H:i:s', $value . ' 00:00:00')) {
-                    $error = new FileMakerException($this->fm, 'Failed to parse "' . $value . '" as a FileMaker date value.');
+                    $error = new FileMakerException(
+                        $this->fm,
+                        'Failed to parse "' . $value . '" as a FileMaker date value.'
+                    );
                 }
                 break;
             case 'time':
-                if (!$dateTime = \DateTime::createFromFormat('Y-m-d H:i:s', '1970-01-01' . $value)) {
-                    $error = new FileMakerException($this->fm, 'Failed to parse "' . $value . '" as a FileMaker date value.');
+                // e. g. "12:00:00"
+                if (!$dateTime = \DateTime::createFromFormat('Y-m-d H:i:s', '1970-01-01 ' . $value)) {
+                    $error = new FileMakerException(
+                        $this->fm,
+                        'Failed to parse "' . $value . '" as a FileMaker time value.'
+                    );
                 }
                 break;
             case 'timestamp':
-                if (!$dateTime = \DateTime::createFromFormat($dateFormat . ' H:i:s', '1970-01-01' . $value)) {
-                    $error = new FileMakerException($this->fm, 'Failed to parse "' . $value . '" as a FileMaker date value.');
+                // e. g. "12/24/2016 12:00:00"
+                if (!$dateTime = \DateTime::createFromFormat($dateFormat . ' H:i:s', $value)) {
+                    $error = new FileMakerException(
+                        $this->fm,
+                        'Failed to parse "' . $value . '" as a FileMaker timestamp value.'
+                    );
                 }
                 break;
             default:
-                $error = new FileMakerException($this->fm, 'Only time, date, and timestamp fields can be converted to UNIX timestamps.');
+                $error = new FileMakerException(
+                    $this->fm,
+                    'Only time, date, and timestamp fields can be converted to UNIX timestamps.'
+                );
                 break;
         }
-        if ($error !== null && $this->fm->getProperty('errorHandling') === 'default') {
-            return $error;
-        } elseif ($error !== null) {
-            throw $error;
+        if ($error !== null) {
+            if ($this->fm->getProperty('errorHandling') === 'default') {
+                return $error;
+            } else {
+                throw $error;
+            }
         }
-        return $dateTime->format("U");
+
+        return $dateTime->format('U');
     }
 
     /**
