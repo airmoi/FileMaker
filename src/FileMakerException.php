@@ -1,7 +1,7 @@
 <?php
 /**
  * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
- * @licence BSD
+ * @license BSD
  */
 namespace airmoi\FileMaker;
 
@@ -17,13 +17,13 @@ class FileMakerException extends \Exception
      * @var FileMaker
      */
     private $_fm;
-    
+
     /**
      *
      * @var array
      */
     private static $strings;
-    
+
     /**
      * Overloaded Exception constructor.
      *
@@ -38,10 +38,10 @@ class FileMakerException extends \Exception
         if ($code !== null) {
             $message = $this->getErrorString($code);
         }
-        
+
         parent::__construct($message, $code, $previous);
     }
-   
+
     /**
      * Returns the string representation of $this->code in the language
      * currently  set for PHP error messages in FileMaker Server Admin

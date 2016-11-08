@@ -1,7 +1,7 @@
 <?php
 /**
  * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
- * @licence BSD
+ * @license BSD
  */
 namespace airmoi\FileMaker\Command;
 
@@ -15,7 +15,7 @@ use airmoi\FileMaker\FileMaker;
  */
 class Find extends Command
 {
-    
+
     protected $_findCriteria = array();
     protected $_sortRules = array();
     protected $_sortOrders = array();
@@ -85,7 +85,7 @@ class Find extends Command
         $this->_sortOrders = array();
         return $this;
     }
-    
+
     public function execute()
     {
         $params = $this->_getCommandParams();
@@ -164,7 +164,7 @@ class Find extends Command
         return array('skip' => $this->_skip,
             'max' => $this->_max);
     }
-    
+
     /**
      * Sets a filter to restrict the number of related records to return from
      * a portal.
@@ -200,7 +200,7 @@ class Find extends Command
         $this->_relatedsetsmax = $relatedsetsmax;
         return $this;
     }
-    
+
     /**
      * Returns the current settings for the related records filter and
      * the maximum number of related records to return.
@@ -215,7 +215,7 @@ class Find extends Command
         return array('relatedsetsfilter' => $this->_relatedsetsfilter,
             'relatedsetsmax' => $this->_relatedsetsmax);
     }
-    
+
     protected function _setRelatedSetsFilters(&$params)
     {
         if ($this->_relatedsetsfilter) {

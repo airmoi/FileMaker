@@ -2,7 +2,7 @@
     "name": "airmoi/filemaker",
     "description": "Rewriten FileMaker PHP-API",
     "keywords": ["filemaker","PHP-API"],
-    "license": "FileMaker Sofware Licence",
+    "license": "FileMaker Sofware license",
     "authors": [
         {
             "name": "Romain Dunand",
