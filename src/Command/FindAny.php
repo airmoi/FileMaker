@@ -1,7 +1,7 @@
 <?php
 /**
  * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
- * @licence BSD
+ * @license BSD
  */
 namespace airmoi\FileMaker\Command;
 
@@ -16,14 +16,13 @@ use airmoi\FileMaker\Object\Result;
 class FindAny extends Find
 {
     /**
-     * 
+     *
      * @return Result
      */
-    public function execute() {
-        $params = $this->_getCommandParams();
+    public function execute()
+    {
+        $params             = $this->_getCommandParams();
         $params['-findany'] = true;
-        $result = $this->fm->execute($params);
-        return $this->_getResult($result);
+        return $this->_getResult($this->fm->execute($params));
     }
-
 }

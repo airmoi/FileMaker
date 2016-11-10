@@ -1,15 +1,13 @@
 <?php
 /**
  * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
- * @licence BSD
+ * @license BSD
  */
 namespace airmoi\FileMaker\Command;
 
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\Object\Result;
-
-
 
 /**
  * Command class that duplicates a single record.
@@ -32,18 +30,19 @@ class Duplicate extends Command
         parent::__construct($fm, $layout);
         $this->recordId = $recordId;
     }
-    
+
     /**
      * Return a Result object with the duplicated record
      * use Result->getFirstRecord() to get the record
-     * 
+     *
      * @return Result|FileMakerException
      * @throws FileMakerException
      */
-    public function execute() {
+    public function execute()
+    {
         if (empty($this->recordId)) {
             $error = new FileMakerException($this->fm, 'Duplicate commands require a record id.');
-            if($this->fm->getProperty('errorHandling') == 'default') {
+            if ($this->fm->getProperty('errorHandling') === 'default') {
                 return $error;
             }
             throw $error;

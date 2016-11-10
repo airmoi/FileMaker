@@ -1,12 +1,12 @@
 <?php
 /**
  * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
- * @licence BSD
+ * @license BSD
  */
 namespace airmoi\FileMaker\Command;
 
 /**
- * Find Request class. Contains all the information about a single find request 
+ * Find Request class. Contains all the information about a single find request
  * for a Compound Find command.
  * Create this command with {@link FileMaker::newFindRequest()}.
  *
@@ -14,7 +14,7 @@ namespace airmoi\FileMaker\Command;
  */
 class FindRequest
 {
-    
+
     public $findCriteria = array();
     public $omit;
 
@@ -32,11 +32,11 @@ class FindRequest
 
     /**
      * Sets whether this request is an omit request.
-     * 
+     *
      * An omit request removes the matching records from the final result set.
      *
      * @param boolean $value TRUE if this is an omit request. Otherwise, FALSE.
-     * 
+     *
      * @return self
      */
     public function setOmit($value)
@@ -50,7 +50,7 @@ class FindRequest
      *
      * @param string $fieldname Name of the field being tested.
      * @param string $testvalue Value of the field to test against.
-     * 
+     *
      * @return self
      */
     public function addFindCriterion($fieldname, $testvalue)
@@ -58,10 +58,10 @@ class FindRequest
         $this->findCriteria[$fieldname] = $testvalue;
         return $this;
     }
-    
+
     /**
      * Clears all existing criteria from this find request.
-     * 
+     *
      * @return self
      */
     public function clearFindCriteria()
@@ -69,13 +69,13 @@ class FindRequest
         $this->findCriteria = array();
         return $this;
     }
-    
+
     /**
-     * 
+     *
      * @return bool true if the request as no criterion set
      */
-    public function isEmpty() {
-        return sizeof($this->findCriteria) === 0;
+    public function isEmpty()
+    {
+        return empty($this->findCriteria);
     }
-
 }

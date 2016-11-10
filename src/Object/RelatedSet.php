@@ -1,7 +1,7 @@
 <?php
 /**
  * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
- * @licence BSD
+ * @license BSD
  */
 namespace airmoi\FileMaker\Object;
 
@@ -18,18 +18,18 @@ class RelatedSet
 {
     /**
      *
-     * @var FileMaker 
+     * @var FileMaker
      */
     public $fm;
     /**
      *
-     * @var Layout 
+     * @var Layout
      */
     public $layout;
     public $name;
-    
+
     public $fields = [];
-    
+
     /**
      * Portal constructor.
      *
@@ -42,7 +42,7 @@ class RelatedSet
     }
 
     /**
-     * Returns the name of the related table from which this portal displays 
+     * Returns the name of the related table from which this portal displays
      * related records.
      *
      * @return string Name of related table for this portal.
@@ -66,8 +66,8 @@ class RelatedSet
      * Returns a Field object that describes the specified field.
      *
      * @param string $fieldName Name of field.
-     * 
-     * @return Field|FileMakerException Field object, if successful. 
+     *
+     * @return Field|FileMakerException Field object, if successful.
      * @throws FileMakerException
      */
     public function getField($fieldName)
@@ -76,14 +76,14 @@ class RelatedSet
             return $this->fields[$fieldName];
         }
         $error = new FileMakerException($this->fm, 'Field '.$fieldName.' Not Found in Layout '. $this->layout->getName());
-        if($this->fm->getProperty('errorHandling') == 'default') {
+        if ($this->fm->getProperty('errorHandling') === 'default') {
             return $error;
         }
         throw $error;
     }
 
     /**
-     * Returns an associative array with the names of all fields as keys and 
+     * Returns an associative array with the names of all fields as keys and
      * Field objects as the array values.
      *
      * @return array Array of {@link Field} objects.
@@ -104,10 +104,9 @@ class RelatedSet
     public function loadExtendedInfo()
     {
         $error = new FileMakerException($this->fm, 'Related sets do not support extended information.');
-        if($this->fm->getProperty('errorHandling') == 'default') {
+        if ($this->fm->getProperty('errorHandling') === 'default') {
             return $error;
         }
         throw $error;
     }
-
 }

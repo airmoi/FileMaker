@@ -1,10 +1,9 @@
 <?php
 /**
  * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
- * @licence BSD
+ * @license BSD
  */
 namespace airmoi\FileMaker;
-
 
 /**
  * Extension of the Exception class for use in all FileMaker classes.
@@ -18,13 +17,13 @@ class FileMakerException extends \Exception
      * @var FileMaker
      */
     private $_fm;
-    
+
     /**
      *
      * @var array
      */
     private static $strings;
-    
+
     /**
      * Overloaded Exception constructor.
      *
@@ -33,20 +32,21 @@ class FileMakerException extends \Exception
      * @param integer $code Error code.
      * @param null|\Exception $previous
      */
-    public function __construct($fm, $message = null, $code = null, $previous=null)
+    public function __construct($fm, $message = null, $code = null, $previous = null)
     {
         $this->_fm = $fm;
-        if ( $code !== null)
+        if ($code !== null) {
             $message = $this->getErrorString($code);
-        
+        }
+
         parent::__construct($message, $code, $previous);
     }
-   
+
     /**
-     * Returns the string representation of $this->code in the language 
-     * currently  set for PHP error messages in FileMaker Server Admin 
+     * Returns the string representation of $this->code in the language
+     * currently  set for PHP error messages in FileMaker Server Admin
      * Console.
-     * 
+     *
      * You should call getMessage() in most cases, if you are not sure whether
      * the error is a FileMaker Web Publishing Engine error with an error code.
      *
@@ -78,15 +78,14 @@ class FileMakerException extends \Exception
     }
 
     /**
-     * Indicates whether the error is a detailed pre-validation error  
+     * Indicates whether the error is a detailed pre-validation error
      * or a FileMaker Web Publishing Engine error.
      *
-     * @return boolean FALSE, to indicate that this is an error from the 
+     * @return boolean FALSE, to indicate that this is an error from the
      *         Web Publishing Engine.
      */
     public function isValidationError()
     {
         return false;
     }
-
 }

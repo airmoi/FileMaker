@@ -1,7 +1,7 @@
 <?php
 /**
  * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
- * @licence BSD
+ * @license BSD
  */
 namespace airmoi\FileMaker\Command;
 
@@ -34,7 +34,7 @@ class PerformScript extends Command
     public function __construct(FileMaker $fm, $layout, $scriptName, $scriptParameters = null)
     {
         parent::__construct($fm, $layout);
-        $this->_script = $scriptName;
+        $this->_script       = $scriptName;
         $this->_scriptParams = $scriptParameters;
     }
 
@@ -44,13 +44,13 @@ class PerformScript extends Command
      * @param integer $skip Number of records to skip past. Default is 0.
      * @param integer $max Maximum number of records to return.
      *        Default is all.
-     * 
+     *
      * @return self
      */
     public function setRange($skip = 0, $max = null)
     {
         $this->_skip = $skip;
-        $this->_max = $max;
+        $this->_max  = $max;
         return $this;
     }
 
@@ -64,23 +64,26 @@ class PerformScript extends Command
      */
     public function getRange()
     {
-        return array('skip' => $this->_skip,
-            'max' => $this->_max);
+        return array(
+            'skip' => $this->_skip,
+            'max'  => $this->_max
+        );
     }
 
     /**
      *
      * @return Result
      */
-    public function execute() {
-        $params = $this->_getCommandParams();
+    public function execute()
+    {
+        $params             = $this->_getCommandParams();
         $params['-findany'] = true;
         $this->_setRangeParams($params);
-        $cUrlResponse = $this->fm->execute($params);
-        return $this->_getResult($cUrlResponse);
+        return $this->_getResult($this->fm->execute($params));
     }
 
-    protected function _setRangeParams(&$params) {
+    protected function _setRangeParams(&$params)
+    {
         if ($this->_skip) {
             $params['-skip'] = $this->_skip;
         }
@@ -88,5 +91,4 @@ class PerformScript extends Command
             $params['-max'] = $this->_max;
         }
     }
-
 }

@@ -1,7 +1,7 @@
 <?php
 /**
  * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
- * @licence BSD
+ * @license BSD
  */
 namespace airmoi\FileMaker\Object;
 
@@ -20,7 +20,7 @@ class Layout
 {
     /**
      *
-     * @var FileMaker 
+     * @var FileMaker
      */
     public $fm;
     public $name;
@@ -35,7 +35,7 @@ class Layout
     /**
      * Layout object constructor.
      *
-     * @param FileMaker $fm FileMaker object 
+     * @param FileMaker $fm FileMaker object
      *        that this layout was created through.
      */
     public function __construct(FileMaker $fm)
@@ -78,7 +78,7 @@ class Layout
      *
      * @param string $fieldName Name of field.
      *
-     * @return Field|FileMakerException Field object, if successful. 
+     * @return Field|FileMakerException Field object, if successful.
      * @throws FileMakerException
      */
     public function getField($fieldName)
@@ -86,13 +86,13 @@ class Layout
         if (isset($this->fields[$fieldName])) {
             return $this->fields[$fieldName];
         }
-        if( $pos = strpos($fieldName, ':')){
+        if ($pos = strpos($fieldName, ':')) {
             $relatedSet = substr($fieldName, 0, $pos);
             //$fieldName = substr($fieldName, $pos+1, strlen($fieldName));
             return $this->getRelatedSet($relatedSet)->getField($fieldName);
         }
         $error = new FileMakerException($this->fm, 'Field "'.$fieldName.'" Not Found');
-        if($this->fm->getProperty('errorHandling') == 'default') {
+        if ($this->fm->getProperty('errorHandling') === 'default') {
             return $error;
         }
         throw $error;
@@ -121,7 +121,7 @@ class Layout
     }
 
     /**
-     * Returns a RelatedSet object that describes the specified 
+     * Returns a RelatedSet object that describes the specified
      * portal.
      *
      * @param string|FileMakerException $relatedSet Name of the related table for a portal.
@@ -131,27 +131,28 @@ class Layout
      */
     public function getRelatedSet($relatedSet)
     {
-         if (isset($this->relatedSets[$relatedSet])) {
+        if (isset($this->relatedSets[$relatedSet])) {
             return $this->relatedSets[$relatedSet];
         }
         $error = new FileMakerException($this->fm, 'RelatedSet "'.$relatedSet.'" Not Found in layout '. $this->getName());
-        if($this->fm->getProperty('errorHandling') == 'default') {
+        if ($this->fm->getProperty('errorHandling') === 'default') {
             return $error;
         }
         throw $error;
     }
-    
+
     /**
      * Check wether a portal based on the given table occurrence exists
      * @param string $relatedSet Table occurrence name to test
      * @return bool true if related set exist
      */
-    public function hasRelatedSet($relatedSet) {
+    public function hasRelatedSet($relatedSet)
+    {
         return isset($this->relatedSets[$relatedSet]);
     }
 
     /**
-     * Returns an associative array with the related table names of all 
+     * Returns an associative array with the related table names of all
      * portals as keys and RelatedSet objects as the array values.
      *
      * @return RelatedSet[] Array of {@link RelatedSet} objects.
@@ -174,9 +175,10 @@ class Layout
         if (FileMaker::isError($ExtendedInfos)) {
             return $ExtendedInfos;
         }
-        if($this->valueLists !== null)
+        if ($this->valueLists !== null) {
             return array_keys($this->valueLists);
-        
+        }
+
         return [];
     }
 
@@ -184,7 +186,7 @@ class Layout
      * Returns the list of defined values in the specified value list.
      *
      * @param string $listName Name of value list.
-     * @param string $recid Record from which the value list should be 
+     * @param string $recid Record from which the value list should be
      *        displayed.
      *
      * @return array|FileMakerException List of defined values.
@@ -204,14 +206,14 @@ class Layout
                 $this->valueLists[$listName] : null;
     }
 
-    
+
 
     /**
-     * Returns the list of defined values in the specified value list. 
-     * This method supports single, 2nd only, and both fields value lists. 
+     * Returns the list of defined values in the specified value list.
+     * This method supports single, 2nd only, and both fields value lists.
      *
      * @param string $valueList Name of value list.
-     * @param string  $recid Record from which the value list should be 
+     * @param string  $recid Record from which the value list should be
      *        displayed.
      *
      * @return array|FileMakerException of display names and its corresponding value from the value list
@@ -226,18 +228,17 @@ class Layout
         }
         return isset($this->valueLists[$valueList]) ?
                 $this->valueListTwoFields[$valueList] : [];
-
     }
 
     /**
-     * Returns a multi-level associative array of value lists. 
-     * The top-level array has names of value lists as keys and arrays as 
-     * values. The second level arrays are the lists of defined values from 
+     * Returns a multi-level associative array of value lists.
+     * The top-level array has names of value lists as keys and arrays as
+     * values. The second level arrays are the lists of defined values from
      * each value list.
      *
-     * @param string  $recid Record from which the value list should be 
+     * @param string  $recid Record from which the value list should be
      *        displayed.
-     * 
+     *
      * @return array|FileMakerException Array of value-list arrays.
      * @throws FileMakerException
      * @deprecated Use getValueListTwoFields instead.
@@ -253,15 +254,15 @@ class Layout
     }
 
     /**
-     * Returns a multi-level associative array of value lists. 
-     * The top-level array has names of value lists as keys and associative arrays as 
-     * values. The second level associative arrays are lists of display name and its corresponding 
+     * Returns a multi-level associative array of value lists.
+     * The top-level array has names of value lists as keys and associative arrays as
+     * values. The second level associative arrays are lists of display name and its corresponding
      * value from the value list.
      *
-     * @param string|FileMakerException $recid Record from which the value list should be 
+     * @param string|FileMakerException $recid Record from which the value list should be
      *        displayed.
      * @throws FileMakerException
-     * 
+     *
      * @return array Array of value-list associative arrays.
      */
     public function getValueListsTwoFields($recid = null)
@@ -278,7 +279,7 @@ class Layout
      *
      * @access private
      *
-     * @param string  $recid Record from which to load extended information. 
+     * @param string  $recid Record from which to load extended information.
      *
      * @return boolean TRUE, if successful.
      * @throws FileMakerException;
@@ -286,7 +287,6 @@ class Layout
     public function loadExtendedInfo($recid = null)
     {
         if (!$this->extended || $recid != null) {
-
             if ($recid != null) {
                 $result = $this->fm->execute(array('-db' => $this->fm->getProperty('database'),
                     '-lay' => $this->getName(),
@@ -302,7 +302,7 @@ class Layout
             if (FileMaker::isError($parseResult)) {
                 return $parseResult;
             }
-            
+
             $parser->setExtendedInfo($this);
             $this->extended = true;
         }

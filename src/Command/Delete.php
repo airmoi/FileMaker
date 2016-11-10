@@ -1,7 +1,7 @@
 <?php
 /**
  * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
- * @licence BSD
+ * @license BSD
  */
 namespace airmoi\FileMaker\Command;
 
@@ -30,16 +30,17 @@ class Delete extends Command
         parent::__construct($fm, $layout);
         $this->recordId = $recordId;
     }
-    
+
     /**
-     * 
+     *
      * @return \airmoi\FileMaker\Object\Result|FileMakerException
      * @throws FileMakerException
      */
-    public function execute() {
+    public function execute()
+    {
         if (empty($this->recordId)) {
             $error = new FileMakerException($this->fm, 'Delete commands require a record id.');
-            if($this->fm->getProperty('errorHandling') == 'default') {
+            if ($this->fm->getProperty('errorHandling') === 'default') {
                 return $error;
             }
             throw $error;
