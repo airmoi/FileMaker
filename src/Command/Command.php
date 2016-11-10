@@ -1,7 +1,7 @@
 <?php
 /**
  * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
- * @licence BSD
+ * @license BSD
  */
 namespace airmoi\FileMaker\Command;
 
@@ -12,8 +12,8 @@ use airmoi\FileMaker\Parser\FMResultSet;
 use airmoi\FileMaker\Object\Result;
 
 /**
- * Base Command class. Represents commands that add records, delete records, 
- * duplicate records, edit records, perform find requests, and perform 
+ * Base Command class. Represents commands that add records, delete records,
+ * duplicate records, edit records, perform find requests, and perform
  * ScriptMaker scripts.
  *
  * @package FileMaker
@@ -28,7 +28,7 @@ class Command
      * @access public
      */
     public $fm;
-    
+
     /**
      *
      * @var \airmoi\FileMaker\Object\Layout
@@ -45,7 +45,7 @@ class Command
     protected $_preSortScriptParams;
     protected $_recordClass;
     protected $_globals = [];
-    
+
     public $recordId;
 
     /**
@@ -54,13 +54,14 @@ class Command
      * @param FileMaker $fm
      * @param string    $layout
      */
-    public function __construct(FileMaker $fm, $layout){
+    public function __construct(FileMaker $fm, $layout)
+    {
         $this->fm = $fm;
         $this->_layout = $layout;
         $this->_recordClass = $fm->getProperty('recordClass');
     }
     /**
-     * Requests that the command's result be returned in a layout different 
+     * Requests that the command's result be returned in a layout different
      * from the current layout.
      *
      * @param string $layout Layout to return results in.
@@ -73,7 +74,7 @@ class Command
     }
 
     /**
-     * Sets a ScriptMaker script to be run after the Find result set is 
+     * Sets a ScriptMaker script to be run after the Find result set is
      * generated and sorted.
      *
      * @param string $scriptName Name of the ScriptMaker script to run.
@@ -102,7 +103,7 @@ class Command
     }
 
     /**
-     * Sets a ScriptMaker script to be run after performing a Find command, 
+     * Sets a ScriptMaker script to be run after performing a Find command,
      * but before sorting the result set.
      *
      * @param string $scriptName Name of the ScriptMaker script to run.
@@ -117,13 +118,13 @@ class Command
     }
 
     /**
-     * Sets the PHP class that the API instantiates to represent records 
-     * returned in any result set. 
-     * 
-     * The default is to use the provided \airmoi\FileMaker\Object\Record class. Any 
-     * substitute classes must provide the same API that \airmoi\FileMaker\Object\Record does, 
-     * either by extending it or re-implementing the necessary methods. The 
-     * user is responsible for defining any custom class before the API 
+     * Sets the PHP class that the API instantiates to represent records
+     * returned in any result set.
+     *
+     * The default is to use the provided \airmoi\FileMaker\Object\Record class. Any
+     * substitute classes must provide the same API that \airmoi\FileMaker\Object\Record does,
+     * either by extending it or re-implementing the necessary methods. The
+     * user is responsible for defining any custom class before the API
      * needs to instantiate it.
      *
      * @param string $className Name of the class to represent records.
@@ -177,8 +178,8 @@ class Command
                 foreach ($values as $value) {
                     try {
                         $field->validate($value);
-                    }catch (FileMakerValidationException $e){
-                        foreach ( $e->getErrors() as $error ) {
+                    } catch (FileMakerValidationException $e) {
+                        foreach ($e->getErrors() as $error) {
                             $validationErrors->addError($error[0], $error[1], $error[2]);
                         }
                     }
@@ -196,15 +197,15 @@ class Command
             foreach ($values as $value) {
                 try {
                         $field->validate($value);
-                    }catch (FileMakerValidationException $e){
-                        foreach ( $e->getErrors() as $error ) {
-                            $validationErrors->addError($error[0], $error[1], $error[2]);
-                        }
+                } catch (FileMakerValidationException $e) {
+                    foreach ($e->getErrors() as $error) {
+                        $validationErrors->addError($error[0], $error[1], $error[2]);
                     }
+                }
             }
         }
-        if ( $validationErrors->numErrors() ) {
-            if($this->fm->getProperty('errorHandling') == 'default') {
+        if ($validationErrors->numErrors()) {
+            if ($this->fm->getProperty('errorHandling') === 'default') {
                 return $validationErrors;
             }
             throw $validationErrors;
@@ -219,12 +220,11 @@ class Command
      */
     public function execute()
     {
-        
     }
 
     /**
-     * Sets the record ID for this command. 
-     * 
+     * Sets the record ID for this command.
+     *
      * For Edit, Delete, and Duplicate commands, a record ID must be specified.
      * It is also possible to find a single record by specifying its record
      * ID. This method is ignored by Add and FindAny commands.
@@ -239,8 +239,8 @@ class Command
     }
 
     /**
-     * Set a global field to be define before perfoming the command. 
-     * 
+     * Set a global field to be define before perfoming the command.
+     *
      *
      * @param string $fieldName the global field name.
      * @param string $fieldValue value to be set.
@@ -253,38 +253,40 @@ class Command
     }
 
     /**
-     * 
+     *
      * @param string $xml
      * @return Result|FileMakerException
      * @throws FileMakerException
      */
-    protected function _getResult($xml) {
+    protected function _getResult($xml)
+    {
         $parser      = new FMResultSet($this->fm);
         $parseResult = $parser->parse($xml);
-        if(FileMaker::isError($parseResult)){
+        if (FileMaker::isError($parseResult)) {
             return $parseResult;
         }
-        
+
         $result      = new Result($this->fm);
         $parseResult = $parser->setResult($result, $this->_recordClass);
-        if(FileMaker::isError($parseResult)){
+        if (FileMaker::isError($parseResult)) {
             return $parseResult;
         }
-        
+
         return $result;
     }
 
-    protected function _getCommandParams() {
+    protected function _getCommandParams()
+    {
         $queryParams = array(
-            '-db' => $this->fm->getProperty('database'
-            ), '-lay' => $this->_layout);
-        
+            '-db'  => $this->fm->getProperty('database'),
+            '-lay' => $this->_layout
+        );
+
         foreach (array(
                 '_script' => '-script',
                 '_preReqScript' => '-script.prefind',
                 '_preSortScript' => '-script.presort'
-                    ) as $varName => $paramName) 
-                {
+                    ) as $varName => $paramName) {
             if ($this->$varName) {
                 $queryParams[$paramName] = $this->$varName;
                 $varName .= 'Params';
@@ -296,11 +298,10 @@ class Command
         if ($this->_resultLayout) {
             $queryParams['-lay.response'] = $this->_resultLayout;
         }
-        
-        foreach ( $this->_globals as $fieldName => $fieldValue ){
+
+        foreach ($this->_globals as $fieldName => $fieldValue) {
             $queryParams[$fieldName.'.global'] = $fieldValue;
         }
         return $queryParams;
     }
-
 }
