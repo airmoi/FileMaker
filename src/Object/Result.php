@@ -1,7 +1,7 @@
 <?php
 /**
  * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
- * @licence BSD
+ * @license BSD
  */
 namespace airmoi\FileMaker\Object;
 
@@ -146,5 +146,4 @@ class Result
     {
         return $this->records[sizeof($this->records) - 1];
     }
-
 }

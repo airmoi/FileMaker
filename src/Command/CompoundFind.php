@@ -1,7 +1,7 @@
 <?php
 /**
  * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
- * @licence BSD
+ * @license BSD
  */
 namespace airmoi\FileMaker\Command;
 
@@ -77,7 +77,8 @@ class CompoundFind extends Command
      * @return \airmoi\FileMaker\Object\Result|\airmoi\FileMaker\FileMakerException
      * @throws \airmoi\FileMaker\FileMakerException
      */
-    public function execute() {
+    public function execute()
+    {
         $query = null;
 
         $critCount = 0;
@@ -94,7 +95,7 @@ class CompoundFind extends Command
             $findCriterias = $request->findCriteria;
             $critCount = count($findCriterias);
 
-            $query = $query . '(';
+            $query .= '(';
 
             $i = 0;
             foreach ($findCriterias as $fieldname => $testvalue) {
@@ -105,17 +106,17 @@ class CompoundFind extends Command
                 $i++;
 
                 if ($i < $critCount) {
-                    $query = $query . ',';
+                    $query .= ',';
                 }
             }
-            $query = $query . ")";
+            $query .= ')';
             $requestCount++;
             if ($requestCount <= $totalRequestCount) {
                 $nextRequest = $this->_requests[$precedence + 1];
-                if ($nextRequest->omit == true) {
-                    $query = $query . ';!';
+                if ($nextRequest->omit === true) {
+                    $query .= ';!';
                 } else {
-                    $query = $query . ';';
+                    $query .= ';';
                 }
             }
         }
@@ -148,8 +149,10 @@ class CompoundFind extends Command
      */
     public function getRange()
     {
-        return array('skip' => $this->_skip,
-            'max' => $this->_max);
+        return array(
+            'skip' => $this->_skip,
+            'max'  => $this->_max
+        );
     }
 
     /**
@@ -185,7 +188,8 @@ class CompoundFind extends Command
             'relatedsetsmax' => $this->_relatedsetsmax);
     }
 
-    public function _setRelatedSetsFilters(&$params) {
+    public function _setRelatedSetsFilters(&$params)
+    {
         if ($this->_relatedsetsfilter) {
             $params['-relatedsets.filter'] = $this->_relatedsetsfilter;
         }
@@ -194,7 +198,8 @@ class CompoundFind extends Command
         }
     }
 
-    public function _setSortParams(&$params) {
+    public function _setSortParams(&$params)
+    {
         foreach ($this->_sortFields as $precedence => $fieldname) {
             $params['-sortfield.' . $precedence] = $fieldname;
         }
@@ -203,7 +208,8 @@ class CompoundFind extends Command
         }
     }
 
-    public function _setRangeParams(&$params) {
+    public function _setRangeParams(&$params)
+    {
         if ($this->_skip) {
             $params['-skip'] = $this->_skip;
         }

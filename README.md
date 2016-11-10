@@ -1,6 +1,6 @@
 # FileMaker® PHP-API
-FileMaker® PHP API rewrited for PHP 5.5+.
-It is compatible with PHP 7.0+ and use PSR-4 autoloading specifications
+FileMaker® PHP API rewritten for PHP 5.5+.
+It is compatible with PHP 7.0+ and uses PSR-4 autoloading specifications.
 
 ## Features
 This version of the PHP-API add the following feature to the offical API :
@@ -10,9 +10,9 @@ This version of the PHP-API add the following feature to the offical API :
 * 'dateFormat' option to select the input/output date format (not compatible with find requets yet)
 * 'emptyAsNull' option to return empty value as null
 * Support setRange() method with PerformScript command (as supported by CWP)
-* A method to get the url of your last CWP call ($fm->getLastRequestedUrl())
-* A method to check if a findRequest is empty ($request->isEmpty())
-* A method to get the value list associated to a field from a Record ($record->getValueListTwoField('my_field'))
+* A method to get the url of your last CWP call: `$fm->getLastRequestedUrl()`
+* A method to check if a findRequest is empty: `$request->isEmpty()`
+* A method to get the value list associated to a field from a Record: `$record->getValueListTwoField('my_field')`
 
 ## Requirements
 
@@ -43,7 +43,7 @@ STEP 1 : Read the 'Important Notice' below
 STEP 2 : include the API autoload
 
 ```php
-require('/path/to/autoloader.php');
+require '/path/to/autoloader.php';
 ```
 *This step is facultative if you are using composer*
 
@@ -56,7 +56,7 @@ $fm = new FileMaker($database, $host, $username, $password, $options);
 
 STEP 4 : use it quite the same way you would use the offical API...
 
-...And enjoy code completion using your favorite IDE and php 7 support without notice/warnings
+...And enjoy code completion using your favorite IDE and php 7 support without notice/warnings.
 
 You may also find sample usage by reading the `sample.php` file located in the "demo" folder 
 
@@ -95,7 +95,7 @@ The major changes compared to the official package are :
 * API now support Exceptions error handling, you may switch between those behaviors by changing property 'errorHandeling' to 'default' or 'exception' (default value is 'exception')
 * There is no more 'conf.php' use "setProperty" to define specifics API's settings. You may also use an array of properties on FileMaker instanciation, ie : new FileMaker( $db, $host, $user, $pass, ['property' => 'value'])
 
-You can use the offical [PHP-API guide](https://fmhelp.filemaker.com/docs/14/fr/fms14_cwp_guide.pdf) provided by FieMaker® for everything else.
+You can use the offical [PHP-API guide](https://fmhelp.filemaker.com/docs/14/fr/fms14_cwp_guide.pdf) provided by FileMaker® for everything else.
 
 ## TODO
 * Finish PHPunit test

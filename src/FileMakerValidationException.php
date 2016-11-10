@@ -1,7 +1,7 @@
 <?php
 /**
  * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
- * @licence BSD
+ * @license BSD
  */
 namespace airmoi\FileMaker;
 
@@ -21,7 +21,7 @@ class FileMakerValidationException extends FileMakerException
      * @var array
      * @access private
      */
-    var $_errors = array();
+    public $_errors = array();
 
     /**
      * Adds an error.
@@ -39,19 +39,20 @@ class FileMakerValidationException extends FileMakerException
         $messages[] = $message;
         $this->message = implode("\n", $messages);
     }
-    
-    private static function getValidationErrorString(Field $field, $rule, $value) {
+
+    private static function getValidationErrorString(Field $field, $rule, $value)
+    {
         switch ($rule) {
             case FileMaker::RULE_FOURDIGITYEAR:
                 $message = 'Please enter a four digit number for the year in field %1$s';
                 break;
-            case FileMaker::RULE_DATE_FIELD :
+            case FileMaker::RULE_DATE_FIELD:
                 $message = 'Please enter a valid date for field %1$s';
                 break;
-            case FileMaker::RULE_MAXCHARACTERS :
+            case FileMaker::RULE_MAXCHARACTERS:
                 $message = 'Value in field %1$s exceeds maximum number of allowed characters (%2$d)';
                 break;
-            case FileMaker::RULE_NOTEMPTY :
+            case FileMaker::RULE_NOTEMPTY:
                 $message = 'Field %1$s is required';
                 break;
             case FileMaker::RULE_NUMERICONLY:
@@ -67,7 +68,7 @@ class FileMakerValidationException extends FileMakerException
             default:
                 $message = 'Incorrect value for field %1$s (%3$s)';
         }
-        
+
         return sprintf($message, $field->getName(), $field->maxCharacters, $value);
     }
 

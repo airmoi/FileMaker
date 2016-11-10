@@ -1,13 +1,13 @@
 # phpstorm project files
-.idea
+/.idea
 
 # netbeans project files
-nbproject
+/nbproject
 
 # zend studio for eclipse project files
-.buildpath
-.project
-.settings
+/.buildpath
+/.project
+/.settings
 
 # windows thumbnail cache
 Thumbs.db
@@ -17,6 +17,9 @@ Thumbs.db
 
 # composer itself is not needed
 composer.phar
+
+# composer.lock is not needed for libraries
+/composer.lock
 
 # Mac DS_Store Files
 .DS_Store
