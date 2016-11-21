@@ -96,7 +96,7 @@ class CompoundFind extends Command
             $critCount = count($findCriterias);
 			
 			//If the first find request is marked as omit
-			if($this->_requests[$precedence]->omit === true){
+			if($this->_requests[$precedence]->omit === true && $precedence == '1'){
 				$query .= "!";
 			}
 
