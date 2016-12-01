@@ -45,10 +45,10 @@ class Delete extends Command
             }
             throw $error;
         }
-        $params = $this->_getCommandParams();
+        $params = $this->getCommandParams();
         $params['-delete'] = true;
         $params['-recid'] = $this->recordId;
         $result = $this->fm->execute($params);
-        return $this->_getResult($result);
+        return $this->getResult($result);
     }
 }

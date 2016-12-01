@@ -33,18 +33,18 @@ class Command
      *
      * @var \airmoi\FileMaker\Object\Layout
      */
-    protected $_layout;
+    protected $layout;
 
-    protected $_fields = array();
-    protected $_resultLayout;
-    protected $_script;
-    protected $_scriptParams;
-    protected $_preReqScript;
-    protected $_preReqScriptParams;
-    protected $_preSortScript;
-    protected $_preSortScriptParams;
-    protected $_recordClass;
-    protected $_globals = [];
+    protected $fields = [];
+    protected $resultLayout;
+    protected $script;
+    protected $scriptParams;
+    protected $preReqScript;
+    protected $preReqScriptParams;
+    protected $preSortScript;
+    protected $preSortScriptParams;
+    protected $recordClass;
+    protected $globals = [];
 
     public $recordId;
 
@@ -57,8 +57,8 @@ class Command
     public function __construct(FileMaker $fm, $layout)
     {
         $this->fm = $fm;
-        $this->_layout = $layout;
-        $this->_recordClass = $fm->getProperty('recordClass');
+        $this->layout = $layout;
+        $this->recordClass = $fm->getProperty('recordClass');
     }
     /**
      * Requests that the command's result be returned in a layout different
@@ -69,7 +69,7 @@ class Command
      */
     public function setResultLayout($layout)
     {
-        $this->_resultLayout = $layout;
+        $this->resultLayout = $layout;
         return $this;
     }
 
@@ -83,8 +83,8 @@ class Command
      */
     public function setScript($scriptName, $scriptParameters = null)
     {
-        $this->_script = $scriptName;
-        $this->_scriptParams = $scriptParameters;
+        $this->script = $scriptName;
+        $this->scriptParams = $scriptParameters;
         return $this;
     }
 
@@ -97,8 +97,8 @@ class Command
      */
     public function setPreCommandScript($scriptName, $scriptParameters = null)
     {
-        $this->_preReqScript = $scriptName;
-        $this->_preReqScriptParams = $scriptParameters;
+        $this->preReqScript = $scriptName;
+        $this->preReqScriptParams = $scriptParameters;
         return $this;
     }
 
@@ -112,8 +112,8 @@ class Command
      */
     public function setPreSortScript($scriptName, $scriptParameters = null)
     {
-        $this->_preSortScript = $scriptName;
-        $this->_preSortScriptParams = $scriptParameters;
+        $this->preSortScript = $scriptName;
+        $this->preSortScriptParams = $scriptParameters;
         return $this;
     }
 
@@ -132,7 +132,7 @@ class Command
      */
     public function setRecordClass($className)
     {
-        $this->_recordClass = $className;
+        $this->recordClass = $className;
         return $this;
     }
 
@@ -164,16 +164,14 @@ class Command
         if (!is_a($this, Add::class) && !is_a($this, Edit::class)) {
             return true;
         }
-        $layout = $this->fm->getLayout($this->_layout);
+        $layout = $this->fm->getLayout($this->layout);
         $validationErrors = new FileMakerValidationException($this->fm);
         if ($fieldName === null) {
             foreach ($layout->getFields() as $fieldName => $field) {
-                if (!isset($this->_fields[$fieldName]) || !count($this->_fields[$fieldName])) {
-                    $values = array(
-                        0 => null
-                    );
+                if (!isset($this->fields[$fieldName]) || !count($this->fields[$fieldName])) {
+                    $values = [0 => null];
                 } else {
-                    $values = $this->_fields[$fieldName];
+                    $values = $this->fields[$fieldName];
                 }
                 foreach ($values as $value) {
                     try {
@@ -187,12 +185,10 @@ class Command
             }
         } else {
             $field = $layout->getField($fieldName);
-            if (!isset($this->_fields[$fieldName]) || !count($this->_fields[$fieldName])) {
-                $values = array(
-                    0 => null
-                );
+            if (!isset($this->fields[$fieldName]) || !count($this->fields[$fieldName])) {
+                $values = [0 => null];
             } else {
-                $values = $this->_fields[$fieldName];
+                $values = $this->fields[$fieldName];
             }
             foreach ($values as $value) {
                 try {
@@ -248,7 +244,7 @@ class Command
      */
     public function setGlobal($fieldName, $fieldValue)
     {
-        $this->_globals[$fieldName] = $fieldValue;
+        $this->globals[$fieldName] = $fieldValue;
         return $this;
     }
 
@@ -258,7 +254,7 @@ class Command
      * @return Result|FileMakerException
      * @throws FileMakerException
      */
-    protected function _getResult($xml)
+    protected function getResult($xml)
     {
         $parser      = new FMResultSet($this->fm);
         $parseResult = $parser->parse($xml);
@@ -267,7 +263,7 @@ class Command
         }
 
         $result      = new Result($this->fm);
-        $parseResult = $parser->setResult($result, $this->_recordClass);
+        $parseResult = $parser->setResult($result, $this->recordClass);
         if (FileMaker::isError($parseResult)) {
             return $parseResult;
         }
@@ -275,18 +271,22 @@ class Command
         return $result;
     }
 
-    protected function _getCommandParams()
+    /**
+     * Build command params
+     * @return array
+     */
+    protected function getCommandParams()
     {
-        $queryParams = array(
+        $queryParams = [
             '-db'  => $this->fm->getProperty('database'),
-            '-lay' => $this->_layout
-        );
+            '-lay' => $this->layout
+        ];
 
-        foreach (array(
-                '_script' => '-script',
-                '_preReqScript' => '-script.prefind',
-                '_preSortScript' => '-script.presort'
-                    ) as $varName => $paramName) {
+        foreach ([
+                    '_script' => '-script',
+                    '_preReqScript' => '-script.prefind',
+                    '_preSortScript' => '-script.presort'
+                 ] as $varName => $paramName) {
             if ($this->$varName) {
                 $queryParams[$paramName] = $this->$varName;
                 $varName .= 'Params';
@@ -295,11 +295,11 @@ class Command
                 }
             }
         }
-        if ($this->_resultLayout) {
-            $queryParams['-lay.response'] = $this->_resultLayout;
+        if ($this->resultLayout) {
+            $queryParams['-lay.response'] = $this->resultLayout;
         }
 
-        foreach ($this->_globals as $fieldName => $fieldValue) {
+        foreach ($this->globals as $fieldName => $fieldValue) {
             $queryParams[$fieldName.'.global'] = $fieldValue;
         }
         return $queryParams;

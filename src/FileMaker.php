@@ -367,10 +367,12 @@ class FileMaker
      * @param string $layout Layout to find records in.
      *
      * @return Command\FindRequest New Find Request command object.
+     *
+     * @todo $layout param unused (not supported by cwp)
      */
     public function newFindRequest($layout)
     {
-        return new Command\FindRequest($this, $layout);
+        return new Command\FindRequest();
     }
 
     /**

@@ -16,11 +16,11 @@ use airmoi\FileMaker\Object\Result;
  */
 class PerformScript extends Command
 {
-    protected $_skip;
-    protected $_max;
+    protected $skip;
+    protected $max;
 
-    protected $_script;
-    protected $_scriptParams;
+    protected $script;
+    protected $scriptParams;
 
     /**
      * PerformScript command constructor.
@@ -34,8 +34,8 @@ class PerformScript extends Command
     public function __construct(FileMaker $fm, $layout, $scriptName, $scriptParameters = null)
     {
         parent::__construct($fm, $layout);
-        $this->_script       = $scriptName;
-        $this->_scriptParams = $scriptParameters;
+        $this->script       = $scriptName;
+        $this->scriptParams = $scriptParameters;
     }
 
     /**
@@ -49,8 +49,8 @@ class PerformScript extends Command
      */
     public function setRange($skip = 0, $max = null)
     {
-        $this->_skip = $skip;
-        $this->_max  = $max;
+        $this->skip = $skip;
+        $this->max  = $max;
         return $this;
     }
 
@@ -64,10 +64,10 @@ class PerformScript extends Command
      */
     public function getRange()
     {
-        return array(
-            'skip' => $this->_skip,
-            'max'  => $this->_max
-        );
+        return [
+            'skip' => $this->skip,
+            'max'  => $this->max
+        ];
     }
 
     /**
@@ -76,19 +76,23 @@ class PerformScript extends Command
      */
     public function execute()
     {
-        $params             = $this->_getCommandParams();
+        $params             = $this->getCommandParams();
         $params['-findany'] = true;
-        $this->_setRangeParams($params);
-        return $this->_getResult($this->fm->execute($params));
+        $this->setRangeParams($params);
+        return $this->getResult($this->fm->execute($params));
     }
 
-    protected function _setRangeParams(&$params)
+    /**
+     * Set Range params
+     * @param array $params
+     */
+    protected function setRangeParams(&$params)
     {
-        if ($this->_skip) {
-            $params['-skip'] = $this->_skip;
+        if ($this->skip) {
+            $params['-skip'] = $this->skip;
         }
-        if ($this->_max) {
-            $params['-max'] = $this->_max;
+        if ($this->max) {
+            $params['-max'] = $this->max;
         }
     }
 }

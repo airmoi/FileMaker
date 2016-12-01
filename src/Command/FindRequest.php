@@ -15,17 +15,15 @@ namespace airmoi\FileMaker\Command;
 class FindRequest
 {
 
-    public $findCriteria = array();
+    public $findCriteria = [];
     public $omit;
 
     /**
      * Find request constructor.
      *
      * @ignore
-     * @param \airmoi\FileMaker\FileMaker $fm FileMaker object the request was created by.
-     * @param string $layout Layout to find records in.
      */
-    public function __construct($fm, $layout)
+    public function __construct()
     {
         $this->omit = false;
     }
@@ -66,7 +64,7 @@ class FindRequest
      */
     public function clearFindCriteria()
     {
-        $this->findCriteria = array();
+        $this->findCriteria = [];
         return $this;
     }
 

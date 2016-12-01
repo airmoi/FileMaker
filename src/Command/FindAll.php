@@ -22,10 +22,10 @@ class FindAll extends Find
      */
     public function execute()
     {
-        $params             = $this->_getCommandParams();
+        $params             = $this->getCommandParams();
         $params['-findall'] = true;
-        $this->_setSortParams($params);
-        $this->_setRangeParams($params);
-        return $this->_getResult($this->fm->execute($params));
+        $this->setSortParams($params);
+        $this->setRangeParams($params);
+        return $this->getResult($this->fm->execute($params));
     }
 }

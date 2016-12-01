@@ -127,7 +127,7 @@ class CompoundFindTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers \airmoi\FileMaker\Command\CompoundFind::_setRelatedSetsFilters
+     * @covers \airmoi\FileMaker\Command\CompoundFind::setRelatedSetsFiltersParams
      * @todo   Implement test_setRelatedSetsFilters().
      */
     public function test_setRelatedSetsFilters()
@@ -139,7 +139,7 @@ class CompoundFindTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers \airmoi\FileMaker\Command\CompoundFind::_setSortParams
+     * @covers \airmoi\FileMaker\Command\CompoundFind::setSortParams
      * @todo   Implement test_setSortParams().
      */
     public function test_setSortParams()
@@ -151,7 +151,7 @@ class CompoundFindTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers \airmoi\FileMaker\Command\CompoundFind::_setRangeParams
+     * @covers \airmoi\FileMaker\Command\CompoundFind::setRangeParams
      * @todo   Implement test_setRangeParams().
      */
     public function test_setRangeParams()

@@ -26,7 +26,7 @@ class Add extends Command
      * use a numerically indexed array for the value of a field, with the numeric keys
      * corresponding to the repetition number to set.
      */
-    public function __construct(FileMaker $fm, $layout, $values = array())
+    public function __construct(FileMaker $fm, $layout, $values = [])
     {
         parent::__construct($fm, $layout);
         foreach ($values as $fieldname => $value) {
@@ -53,10 +53,10 @@ class Add extends Command
                 return $validation;
             }
         }
-        $layout = $this->fm->getLayout($this->_layout);
-        $params = $this->_getCommandParams();
+        $layout = $this->fm->getLayout($this->layout);
+        $params = $this->getCommandParams();
         $params['-new'] = true;
-        foreach ($this->_fields as $field => $values) {
+        foreach ($this->fields as $field => $values) {
             if (strpos($field, '.') !== false) {
                 list($fieldname, $fieldType) = explode('.', $field, 2);
                 $fieldType = '.' . $fieldType;
@@ -74,7 +74,7 @@ class Add extends Command
             }
         }
         $result = $this->fm->execute($params);
-        return $this->_getResult($result);
+        return $this->getResult($result);
     }
 
     /**
@@ -89,7 +89,7 @@ class Add extends Command
      */
     public function setField($field, $value, $repetition = 0)
     {
-        $fieldInfos = $this->fm->getLayout($this->_layout)->getField($field);
+        $fieldInfos = $this->fm->getLayout($this->layout)->getField($field);
         /* if(FileMaker::isError($fieldInfos)){
             return $fieldInfos;
         }*/
@@ -110,7 +110,7 @@ class Add extends Command
             }
         }
 
-        $this->_fields[$field][$repetition] = $value;
+        $this->fields[$field][$repetition] = $value;
         return $value;
     }
 
@@ -135,7 +135,7 @@ class Add extends Command
      */
     public function setFieldFromTimestamp($field, $timestamp, $repetition = 0)
     {
-        $layout = $this->fm->getLayout($this->_layout);
+        $layout = $this->fm->getLayout($this->layout);
         $fieldInfos = $layout->getField($field);
         switch ($fieldInfos->getResult()) {
             case 'date':

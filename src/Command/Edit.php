@@ -17,8 +17,8 @@ use airmoi\FileMaker\FileMakerValidationException;
  */
 class Edit extends Command
 {
-    protected $_modificationId = null;
-    protected $_deleteRelated;
+    protected $modificationId = null;
+    protected $deleteRelated;
 
     /**
      * Edit command constructor.
@@ -36,7 +36,7 @@ class Edit extends Command
     {
         parent::__construct($fm, $layout);
         $this->recordId = $recordId;
-        $this->_deleteRelated = null;
+        $this->deleteRelated = null;
         foreach ($updatedValues as $fieldname => $value) {
             if (!is_array($value)) {
                 $this->setField($fieldname, $value, 0);
@@ -55,7 +55,7 @@ class Edit extends Command
      */
     public function execute()
     {
-        $params = $this->_getCommandParams();
+        $params = $this->getCommandParams();
         if (empty($this->recordId)) {
             $error = new FileMakerException($this->fm, 'Edit commands require a record id.');
             if ($this->fm->getProperty('errorHandling') === 'default') {
@@ -63,8 +63,8 @@ class Edit extends Command
             }
             throw $error;
         }
-        if (!count($this->_fields)) {
-            if ($this->_deleteRelated === null) {
+        if (!count($this->fields)) {
+            if ($this->deleteRelated === null) {
                 $error = new FileMakerException($this->fm, 'There are no changes to make.');
                 if ($this->fm->getProperty('errorHandling') === 'default') {
                     return $error;
@@ -80,11 +80,11 @@ class Edit extends Command
             }
         }
 
-        $layout = $this->fm->getLayout($this->_layout);
+        $layout = $this->fm->getLayout($this->layout);
 
         $params['-edit'] = true;
-        if ($this->_deleteRelated === null) {
-            foreach ($this->_fields as $fieldname => $values) {
+        if ($this->deleteRelated === null) {
+            foreach ($this->fields as $fieldname => $values) {
                 if (strpos($fieldname, '.') !== false) {
                     list ($fieldname, $infos) = explode('.', $fieldname, 2);
                     $infos = '.' . $infos;
@@ -101,15 +101,15 @@ class Edit extends Command
                 }
             }
         }
-        if ($this->_deleteRelated !== null) {
-            $params['-delete.related'] = $this->_deleteRelated;
+        if ($this->deleteRelated !== null) {
+            $params['-delete.related'] = $this->deleteRelated;
         }
         $params['-recid'] = $this->recordId;
-        if ($this->_modificationId) {
-            $params['-modid'] = $this->_modificationId;
+        if ($this->modificationId) {
+            $params['-modid'] = $this->modificationId;
         }
         $result = $this->fm->execute($params);
-        return $this->_getResult($result);
+        return $this->getResult($result);
     }
 
     /**
@@ -125,7 +125,7 @@ class Edit extends Command
      */
     public function setField($field, $value, $repetition = 0)
     {
-        $fieldInfos = $this->fm->getLayout($this->_layout)->getField($field);
+        $fieldInfos = $this->fm->getLayout($this->layout)->getField($field);
         /*if(FileMaker::isError($fieldInfos)){
             return $fieldInfos;
         }*/
@@ -147,7 +147,7 @@ class Edit extends Command
             }
         }
 
-        $this->_fields[$field][$repetition] = $value;
+        $this->fields[$field][$repetition] = $value;
         return $value;
     }
 
@@ -172,7 +172,7 @@ class Edit extends Command
      */
     public function setFieldFromTimestamp($field, $timestamp, $repetition = 0)
     {
-        $layout = & $this->fm->getLayout($this->_layout);
+        $layout = & $this->fm->getLayout($this->layout);
         if (FileMaker::isError($layout)) {
             return $layout;
         }
@@ -213,11 +213,15 @@ class Edit extends Command
      */
     public function setModificationId($modificationId)
     {
-        $this->_modificationId = $modificationId;
+        $this->modificationId = $modificationId;
     }
 
+    /**
+     * Set the related record ID to delete
+     * @param int $relatedRecordId
+     */
     public function setDeleteRelated($relatedRecordId)
     {
-        $this->_deleteRelated = $relatedRecordId;
+        $this->deleteRelated = $relatedRecordId;
     }
 }

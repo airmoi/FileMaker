@@ -75,7 +75,10 @@ class RelatedSet
         if (isset($this->fields[$fieldName])) {
             return $this->fields[$fieldName];
         }
-        $error = new FileMakerException($this->fm, 'Field '.$fieldName.' Not Found in Layout '. $this->layout->getName());
+        $error = new FileMakerException(
+            $this->fm,
+            'Field '.$fieldName.' Not Found in Layout '. $this->layout->getName()
+        );
         if ($this->fm->getProperty('errorHandling') === 'default') {
             return $error;
         }

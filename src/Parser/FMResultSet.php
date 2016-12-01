@@ -18,33 +18,40 @@ use airmoi\FileMaker\Object\Result;
  */
 class FMResultSet
 {
+    /**
+     * @var FileMaker
+     */
+    private $fm;
 
     /**
      * Array that stores parsed records
      * @var \airmoi\FileMaker\Object\Record[]
      */
-    public $parsedResult = array();
+    public $parsedResult = [];
 
-    private $_errorCode;
-    private $_serverVersion;
-    private $_parsedHead;
-    private $_fieldList = array();
-    private $_parsedFoundSet;
-    private $_relatedSetNames = array();
-    private $_currentRelatedSet;
-    private $_currentRecord;
-    private $_parentRecord;
-    private $_currentField;
-    private $_cdata;
-    private $_fm;
-    private $_xmlParser;
-    private $_isParsed = false;
-    private $_result;
-    private $_layout;
+    private $errorCode;
+    private $serverVersion;
+    private $parsedHead;
+    private $fieldList = [];
+    private $parsedFoundSet;
+    private $relatedSetNames = [];
+    private $currentRelatedSet;
+    private $currentRecord;
+    private $parentRecord;
+    private $currentField;
+    private $cdata;
+    private $xmlParser;
+    private $isParsed = false;
+    private $result;
+    private $layout;
 
+    /**
+     * FMResultSet constructor.
+     * @param FileMaker $fm
+     */
     public function __construct(FileMaker $fm)
     {
-        $this->_fm = $fm;
+        $this->fm = $fm;
     }
 
     /**
@@ -57,52 +64,52 @@ class FMResultSet
     public function parse($xml)
     {
         if (empty($xml)) {
-            $error = new FileMakerException($this->_fm, 'Did not receive an XML document from the server.');
-            if ($this->_fm->getProperty('errorHandling') === 'default') {
+            $error = new FileMakerException($this->fm, 'Did not receive an XML document from the server.');
+            if ($this->fm->getProperty('errorHandling') === 'default') {
                 return $error;
             }
             throw $error;
         }
-        $this->_xmlParser = xml_parser_create('UTF-8');
-        xml_set_object($this->_xmlParser, $this);
-        xml_parser_set_option($this->_xmlParser, XML_OPTION_CASE_FOLDING, false);
-        xml_parser_set_option($this->_xmlParser, XML_OPTION_TARGET_ENCODING, 'UTF-8');
-        xml_set_element_handler($this->_xmlParser, '_start', '_end');
-        xml_set_character_data_handler($this->_xmlParser, '_cdata');
-        if (!@xml_parse($this->_xmlParser, $xml)) {
+        $this->xmlParser = xml_parser_create('UTF-8');
+        xml_set_object($this->xmlParser, $this);
+        xml_parser_set_option($this->xmlParser, XML_OPTION_CASE_FOLDING, false);
+        xml_parser_set_option($this->xmlParser, XML_OPTION_TARGET_ENCODING, 'UTF-8');
+        xml_set_element_handler($this->xmlParser, 'start', 'end');
+        xml_set_character_data_handler($this->xmlParser, 'cdata');
+        if (!@xml_parse($this->xmlParser, $xml)) {
             $error = new FileMakerException(
-                $this->_fm,
+                $this->fm,
                 sprintf(
                     'XML error: %s at line %d',
-                    xml_error_string(xml_get_error_code($this->_xmlParser)),
-                    xml_get_current_line_number($this->_xmlParser)
+                    xml_error_string(xml_get_error_code($this->xmlParser)),
+                    xml_get_current_line_number($this->xmlParser)
                 )
             );
-            if ($this->_fm->getProperty('errorHandling') === 'default') {
+            if ($this->fm->getProperty('errorHandling') === 'default') {
                 return $error;
             }
             throw $error;
         }
-        xml_parser_free($this->_xmlParser);
-        if (!empty($this->_errorCode)) {
-            $error = new FileMakerException($this->_fm, null, $this->_errorCode);
-            if ($this->_fm->getProperty('errorHandling') === 'default') {
+        xml_parser_free($this->xmlParser);
+        if (!empty($this->errorCode)) {
+            $error = new FileMakerException($this->fm, null, $this->errorCode);
+            if ($this->fm->getProperty('errorHandling') === 'default') {
                 return $error;
             }
             throw $error;
         }
-        if (version_compare($this->_serverVersion['version'], FileMaker::getMinServerVersion(), '<')) {
+        if (version_compare($this->serverVersion['version'], FileMaker::getMinServerVersion(), '<')) {
             $error = new FileMakerException(
-                $this->_fm,
+                $this->fm,
                 'This API requires at least version ' . FileMaker::getMinServerVersion()
-                . ' of FileMaker Server to run (detected ' . $this->_serverVersion['version'] . ').'
+                . ' of FileMaker Server to run (detected ' . $this->serverVersion['version'] . ').'
             );
-            if ($this->_fm->getProperty('errorHandling') === 'default') {
+            if ($this->fm->getProperty('errorHandling') === 'default') {
                 return $error;
             }
             throw $error;
         }
-        $this->_isParsed = true;
+        $this->isParsed = true;
         return true;
     }
 
@@ -116,23 +123,22 @@ class FMResultSet
      */
     public function setResult(Result $result, $recordClass = 'airmoi\FileMaker\Object\Record')
     {
-        if (!$this->_isParsed) {
-            $error = new FileMakerException($this->_fm, 'Attempt to get a result object before parsing data.');
-            if ($this->_fm->getProperty('errorHandling') === 'default') {
+        if (!$this->isParsed) {
+            $error = new FileMakerException($this->fm, 'Attempt to get a result object before parsing data.');
+            if ($this->fm->getProperty('errorHandling') === 'default') {
                 return $error;
             }
             throw $error;
         }
-        if ($this->_result) {
-            $result = $this->_result;
+        if ($this->result) {
             return true;
         }
-        $result->layout = new Layout($this->_fm);
+        $result->layout = new Layout($this->fm);
         $this->setLayout($result->layout);
-        $result->tableCount = $this->_parsedHead['total-count'];
-        $result->foundSetCount = $this->_parsedFoundSet['count'];
-        $result->fetchCount = $this->_parsedFoundSet['fetch-size'];
-        $records = array();
+        $result->tableCount = $this->parsedHead['total-count'];
+        $result->foundSetCount = $this->parsedFoundSet['count'];
+        $result->fetchCount = $this->parsedFoundSet['fetch-size'];
+        $records = [];
         foreach ($this->parsedResult as $recordData) {
             $record = new $recordClass($result->layout);
             $record->fields = $recordData['fields'];
@@ -140,7 +146,7 @@ class FMResultSet
             $record->modificationId = $recordData['mod-id'];
             if ($recordData['children']) {
                 foreach ($recordData['children'] as $relatedSetName => $relatedRecords) {
-                    $record->relatedSets[$relatedSetName] = array();
+                    $record->relatedSets[$relatedSetName] = [];
                     foreach ($relatedRecords as $relatedRecordData) {
                         $relatedRecord = new $recordClass($result->layout->getRelatedSet($relatedSetName));
                         $relatedRecord->fields = $relatedRecordData['fields'];
@@ -155,7 +161,7 @@ class FMResultSet
             $records[] = $record;
         }
         $result->records = & $records;
-        $this->_result = & $result;
+        $this->result = & $result;
         return true;
     }
 
@@ -168,20 +174,20 @@ class FMResultSet
      */
     public function setLayout(Layout $layout)
     {
-        if (!$this->_isParsed) {
-            $error = new FileMakerException($this->_fm, 'Attempt to get a layout object before parsing data.');
-            if ($this->_fm->getProperty('errorHandling') === 'default') {
+        if (!$this->isParsed) {
+            $error = new FileMakerException($this->fm, 'Attempt to get a layout object before parsing data.');
+            if ($this->fm->getProperty('errorHandling') === 'default') {
                 return $error;
             }
             throw $error;
         }
-        if ($this->_layout === $layout) {
+        if ($this->layout === $layout) {
             return true;
         }
-        $layout->name = $this->_parsedHead['layout'];
-        $layout->database = $this->_parsedHead['database'];
-        $layout->table = $this->_parsedHead['table'];
-        foreach ($this->_fieldList as $fieldInfos) {
+        $layout->name = $this->parsedHead['layout'];
+        $layout->database = $this->parsedHead['database'];
+        $layout->table = $this->parsedHead['table'];
+        foreach ($this->fieldList as $fieldInfos) {
             $field = new Field($layout);
             $field->name = $fieldInfos['name'];
             $field->autoEntered = (bool) ($fieldInfos['auto-enter'] === 'yes');
@@ -224,7 +230,7 @@ class FMResultSet
             }
             $layout->fields[$field->getName()] = $field;
         }
-        foreach ($this->_relatedSetNames as $relatedSetName => $fields) {
+        foreach ($this->relatedSetNames as $relatedSetName => $fields) {
             $relatedSet = new RelatedSet($layout);
             $relatedSet->name = $relatedSetName;
             foreach ($fields as $fieldInfos) {
@@ -272,7 +278,7 @@ class FMResultSet
             }
             $layout->relatedSets[$relatedSet->getName()] = $relatedSet;
         }
-        $this->_layout = $layout;
+        $this->layout = $layout;
         return true;
     }
     /**
@@ -282,53 +288,53 @@ class FMResultSet
      * @param string $tag
      * @param array $datas
      */
-    private function _start($parser, $tag, $datas)
+    private function start($parser, $tag, $datas)
     {
-        $datas = $this->_fm->toOutputCharset($datas);
+        $datas = $this->fm->toOutputCharset($datas);
         switch ($tag) {
             case 'error':
-                $this->_errorCode = $datas['code'];
+                $this->errorCode = $datas['code'];
                 break;
             case 'product':
-                $this->_serverVersion = $datas;
+                $this->serverVersion = $datas;
                 break;
             case 'datasource':
-                $this->_parsedHead = $datas;
+                $this->parsedHead = $datas;
                 break;
             case 'relatedset-definition':
-                $this->_relatedSetNames[$datas['table']] = [];
-                $this->_currentRelatedSet = $datas['table'];
+                $this->relatedSetNames[$datas['table']] = [];
+                $this->currentRelatedSet = $datas['table'];
                 break;
             case 'field-definition':
-                if ($this->_currentRelatedSet) {
-                    $this->_relatedSetNames[$this->_currentRelatedSet][] = $datas;
+                if ($this->currentRelatedSet) {
+                    $this->relatedSetNames[$this->currentRelatedSet][] = $datas;
                 } else {
-                    $this->_fieldList[] = $datas;
+                    $this->fieldList[] = $datas;
                 }
                 break;
             case 'resultset':
-                $this->_parsedFoundSet = $datas;
+                $this->parsedFoundSet = $datas;
                 break;
             case 'relatedset':
-                $this->_currentRelatedSet = $datas['table'];
-                $this->_parentRecord = $this->_currentRecord;
-                $this->_parentRecord['children'][$this->_currentRelatedSet] = array();
-                $this->_currentRecord = null;
+                $this->currentRelatedSet = $datas['table'];
+                $this->parentRecord = $this->currentRecord;
+                $this->parentRecord['children'][$this->currentRelatedSet] = [];
+                $this->currentRecord = null;
                 break;
             case 'record':
-                $this->_currentRecord = array(
+                $this->currentRecord = [
                     'record-id' => $datas['record-id'],
                     'mod-id'    => $datas['mod-id'],
-                    'fields'    => array(),
-                    'children'  => array(),
-                );
+                    'fields'    => [],
+                    'children'  => [],
+                ];
                 break;
             case 'field':
-                $this->_currentField = $datas['name'];
-                $this->_currentRecord['fields'][$this->_currentField] = array();
+                $this->currentField = $datas['name'];
+                $this->currentRecord['fields'][$this->currentField] = [];
                 break;
             case 'data':
-                $this->_cdata = '';
+                $this->cdata = '';
                 break;
         }
     }
@@ -339,31 +345,31 @@ class FMResultSet
      * @param mixed $parser
      * @param string $tag
      */
-    private function _end($parser, $tag)
+    private function end($parser, $tag)
     {
         switch ($tag) {
             case 'relatedset-definition':
-                $this->_currentRelatedSet = null;
+                $this->currentRelatedSet = null;
                 break;
             case 'relatedset':
-                $this->_currentRelatedSet = null;
-                $this->_currentRecord = $this->_parentRecord;
-                $this->_parentRecord = null;
+                $this->currentRelatedSet = null;
+                $this->currentRecord = $this->parentRecord;
+                $this->parentRecord = null;
                 break;
             case 'record':
-                if ($this->_currentRelatedSet) {
-                    $this->_parentRecord['children'][$this->_currentRelatedSet][] = $this->_currentRecord;
+                if ($this->currentRelatedSet) {
+                    $this->parentRecord['children'][$this->currentRelatedSet][] = $this->currentRecord;
                 } else {
-                    $this->parsedResult[] = $this->_currentRecord;
+                    $this->parsedResult[] = $this->currentRecord;
                 }
-                $this->_currentRecord = null;
+                $this->currentRecord = null;
                 break;
             case 'field':
-                $this->_currentField = null;
+                $this->currentField = null;
                 break;
             case 'data':
-                $this->_currentRecord['fields'][$this->_currentField][] = $this->_cdata;
-                $this->_cdata = null;
+                $this->currentRecord['fields'][$this->currentField][] = $this->cdata;
+                $this->cdata = null;
                 break;
         }
     }
@@ -374,8 +380,8 @@ class FMResultSet
      * @param resource $parser
      * @param string $data
      */
-    private function _cdata($parser, $data)
+    private function cdata($parser, $data)
     {
-        $this->_cdata .= $this->_fm->toOutputCharset($data);
+        $this->cdata .= $this->fm->toOutputCharset($data);
     }
 }
