@@ -505,6 +505,12 @@ class Field
         return (!is_numeric($value));
     }
 
+    /**
+     * Check if the given string is a valid date
+     * @param string $value
+     * @param int $rule
+     * @param FileMakerValidationException $validationError
+     */
     public function checkDateValidity($value, $rule, FileMakerValidationException $validationError)
     {
         preg_match('#([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})([-,/,\\\\]([0-9]{1,4}))?#', $value, $matches);
@@ -529,6 +535,13 @@ class Field
         }
     }
 
+    /**
+     * Check if the given string is a valid time
+     * @param string $value
+     * @param int $rule
+     * @param FileMakerValidationException $validationError
+     * @param bool $shortHoursFormat
+     */
     public function checkTimeValidity($value, $rule, FileMakerValidationException $validationError, $shortHoursFormat)
     {
         if ($shortHoursFormat) {

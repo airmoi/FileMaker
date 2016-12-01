@@ -134,7 +134,10 @@ class Layout
         if (isset($this->relatedSets[$relatedSet])) {
             return $this->relatedSets[$relatedSet];
         }
-        $error = new FileMakerException($this->fm, 'RelatedSet "'.$relatedSet.'" Not Found in layout '. $this->getName());
+        $error = new FileMakerException(
+            $this->fm,
+            'RelatedSet "'.$relatedSet.'" Not Found in layout '. $this->getName()
+        );
         if ($this->fm->getProperty('errorHandling') === 'default') {
             return $error;
         }
