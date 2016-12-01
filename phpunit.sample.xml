@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<phpunit bootstrap="./tests/bootstrap.php"
+         colors="true"
+         convertErrorsToExceptions="true"
+         convertNoticesToExceptions="true"
+         convertWarningsToExceptions="true"
+         stopOnFailure="false">
+    <testsuites>
+        <testsuite name="FileMaker test suite">
+            <file>tests/src/FileMakerTest.php</file>
+        </testsuite>
+        <testsuite name="FileMakerException test suite">
+            <file>tests/src/FileMakerExceptionTest.php</file>
+        </testsuite>
+        <testsuite name="FileMakerValidationException test suite">
+            <file>tests/src/FileMakerValidationExceptionTest.php</file>
+        </testsuite>
+    </testsuites>
+    <filter>
+        <whitelist>
+            <directory suffix=".php">src/</directory>
+        </whitelist>
+    </filter>
+    <php>
+        <var name="DB_HOST" value="localhost" />
+        <var name="DB_USER" value="filemaker" />
+        <var name="DB_PASSWD" value="filemaker" />
+        <var name="DB_FILE" value="filemaker-test" />
+    </php>
+</phpunit>

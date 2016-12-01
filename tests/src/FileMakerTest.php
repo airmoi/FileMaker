@@ -21,9 +21,13 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase
      * Sets up the fixture, for example, opens a network connection.
      * This method is called before a test is executed.
      */
-    protected function setUp()
-    {
-        $this->fm = new FileMaker($GLOBALS['DB_FILE'], $GLOBALS['DB_HOST'], $GLOBALS['DB_USER'], $GLOBALS['DB_PASSWD']);
+    protected function setUp() {
+        if( $GLOBALS['OFFICIAL_API'] == 1 ) {
+            $this->fm = new \FileMaker($GLOBALS['DB_FILE'], $GLOBALS['DB_HOST'], $GLOBALS['DB_USER'], $GLOBALS['DB_PASSWD']);
+        } else {
+            $this->fm = new FileMaker($GLOBALS['DB_FILE'], $GLOBALS['DB_HOST'], $GLOBALS['DB_USER'], $GLOBALS['DB_PASSWD'], ['errorHandling' => 'exception']);
+        }
+        //$this->fm->newPerformScriptCommand('sample', 'cleanup db')->execute();
     }
 
     /**
@@ -60,21 +64,28 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase
     public function testGetLayout()
     {
         $layout = $this->fm->getLayout('sample');
-        $this->assertInstanceOf(\airmoi\FileMaker\Object\Layout::class, $layout);
-
-        $this->assertEquals('sample', $layout->getName(), 'Layout name missmatch (' . $layout->table . ')');
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->assertInstanceOf(\airmoi\FileMaker\Object\Layout::class, $layout);
+        }
+        
+        $this->assertEquals('sample', $layout->getName(), 'Layout name missmatch (' . $layout->getName() . ')');
     }
 
     /**
      * @covers \airmoi\FileMaker\FileMaker::isError
      */
-    public function testIsError()
-    {
-        $error = new \airmoi\FileMaker\FileMakerException($this->fm, 'Test FileMaker exception');
-        $record = new \airmoi\FileMaker\Object\Record(new \airmoi\FileMaker\Object\Layout($this->fm));
+    public function testIsError() {
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $error = new \airmoi\FileMaker\FileMakerException($this->fm, 'Test FileMaker exception');
+            $record = new \airmoi\FileMaker\Object\Record(new \airmoi\FileMaker\Object\Layout($this->fm));
+        }
+        else {
+            $error = new \FileMaker_Error($this->fm->_impl, 'Test FileMaker exception');
+            $record = new \FileMaker_Record(new \FileMaker_Layout($this->fm));
+        }
 
-        $this->assertTrue(FileMaker::isError($error));
-        $this->assertFalse(FileMaker::isError($record));
+        $this->assertTrue($this->fm->isError($error));
+        $this->assertFalse($this->fm->isError($record));
     }
 
     /**
@@ -97,7 +108,10 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(FileMaker::LOG_INFO, $this->fm->getProperty('logLevel'));
 
         //Test invalid property (should return an error)
-        $this->assertTrue(FileMaker::isError($this->fm->setProperty('fakeProperty', FileMaker::LOG_INFO)));
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->setExpectedException(FileMakerException::class);
+            $this->fm->setProperty('fakeProperty', FileMaker::LOG_INFO);
+        }
     }
 
     /**
@@ -134,19 +148,31 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase
     public function testNewAddCommand()
     {
         $command = $this->fm->newAddCommand('sample', ['text_field' => 'Test 1']);
-        $this->assertInstanceOf(\airmoi\FileMaker\Command\Add::class, $command);
-
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->assertInstanceOf(\airmoi\FileMaker\Command\Add::class, $command);
+        } else {
+            $this->assertInstanceOf( \FileMaker_Command_Add::class, $command);
+        }
+        
         $command->setField('date_field', date('m/d/Y'));
 
         $result = $command->execute();
-        $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
-
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
+        } else {
+            $this->assertInstanceOf(\FileMaker_Result::class, $result);
+        }
+        
         $record = $result->getFirstRecord();
-        $this->assertInstanceOf(\airmoi\FileMaker\Object\Record::class, $record);
-
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->assertInstanceOf(\airmoi\FileMaker\Object\Record::class, $record);
+        } else {
+            $this->assertInstanceOf(\FileMaker_Record::class, $record);
+        }
+        
         $this->assertEquals('Test 1', $record->getField('text_field'));
-
-        return ['recid' => $record->getRecordId(), 'tableCount' => $result->tableCount];
+        
+        return ['recid' => $record->getRecordId(), 'tableCount' => $result->GetTableRecordCount()];
     }
 
     /**
@@ -156,14 +182,26 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase
     public function testNewEditCommand($datas)
     {
         $command = $this->fm->newEditCommand('sample', $datas['recid'], ['text_field' => 'Test 2']);
-        $this->assertInstanceOf(\airmoi\FileMaker\Command\Edit::class, $command);
-
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->assertInstanceOf(\airmoi\FileMaker\Command\Edit::class, $command);
+        } else {
+            $this->assertInstanceOf(\FileMaker_Command_Edit::class, $command);
+        }
+        
         $result = $command->execute();
-        $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
-
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
+        } else {
+            $this->assertInstanceOf(\FileMaker_Result::class, $result);
+        }
+        
         $record = $result->getFirstRecord();
-        $this->assertInstanceOf(\airmoi\FileMaker\Object\Record::class, $record);
-
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->assertInstanceOf(\airmoi\FileMaker\Object\Record::class, $record);
+        } else {
+            $this->assertInstanceOf(\FileMaker_Record::class, $record);
+        }
+        
         $this->assertEquals('Test 2', $record->getField('text_field'));
     }
 
@@ -174,14 +212,26 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase
     public function testNewDuplicateCommand($datas)
     {
         $command = $this->fm->newDuplicateCommand('sample', $datas['recid']);
-        $this->assertInstanceOf(\airmoi\FileMaker\Command\Duplicate::class, $command);
-
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->assertInstanceOf(\airmoi\FileMaker\Command\Duplicate::class, $command);
+        } else {
+            $this->assertInstanceOf(\FileMaker_Command_Duplicate::class, $command);
+        }
+        
         $result = $command->execute();
-        $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
-
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
+        } else {
+            $this->assertInstanceOf(\FileMaker_Result::class, $result);
+        }
+        
         $record = $result->getFirstRecord();
-        $this->assertInstanceOf(\airmoi\FileMaker\Object\Record::class, $record);
-
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->assertInstanceOf(\airmoi\FileMaker\Object\Record::class, $record);
+        } else {
+            $this->assertInstanceOf(\FileMaker_Record::class, $record);
+        }
+        
         $this->assertEquals('Test 2', $record->getField('text_field'));
         $this->assertNotEquals($datas['recid'], $record->getRecordId());
     }
@@ -192,12 +242,20 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase
     public function testNewDeleteCommand($datas)
     {
         $command = $this->fm->newDeleteCommand('sample', $datas['recid']);
-        $this->assertInstanceOf(\airmoi\FileMaker\Command\Delete::class, $command);
-
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->assertInstanceOf(\airmoi\FileMaker\Command\Delete::class, $command);
+        } else {
+            $this->assertInstanceOf(\FileMaker_Command_Delete::class, $command);
+        }
+        
         $result = $command->execute();
-        $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
-
-        $this->assertEquals($datas['tableCount'], (int)$result->tableCount);
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
+        } else {
+            $this->assertInstanceOf(\FileMaker_Result::class, $result);
+        }
+        
+        $this->assertEquals($datas['tableCount'] , (int)$result->GetTableRecordCount());
     }
 
     /**
@@ -216,33 +274,56 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase
     public function testNewPerformScriptCommand()
     {
         $command = $this->fm->newPerformScriptCommand('sample', 'cleanup db');
-        $this->assertInstanceOf(\airmoi\FileMaker\Command\PerformScript::class, $command);
-
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->assertInstanceOf(\airmoi\FileMaker\Command\PerformScript::class, $command);
+        } else {
+            $this->assertInstanceOf(\FileMaker_Command_PerformScript::class, $command);
+        }
+        
         $result = $command->execute();
-        $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
+        } else {
+            $this->assertInstanceOf(\FileMaker_Result::class, $result);
+        }
+        
+        $this->assertEquals( 0 , (int)$result->getFoundSetCount());
+        
+        
+        $command = $this->fm->newPerformScriptCommand('sample', 'create sample data', 50 );
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $command->setRange(5, 25);
+            $result = $command->execute();
+            $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
+            $this->assertEquals( 50 , (int)$result->getFoundSetCount());
+            $this->assertEquals( 25 , (int)$result->getFetchCount());
 
-        $this->assertEquals(0, (int)$result->tableCount);
-
-        $command = $this->fm->newPerformScriptCommand('sample', 'create sample data', 50);
-        $result = $command->execute();
-        $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
-        $this->assertEquals(50, (int)$result->tableCount);
-
-        $this->assertRegExp('#(http:\/\/|https:\/\/)?[^:\/]*(:\d{2})?\/fmi\/xml\/fmresultset\.xml\?-db=[^\&]*\&-lay=[^\&]*\&-script=[^\&]*\&-script.param=[^\&]*\&-findany#', $this->fm->lastRequestedUrl);
+            $this->assertRegExp('#(http:\/\/|https:\/\/)?[^:\/]*(:\d{2})?\/fmi\/xml\/fmresultset\.xml\?-db=[^\&]*\&-lay=[^\&]*\&-script=[^\&]*\&-script.param=[^\&]*\&-findany#', $this->fm->lastRequestedUrl);
+        }
+        else {
+            $result = $command->execute();
+        }
     }
 
     /**
-     * @covers \airmoi\FileMaker\FileMaker::newFindAnyCommand
-     * @todo   Implement testNewFindAnyCommand().
+     * @covers airmoi\FileMaker\FileMaker::newFindAnyCommand
      */
     public function testNewFindAnyCommand()
     {
         $command =$this->fm->newFindAnyCommand('sample');
-        $this->assertInstanceOf(\airmoi\FileMaker\Command\FindAny::class, $command);
-
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->assertInstanceOf(\airmoi\FileMaker\Command\FindAny::class, $command);
+        } else {
+            $this->assertInstanceOf(\FileMaker_Command_FindAny::class, $command);
+        }
+        
         $result = $command->execute();
-        $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
-
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
+        } else {
+            $this->assertInstanceOf(\FileMaker_Result::class, $result);
+        }
+        
         $this->assertEquals(1, $result->getFoundSetCount());
     }
 
@@ -252,12 +333,20 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase
     public function testNewFindCommand()
     {
         $command = $this->fm->newFindCommand('sample');
-        $this->assertInstanceOf(\airmoi\FileMaker\Command\Find::class, $command);
-
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->assertInstanceOf(\airmoi\FileMaker\Command\Find::class, $command);
+        } else {
+            $this->assertInstanceOf(\FileMaker_Command_Find::class, $command);
+        }
+        
         $command->addFindCriterion('id', FileMaker::FIND_GT . '25');
         $result = $command->execute();
-        $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
-
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
+        } else {
+            $this->assertInstanceOf(\FileMaker_Result::class, $result);
+        }
+        
         $this->assertEquals(25, $result->getFoundSetCount());
     }
 
@@ -267,30 +356,42 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase
     public function testNewCompoundFindCommand()
     {
         $command = $this->fm->newCompoundFindCommand('sample');
-        $this->assertInstanceOf(\airmoi\FileMaker\Command\CompoundFind::class, $command);
-
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->assertInstanceOf(\airmoi\FileMaker\Command\CompoundFind::class, $command);
+        } else {
+            $this->assertInstanceOf(\FileMaker_Command_CompoundFind::class, $command);
+        }
+        
         $request1 = $this->fm->newFindRequest('sample');
-        $this->assertInstanceOf(\airmoi\FileMaker\Command\FindRequest::class, $request1);
-
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->assertInstanceOf(\airmoi\FileMaker\Command\FindRequest::class, $request1);
+        } else {
+            $this->assertInstanceOf(\FileMaker_Command_FindRequest::class, $request1);
+        }
+        
         $request1->addFindCriterion('id', "1...10");
         $command->add(1, $request1);
 
         $request2 = $this->fm->newFindRequest('sample');
-        $this->assertInstanceOf(\airmoi\FileMaker\Command\FindRequest::class, $request2);
-
+        //$this->assertInstanceOf(\airmoi\FileMaker\Command\FindRequest::class, $request2);
+        
         $request2->addFindCriterion('id', "40...50");
         $command->add(2, $request2);
 
         $request3 = $this->fm->newFindRequest('sample');
-        $this->assertInstanceOf(\airmoi\FileMaker\Command\FindRequest::class, $request3);
-
+        //$this->assertInstanceOf(\airmoi\FileMaker\Command\FindRequest::class, $request3);
+        
         $request3->addFindCriterion('id', "45");
         $request3->setOmit(true);
         $command->add(3, $request3);
 
         $result = $command->execute();
-        $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
-
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
+        } else {
+            $this->assertInstanceOf(\FileMaker_Result::class, $result);
+        }
+        
         $this->assertEquals(20, $result->getFoundSetCount());
     }
 
@@ -300,11 +401,19 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase
     public function testNewFindAllCommand()
     {
         $command =$this->fm->newFindAllCommand('sample');
-        $this->assertInstanceOf(\airmoi\FileMaker\Command\FindAll::class, $command);
-
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->assertInstanceOf(\airmoi\FileMaker\Command\FindAll::class, $command);
+        } else {
+            $this->assertInstanceOf(\FileMaker_Command_FindAll::class, $command);
+        }
+        
         $result = $command->execute();
-        $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
-
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->assertInstanceOf(\airmoi\FileMaker\Object\Result::class, $result);
+        } else {
+            $this->assertInstanceOf(\FileMaker_Result::class, $result);
+        }
+        
         $this->assertEquals(50, $result->getFoundSetCount());
     }
 
@@ -314,8 +423,12 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase
     public function testCreateRecord()
     {
         $record = $this->fm->createRecord('sample', [ 'text_field' => __METHOD__]);
-        $this->assertInstanceOf(\airmoi\FileMaker\Object\Record::class, $record);
-
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->assertInstanceOf(\airmoi\FileMaker\Object\Record::class, $record);
+        } else {
+            $this->assertInstanceOf(\FileMaker_Record::class, $record);
+        }
+        
         $result = $record->commit();
 
         $this->assertTrue($result);
@@ -329,8 +442,13 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase
     public function testGetRecordById($recId)
     {
         $record = $this->fm->getRecordById('sample', $recId);
-        $this->assertInstanceOf(\airmoi\FileMaker\Object\Record::class, $record);
-
+        if( !$GLOBALS['OFFICIAL_API'] ) {
+            $this->assertInstanceOf(\airmoi\FileMaker\Object\Record::class, $record);
+        } else {
+            $this->assertInstanceOf(\FileMaker_Record::class, $record);
+        }
+        
+        
         $this->assertStringEndsWith('testCreateRecord', $record->getField('text_field'));
         $this->fm->newDeleteCommand('sample', $record->getRecordId())->execute();
     }
@@ -360,13 +478,17 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase
     /**
      * @covers \airmoi\FileMaker\FileMaker::__set
      */
-    public function test__set()
-    {
+    public function test__set() {
+        
+        if( $GLOBALS['OFFICIAL_API'] ) {
+            return true;
+        }
         $this->fm->logLevel = 5;
         $this->assertEquals(5, $this->fm->getProperty('logLevel'));
         try {
             $this->fm->fakeVar = "Hello World";
         } catch (\airmoi\FileMaker\FileMakerException $e) {
+            $this->assertTrue(FileMaker::isError($e));
         }
     }
 
