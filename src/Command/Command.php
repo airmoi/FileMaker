@@ -283,9 +283,9 @@ class Command
         ];
 
         foreach ([
-                    '_script' => '-script',
-                    '_preReqScript' => '-script.prefind',
-                    '_preSortScript' => '-script.presort'
+                    'script' => '-script',
+                    'preReqScript' => '-script.prefind',
+                    'preSortScript' => '-script.presort'
                  ] as $varName => $paramName) {
             if ($this->$varName) {
                 $queryParams[$paramName] = $this->$varName;
