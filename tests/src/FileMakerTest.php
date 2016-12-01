@@ -399,6 +399,25 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * Test pull request #9 : omit on first request is missing
+     * @covers \airmoi\FileMaker\FileMaker::newCompoundFindCommand
+     */
+    public function testNewCompoundFindCommandFirstOmitMissing()
+    {
+        $command = $this->fm->newCompoundFindCommand('sample');
+        $request1 = $this->fm->newFindRequest('sample');
+
+        $request1->addFindCriterion('id', "1");
+        $request1->setOmit(true);
+
+        $command->add(1, $request1);
+
+        $result = $command->execute();
+
+        $this->assertEquals(49, $result->getFoundSetCount());
+    }
+    
+    /**
      * @covers \airmoi\FileMaker\FileMaker::newFindAllCommand
      * @SuppressWarnings(PHPMD.Superglobals)
      */
