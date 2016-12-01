@@ -95,6 +95,11 @@ class CompoundFind extends Command
             $findCriterias = $request->findCriteria;
             $critCount = count($findCriterias);
 
+            //Handle first request omit flag
+            if ($request->omit && $precedence == 1) {
+                $query .= '!';
+            }
+
             $query .= '(';
 
             $i = 0;
