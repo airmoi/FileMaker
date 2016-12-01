@@ -55,7 +55,7 @@ class FMPXMLLAYOUTTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers \airmoi\FileMaker\Parser\FMPXMLLAYOUT::_cdata
+     * @covers \airmoi\FileMaker\Parser\FMPXMLLAYOUT::cdata
      * @todo   Implement test_cdata().
      */
     public function test_cdata()
@@ -67,7 +67,7 @@ class FMPXMLLAYOUTTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers \airmoi\FileMaker\Parser\FMPXMLLAYOUT::associative_array_push
+     * @covers \airmoi\FileMaker\Parser\FMPXMLLAYOUT::associativeArrayPush
      * @todo   Implement testAssociative_array_push().
      */
     public function testAssociative_array_push()

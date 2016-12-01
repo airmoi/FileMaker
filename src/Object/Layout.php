@@ -25,10 +25,10 @@ class Layout
     public $fm;
     public $name;
     /**  @var Field[] */
-    public $fields = array();
-    public $relatedSets = array();
-    public $valueLists = array();
-    public $valueListTwoFields = array();
+    public $fields = [];
+    public $relatedSets = [];
+    public $valueLists = [];
+    public $valueListTwoFields = [];
     public $database;
     public $extended = false;
     public $table = false;
@@ -134,7 +134,10 @@ class Layout
         if (isset($this->relatedSets[$relatedSet])) {
             return $this->relatedSets[$relatedSet];
         }
-        $error = new FileMakerException($this->fm, 'RelatedSet "'.$relatedSet.'" Not Found in layout '. $this->getName());
+        $error = new FileMakerException(
+            $this->fm,
+            'RelatedSet "'.$relatedSet.'" Not Found in layout '. $this->getName()
+        );
         if ($this->fm->getProperty('errorHandling') === 'default') {
             return $error;
         }
@@ -171,9 +174,9 @@ class Layout
      */
     public function listValueLists()
     {
-        $ExtendedInfos = $this->loadExtendedInfo();
-        if (FileMaker::isError($ExtendedInfos)) {
-            return $ExtendedInfos;
+        $extendedInfos = $this->loadExtendedInfo();
+        if (FileMaker::isError($extendedInfos)) {
+            return $extendedInfos;
         }
         if ($this->valueLists !== null) {
             return array_keys($this->valueLists);
@@ -198,9 +201,9 @@ class Layout
      */
     public function getValueList($listName, $recid = null)
     {
-        $ExtendedInfos = $this->loadExtendedInfo($recid);
-        if (FileMaker::isError($ExtendedInfos)) {
-            return $ExtendedInfos;
+        $extendedInfos = $this->loadExtendedInfo($recid);
+        if (FileMaker::isError($extendedInfos)) {
+            return $extendedInfos;
         }
         return isset($this->valueLists[$listName]) ?
                 $this->valueLists[$listName] : null;
@@ -222,9 +225,9 @@ class Layout
     public function getValueListTwoFields($valueList, $recid = null)
     {
 
-        $ExtendedInfos = $this->loadExtendedInfo($recid);
-        if (FileMaker::isError($ExtendedInfos)) {
-            return $ExtendedInfos;
+        $extendedInfos = $this->loadExtendedInfo($recid);
+        if (FileMaker::isError($extendedInfos)) {
+            return $extendedInfos;
         }
         return isset($this->valueLists[$valueList]) ?
                 $this->valueListTwoFields[$valueList] : [];
@@ -246,9 +249,9 @@ class Layout
      */
     public function getValueLists($recid = null)
     {
-        $ExtendedInfos = $this->loadExtendedInfo($recid);
-        if (FileMaker::isError($ExtendedInfos)) {
-            return $ExtendedInfos;
+        $extendedInfos = $this->loadExtendedInfo($recid);
+        if (FileMaker::isError($extendedInfos)) {
+            return $extendedInfos;
         }
         return $this->valueLists;
     }
@@ -267,9 +270,9 @@ class Layout
      */
     public function getValueListsTwoFields($recid = null)
     {
-        $ExtendedInfos = $this->loadExtendedInfo($recid);
-        if (FileMaker::isError($ExtendedInfos)) {
-            return $ExtendedInfos;
+        $extendedInfos = $this->loadExtendedInfo($recid);
+        if (FileMaker::isError($extendedInfos)) {
+            return $extendedInfos;
         }
         return $this->valueListTwoFields;
     }
@@ -288,14 +291,18 @@ class Layout
     {
         if (!$this->extended || $recid != null) {
             if ($recid != null) {
-                $result = $this->fm->execute(array('-db' => $this->fm->getProperty('database'),
+                $result = $this->fm->execute([
+                    '-db' => $this->fm->getProperty('database'),
                     '-lay' => $this->getName(),
                     '-recid' => $recid,
-                    '-view' => null), 'FMPXMLLAYOUT');
+                    '-view' => null
+                ], 'FMPXMLLAYOUT');
             } else {
-                $result = $this->fm->execute(array('-db' => $this->fm->getProperty('database'),
+                $result = $this->fm->execute([
+                    '-db' => $this->fm->getProperty('database'),
                     '-lay' => $this->getName(),
-                    '-view' => null), 'FMPXMLLAYOUT');
+                    '-view' => null
+                ], 'FMPXMLLAYOUT');
             }
             $parser = new FMPXMLLAYOUT($this->fm);
             $parseResult = $parser->parse($result);

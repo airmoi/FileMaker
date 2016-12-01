@@ -47,10 +47,10 @@ class Duplicate extends Command
             }
             throw $error;
         }
-        $params = $this->_getCommandParams();
+        $params = $this->getCommandParams();
         $params['-dup'] = true;
         $params['-recid'] = $this->recordId;
         $result = $this->fm->execute($params);
-        return $this->_getResult($result);
+        return $this->getResult($result);
     }
 }

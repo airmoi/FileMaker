@@ -16,14 +16,14 @@ use airmoi\FileMaker\FileMaker;
 class Find extends Command
 {
 
-    protected $_findCriteria = array();
-    protected $_sortRules = array();
-    protected $_sortOrders = array();
-    protected $_operator;
-    protected $_skip;
-    protected $_max;
-    protected $_relatedsetsfilter;
-    protected $_relatedsetsmax;
+    protected $findCriteria = [];
+    protected $sortRules = [];
+    protected $sortOrders = [];
+    protected $operator;
+    protected $skip;
+    protected $max;
+    protected $relatedsetsfilter;
+    protected $relatedsetsmax;
 
     /**
      * Adds a criterion to this Find command.
@@ -35,7 +35,7 @@ class Find extends Command
      */
     public function addFindCriterion($fieldname, $testvalue)
     {
-        $this->_findCriteria[$fieldname] = $testvalue;
+        $this->findCriteria[$fieldname] = $testvalue;
         return $this;
     }
 
@@ -46,7 +46,7 @@ class Find extends Command
      */
     public function clearFindCriteria()
     {
-        $this->_findCriteria = [];
+        $this->findCriteria = [];
         return $this;
     }
 
@@ -67,9 +67,9 @@ class Find extends Command
      */
     public function addSortRule($fieldname, $precedence, $order = null)
     {
-         $this->_sortRules[$precedence] = $fieldname;
+         $this->sortRules[$precedence] = $fieldname;
         if ($order !== null) {
-            $this->_sortOrders[$precedence] = $order;
+            $this->sortOrders[$precedence] = $order;
         }
         return $this;
     }
@@ -81,18 +81,23 @@ class Find extends Command
      */
     public function clearSortRules()
     {
-        $this->_sortRules = array();
-        $this->_sortOrders = array();
+        $this->sortRules = [];
+        $this->sortOrders = [];
         return $this;
     }
 
+    /**
+     * Execute the command
+     * @return \airmoi\FileMaker\FileMakerException|\airmoi\FileMaker\Object\Result|string
+     * @throws \airmoi\FileMaker\FileMakerException
+     */
     public function execute()
     {
-        $params = $this->_getCommandParams();
-        $this->_setSortParams($params);
-        $this->_setRangeParams($params);
-        $this->_setRelatedSetsFilters($params);
-        if (count($this->_findCriteria) || $this->recordId) {
+        $params = $this->getCommandParams();
+        $this->setSortParams($params);
+        $this->setRangeParams($params);
+        $this->setRelatedSetsFiltersParams($params);
+        if (count($this->findCriteria) || $this->recordId) {
             $params['-find'] = true;
         } else {
             $params['-findall'] = true;
@@ -100,17 +105,17 @@ class Find extends Command
         if ($this->recordId) {
             $params['-recid'] = $this->recordId;
         }
-        if ($this->_operator) {
-            $params['-lop'] = $this->_operator;
+        if ($this->operator) {
+            $params['-lop'] = $this->operator;
         }
-        foreach ($this->_findCriteria as $field => $value) {
+        foreach ($this->findCriteria as $field => $value) {
             $params[$field] = $value;
         }
         $result = $this->fm->execute($params);
         if (FileMaker::isError($result)) {
             return $result;
         }
-        return $this->_getResult($result);
+        return $this->getResult($result);
     }
 
     /**
@@ -129,7 +134,7 @@ class Find extends Command
         switch ($operator) {
             case FileMaker::FIND_AND:
             case FileMaker::FIND_OR:
-                $this->_operator = $operator;
+                $this->operator = $operator;
                 break;
         }
         return $this;
@@ -146,8 +151,8 @@ class Find extends Command
      */
     public function setRange($skip = 0, $max = null)
     {
-        $this->_skip = $skip;
-        $this->_max = $max;
+        $this->skip = $skip;
+        $this->max = $max;
         return $this;
     }
 
@@ -161,8 +166,10 @@ class Find extends Command
      */
     public function getRange()
     {
-        return array('skip' => $this->_skip,
-            'max' => $this->_max);
+        return [
+            'skip' => $this->skip,
+            'max' => $this->max
+        ];
     }
 
     /**
@@ -196,8 +203,8 @@ class Find extends Command
      */
     public function setRelatedSetsFilters($relatedsetsfilter, $relatedsetsmax = null)
     {
-        $this->_relatedsetsfilter = $relatedsetsfilter;
-        $this->_relatedsetsmax = $relatedsetsmax;
+        $this->relatedsetsfilter = $relatedsetsfilter;
+        $this->relatedsetsmax = $relatedsetsmax;
         return $this;
     }
 
@@ -212,37 +219,51 @@ class Find extends Command
      */
     public function getRelatedSetsFilters()
     {
-        return array('relatedsetsfilter' => $this->_relatedsetsfilter,
-            'relatedsetsmax' => $this->_relatedsetsmax);
+        return [
+            'relatedsetsfilter' => $this->relatedsetsfilter,
+            'relatedsetsmax' => $this->relatedsetsmax
+        ];
     }
 
-    protected function _setRelatedSetsFilters(&$params)
+    /**
+     * Set relatedSet Filters params
+     * @param array $params
+     */
+    protected function setRelatedSetsFiltersParams(&$params)
     {
-        if ($this->_relatedsetsfilter) {
-            $params['-relatedsets.filter'] = $this->_relatedsetsfilter;
+        if ($this->relatedsetsfilter) {
+            $params['-relatedsets.filter'] = $this->relatedsetsfilter;
         }
-        if ($this->_relatedsetsmax) {
-            $params['-relatedsets.max'] = $this->_relatedsetsmax;
+        if ($this->relatedsetsmax) {
+            $params['-relatedsets.max'] = $this->relatedsetsmax;
         }
     }
 
-    protected function _setSortParams(&$params)
+    /**
+     * Set sort Params
+     * @param array $params
+     */
+    protected function setSortParams(&$params)
     {
-        foreach ($this->_sortRules as $precedence => $fieldname) {
+        foreach ($this->sortRules as $precedence => $fieldname) {
             $params['-sortfield.' . $precedence] = $fieldname;
         }
-        foreach ($this->_sortOrders as $precedence => $order) {
+        foreach ($this->sortOrders as $precedence => $order) {
             $params['-sortorder.' . $precedence] = $order;
         }
     }
 
-    protected function _setRangeParams(&$params)
+    /**
+     * Set Range params
+     * @param array $params
+     */
+    protected function setRangeParams(&$params)
     {
-        if ($this->_skip) {
-            $params['-skip'] = $this->_skip;
+        if ($this->skip) {
+            $params['-skip'] = $this->skip;
         }
-        if ($this->_max) {
-            $params['-max'] = $this->_max;
+        if ($this->max) {
+            $params['-max'] = $this->max;
         }
     }
 }

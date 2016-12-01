@@ -16,18 +16,18 @@ namespace airmoi\FileMaker\Command;
  */
 class CompoundFind extends Command
 {
-    private $_sortFields = array();
-    private $_sortOrders = array();
-    private $_skip;
-    private $_max;
-    private $_relatedsetsfilter;
-    private $_relatedsetsmax;
+    private $sortFields = [];
+    private $sortOrders = [];
+    private $skip;
+    private $max;
+    private $relatedsetsfilter;
+    private $relatedsetsmax;
 
     /**
      *
      * @var FindRequest[]
      */
-    private $_requests = array();
+    private $requests = [];
 
      /**
      * Adds a Find Request object to this Compound Find command.
@@ -39,7 +39,7 @@ class CompoundFind extends Command
      */
     public function add($precedence, FindRequest $findrequest)
     {
-        $this->_requests[$precedence] = $findrequest;
+        $this->requests[$precedence] = $findrequest;
     }
 
      /**
@@ -57,9 +57,9 @@ class CompoundFind extends Command
      */
     public function addSortRule($fieldname, $precedence, $order = null)
     {
-        $this->_sortFields[$precedence] = $fieldname;
+        $this->sortFields[$precedence] = $fieldname;
         if ($order !== null) {
-            $this->_sortOrders[$precedence] = $order;
+            $this->sortOrders[$precedence] = $order;
         }
     }
 
@@ -68,8 +68,8 @@ class CompoundFind extends Command
      */
     public function clearSortRules()
     {
-        $this->_sortFields = array();
-        $this->_sortOrders = array();
+        $this->sortFields = [];
+        $this->sortOrders = [];
     }
 
     /**
@@ -80,18 +80,18 @@ class CompoundFind extends Command
     public function execute()
     {
         $query = null;
-
-        $critCount = 0;
-        $totalRequestCount = 0;
         $requestCount = 1;
         $totalCritCount = 1;
-        $params = $this->_getCommandParams();
-        $this->_setSortParams($params);
-        $this->_setRangeParams($params);
-        $this->_setRelatedSetsFilters($params);
-        ksort($this->_requests);
-        $totalRequestCount = count($this->_requests);
-        foreach ($this->_requests as $precedence => $request) {
+
+        $params = $this->getCommandParams();
+        $this->setSortParams($params);
+        $this->setRangeParams($params);
+        $this->setRelatedSetsFiltersParams($params);
+
+        ksort($this->requests);
+        $totalRequestCount = count($this->requests);
+        
+        foreach ($this->requests as $precedence => $request) {
             $findCriterias = $request->findCriteria;
             $critCount = count($findCriterias);
 
@@ -117,7 +117,7 @@ class CompoundFind extends Command
             $query .= ')';
             $requestCount++;
             if ($requestCount <= $totalRequestCount) {
-                $nextRequest = $this->_requests[$precedence + 1];
+                $nextRequest = $this->requests[$precedence + 1];
                 if ($nextRequest->omit === true) {
                     $query .= ';!';
                 } else {
@@ -128,7 +128,7 @@ class CompoundFind extends Command
         $params['-query'] = $query;
         $params['-findquery'] = true;
         $result = $this->fm->execute($params);
-        return $this->_getResult($result);
+        return $this->getResult($result);
     }
 
     /**
@@ -140,8 +140,8 @@ class CompoundFind extends Command
      */
     public function setRange($skip = 0, $max = null)
     {
-        $this->_skip = $skip;
-        $this->_max = $max;
+        $this->skip = $skip;
+        $this->max = $max;
     }
 
     /**
@@ -154,10 +154,10 @@ class CompoundFind extends Command
      */
     public function getRange()
     {
-        return array(
-            'skip' => $this->_skip,
-            'max'  => $this->_max
-        );
+        return [
+            'skip' => $this->skip,
+            'max'  => $this->max
+        ];
     }
 
     /**
@@ -174,8 +174,8 @@ class CompoundFind extends Command
      */
     public function setRelatedSetsFilters($relatedsetsfilter, $relatedsetsmax = null)
     {
-        $this->_relatedsetsfilter = $relatedsetsfilter;
-        $this->_relatedsetsmax = $relatedsetsmax;
+        $this->relatedsetsfilter = $relatedsetsfilter;
+        $this->relatedsetsmax = $relatedsetsmax;
     }
 
     /**
@@ -189,37 +189,51 @@ class CompoundFind extends Command
      */
     public function getRelatedSetsFilters()
     {
-        return array('relatedsetsfilter' => $this->_relatedsetsfilter,
-            'relatedsetsmax' => $this->_relatedsetsmax);
+        return [
+            'relatedsetsfilter' => $this->relatedsetsfilter,
+            'relatedsetsmax' => $this->relatedsetsmax
+        ];
     }
 
-    public function _setRelatedSetsFilters(&$params)
+    /**
+     * Build relatedSets Filter params
+     * @param $params
+     */
+    public function setRelatedSetsFiltersParams(&$params)
     {
-        if ($this->_relatedsetsfilter) {
-            $params['-relatedsets.filter'] = $this->_relatedsetsfilter;
+        if ($this->relatedsetsfilter) {
+            $params['-relatedsets.filter'] = $this->relatedsetsfilter;
         }
-        if ($this->_relatedsetsmax) {
-            $params['-relatedsets.max'] = $this->_relatedsetsmax;
+        if ($this->relatedsetsmax) {
+            $params['-relatedsets.max'] = $this->relatedsetsmax;
         }
     }
 
-    public function _setSortParams(&$params)
+    /**
+     * Build sort params
+     * @param $params
+     */
+    public function setSortParams(&$params)
     {
-        foreach ($this->_sortFields as $precedence => $fieldname) {
+        foreach ($this->sortFields as $precedence => $fieldname) {
             $params['-sortfield.' . $precedence] = $fieldname;
         }
-        foreach ($this->_sortOrders as $precedence => $order) {
+        foreach ($this->sortOrders as $precedence => $order) {
             $params['-sortorder.' . $precedence] = $order;
         }
     }
 
-    public function _setRangeParams(&$params)
+    /**
+     * Build range params
+     * @param $params
+     */
+    public function setRangeParams(&$params)
     {
-        if ($this->_skip) {
-            $params['-skip'] = $this->_skip;
+        if ($this->skip) {
+            $params['-skip'] = $this->skip;
         }
-        if ($this->_max) {
-            $params['-max'] = $this->_max;
+        if ($this->max) {
+            $params['-max'] = $this->max;
         }
     }
 }

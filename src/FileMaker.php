@@ -20,18 +20,33 @@ use airmoi\FileMaker\Object\Layout;
  * @package FileMaker
  *
  * @author Romain Dunand <airmoi@gmail.com>
+ *
+ * @property string     $charset            Default to 'utf-8'
+ * @property string     $locale             Default to 'en' (possible values : en, de, fr, it, ja, sv)
+ * @property int        $logLevel           Defult to 3 (PEAR_LOG_ERR)
+ * @property string     $hostspec           Default to '127.0.0.1'
+ * @property string     $database
+ * @property string     $username
+ * @property string     $password
+ * @property string     $recordClass        Default to 'Object/Record'
+ * @property bool       $prevalidate        Default to false
+ * @property array      $curlOptions        Default to [CURLOPT_SSL_VERIFYPEER => false]
+ * @property string     $dateFormat
+ * @property bool       $useCookieSession   Default to false
+ * @property bool       $emptyAsNull        Return null instead of empty strings, default to false
+ * @property string     $errorHandling      exception|default, default to 'exception'
  */
 class FileMaker
 {
-    private static $_apiVersion = '2.1.0';
-    private static $_minServerVersion = '10.0.0.0';
+    private static $apiVersion = '2.1.0';
+    private static $minServerVersion = '10.0.0.0';
     /**
      *
      * @var array The FileMaker connection properties
      * You may access and manipulate thoes properties using
      * [[getProperty()]] and [[setPropety()]] methods
      */
-    private $_properties = [
+    private $properties = [
         'charset' => 'utf-8',
         'locale' => 'en',
         'logLevel' => 3,
@@ -45,18 +60,18 @@ class FileMaker
         'dateFormat' => null,
         'useCookieSession' => false,
         'emptyAsNull' => false, //Returns null value instead of empty strings on empty field value
-        'errorHandling' => 'exception', //Default to use old school FileMaker Errors trapping, 'exception' to handle errors as exceptions
+        'errorHandling' => 'exception', //Default to use old school FileMaker Errors trapping
     ];
 
     /**
      * @var \Log PEAR Log object
      */
-    private $_logger = null;
+    private $logger = null;
 
     /**
      * @var Layout[] a pseudo cache for layouts to prevent unnecessary call's to Custom Web Publishing engine
      */
-    private static $_layouts = [];
+    private static $layouts = [];
 
     /**
      * @var string Store the last URL call to Custom Web Publishing engine
@@ -138,7 +153,7 @@ class FileMaker
      */
     public static function getAPIVersion()
     {
-        return self::$_apiVersion;
+        return self::$apiVersion;
     }
 
     /**
@@ -149,7 +164,7 @@ class FileMaker
      */
     public static function getMinServerVersion()
     {
-        return self::$_minServerVersion;
+        return self::$minServerVersion;
     }
 
     /**
@@ -199,14 +214,14 @@ class FileMaker
      */
     public function setProperty($prop, $value)
     {
-        if (!array_key_exists($prop, $this->_properties)) {
+        if (!array_key_exists($prop, $this->properties)) {
             $error = new FileMakerException($this, 'Unsupported property ' . $prop);
             if ($this->getProperty('errorHandling') === 'default') {
                 return $error;
             }
             throw $error;
         }
-        $this->_properties[$prop] = $value;
+        $this->properties[$prop] = $value;
     }
 
     /**
@@ -218,7 +233,7 @@ class FileMaker
      */
     public function getProperty($prop)
     {
-        return isset($this->_properties[$prop]) ? $this->_properties[$prop] : null;
+        return isset($this->properties[$prop]) ? $this->properties[$prop] : null;
     }
 
     /**
@@ -231,7 +246,7 @@ class FileMaker
      */
     public function getProperties()
     {
-        return $this->_properties;
+        return $this->properties;
     }
 
     /**
@@ -254,7 +269,7 @@ class FileMaker
             }
             throw $error;
         }
-        $this->_logger = $logger;
+        $this->logger = $logger;
     }
 
     /**
@@ -268,7 +283,7 @@ class FileMaker
      *
      * @return Command\Add New Add command object.
      */
-    public function newAddCommand($layout, $values = array())
+    public function newAddCommand($layout, $values = [])
     {
         return new Command\Add($this, $layout, $values);
     }
@@ -286,7 +301,7 @@ class FileMaker
      *
      * @return Command\Edit New Edit command object.
      */
-    public function newEditCommand($layout, $recordId, $updatedValues = array())
+    public function newEditCommand($layout, $recordId, $updatedValues = [])
     {
         return new Command\Edit($this, $layout, $recordId, $updatedValues);
     }
@@ -352,10 +367,12 @@ class FileMaker
      * @param string $layout Layout to find records in.
      *
      * @return Command\FindRequest New Find Request command object.
+     *
+     * @todo $layout param unused (not supported by cwp)
      */
     public function newFindRequest($layout)
     {
-        return new Command\FindRequest($this, $layout);
+        return new Command\FindRequest();
     }
 
     /**
@@ -413,10 +430,10 @@ class FileMaker
      * @return Object\Record|FileMakerException New Record object or a FileMakerError.
      * @throws FileMakerException
      */
-    public function createRecord($layoutName, $fieldValues = array())
+    public function createRecord($layoutName, $fieldValues = [])
     {
         $layout = $this->getLayout($layoutName);
-        $record = new $this->_properties['recordClass']($layout);
+        $record = new $this->properties['recordClass']($layout);
         /* @var $record Object\Record */
         if (is_array($fieldValues)) {
             foreach ($fieldValues as $fieldName => $fieldValue) {
@@ -476,13 +493,15 @@ class FileMaker
      */
     public function getLayout($layoutName)
     {
-        if (isset(self::$_layouts[$layoutName])) {
-            return self::$_layouts[$layoutName];
+        if (isset(self::$layouts[$layoutName])) {
+            return self::$layouts[$layoutName];
         }
 
-        $request = $this->execute(array('-db' => $this->getProperty('database'),
+        $request = $this->execute([
+            '-db' => $this->getProperty('database'),
             '-lay' => $layoutName,
-            '-view' => true));
+            '-view' => true
+        ]);
         if (FileMaker::isError($request)) {
             return $request;
         }
@@ -499,7 +518,7 @@ class FileMaker
             return $result;
         }
 
-        self::$_layouts[$layoutName] = $layout;
+        self::$layouts[$layoutName] = $layout;
         return $layout;
     }
 
@@ -513,15 +532,18 @@ class FileMaker
      */
     public function listDatabases()
     {
-        $request = $this->execute(array('-dbnames' => true));
+        $request = $this->execute(['-dbnames' => true]);
         if (FileMaker::isError($request)) {
             return $request;
         }
 
         $parser = new FMResultSet($this);
         $result = $parser->parse($request);
+        if (FileMaker::isError($result)) {
+            return $request;
+        }
 
-        $list = array();
+        $list = [];
         foreach ($parser->parsedResult as $data) {
             $list[] = $data['fields']['DATABASE_NAME'][0];
         }
@@ -538,8 +560,10 @@ class FileMaker
      */
     public function listScripts()
     {
-        $request = $this->execute(array('-db' => $this->getProperty('database'),
-            '-scriptnames' => true));
+        $request = $this->execute([
+            '-db' => $this->getProperty('database'),
+            '-scriptnames' => true
+        ]);
         if (FileMaker::isError($request)) {
             return $request;
         }
@@ -550,7 +574,7 @@ class FileMaker
             return $result;
         }
 
-        $list = array();
+        $list = [];
         foreach ($parser->parsedResult as $data) {
             $list[] = $data['fields']['SCRIPT_NAME'][0];
         }
@@ -567,12 +591,10 @@ class FileMaker
      */
     public function listLayouts()
     {
-        $request = $this->execute(
-            array(
+        $request = $this->execute([
                 '-db'          => $this->getProperty('database'),
                 '-layoutnames' => true
-            )
-        );
+        ]);
         if (FileMaker::isError($request)) {
             return $request;
         }
@@ -583,16 +605,20 @@ class FileMaker
             return $result;
         }
 
-        $list = array();
+        $list = [];
         foreach ($parser->parsedResult as $data) {
             $list[] = $data['fields']['LAYOUT_NAME'][0];
         }
         return $list;
     }
 
+    /**
+     * @param string $message
+     * @param int $level
+     */
     public function log($message, $level)
     {
-        if ($this->_logger === null) {
+        if ($this->logger === null) {
             return;
         }
 
@@ -602,13 +628,13 @@ class FileMaker
         }
         switch ($level) {
             case self::LOG_DEBUG:
-                $this->_logger->log($message, PEAR_LOG_DEBUG);
+                $this->logger->log($message, PEAR_LOG_DEBUG);
                 break;
             case self::LOG_INFO:
-                $this->_logger->log($message, PEAR_LOG_INFO);
+                $this->logger->log($message, PEAR_LOG_INFO);
                 break;
             case self::LOG_ERR:
-                $this->_logger->log($message, PEAR_LOG_ERR);
+                $this->logger->log($message, PEAR_LOG_ERR);
                 break;
         }
     }
@@ -666,17 +692,17 @@ class FileMaker
             $isHeadersSent = true;
             curl_setopt($curl, CURLOPT_HEADER, true);
         }
-        $this->_setCurlWPCSessionCookie($curl);
+        $this->setCurlWPCSessionCookie($curl);
 
         if ($this->getProperty('username')) {
             $authString = base64_encode($this->getProperty('username') . ':' . $this->getProperty('password'));
-            $headers    = array(
+            $headers    = [
                 'Authorization: Basic ' . $authString,
                 'X-FMI-PE-ExtendedPrivilege: IrG6U+Rx0F5bLIQCUb9gOw=='
-            );
+            ];
             curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
         } else {
-            curl_setopt($curl, CURLOPT_HTTPHEADER, array('X-FMI-PE-ExtendedPrivilege: IrG6U+Rx0F5bLIQCUb9gOw=='));
+            curl_setopt($curl, CURLOPT_HTTPHEADER, ['X-FMI-PE-ExtendedPrivilege: IrG6U+Rx0F5bLIQCUb9gOw==']);
         }
         if ($curlOptions = $this->getProperty('curlOptions')) {
             foreach ($curlOptions as $property => $value) {
@@ -684,9 +710,9 @@ class FileMaker
             }
         }
         $curlResponse = curl_exec($curl);
-        $this->_setClientWPCSessionCookie($curlResponse);
+        $this->setClientWPCSessionCookie($curlResponse);
         if ($isHeadersSent) {
-            $curlResponse = $this->_eliminateContainerHeader($curlResponse);
+            $curlResponse = $this->eliminateContainerHeader($curlResponse);
         }
         $this->log($curlResponse, FileMaker::LOG_DEBUG);
         if ($curlError = curl_errno($curl)) {
@@ -722,12 +748,12 @@ class FileMaker
             throw $error;
         }
 
-        $RESTparams = array();
+        $restParams = [];
         foreach ($params as $option => $value) {
             if (($value !== true) && strtolower($this->getProperty('charset')) !== 'utf-8') {
                 $value = utf8_encode($value);
             }
-            $RESTparams[] = urlencode($option) . ($value === true ? '' : '=' . urlencode($value));
+            $restParams[] = urlencode($option) . ($value === true ? '' : '=' . urlencode($value));
         }
 
         $host = $this->getProperty('hostspec');
@@ -746,7 +772,7 @@ class FileMaker
             $curlHeadersSent = true;
             curl_setopt($curl, CURLOPT_HEADER, true);
         }
-        $this->_setCurlWPCSessionCookie($curl);
+        $this->setCurlWPCSessionCookie($curl);
 
         if ($this->getProperty('username')) {
             $auth = base64_encode(
@@ -756,28 +782,30 @@ class FileMaker
             curl_setopt(
                 $curl,
                 CURLOPT_HTTPHEADER,
-                array(
-                    'Content-Type: application/x-www-form-urlencoded; charset=utf-8', 'X-FMI-PE-ExtendedPrivilege: IrG6U+Rx0F5bLIQCUb9gOw==',
+                [
+                    'Content-Type: application/x-www-form-urlencoded; charset=utf-8',
+                    'X-FMI-PE-ExtendedPrivilege: IrG6U+Rx0F5bLIQCUb9gOw==',
                     $authHeader
-                )
+                ]
             );
         } else {
             curl_setopt(
                 $curl,
                 CURLOPT_HTTPHEADER,
-                array(
-                    'Content-Type: application/x-www-form-urlencoded; charset=utf-8', 'X-FMI-PE-ExtendedPrivilege: IrG6U+Rx0F5bLIQCUb9gOw=='
-                )
+                [
+                    'Content-Type: application/x-www-form-urlencoded; charset=utf-8',
+                    'X-FMI-PE-ExtendedPrivilege: IrG6U+Rx0F5bLIQCUb9gOw=='
+                ]
             );
         }
 
-        curl_setopt($curl, CURLOPT_POSTFIELDS, implode('&', $RESTparams));
+        curl_setopt($curl, CURLOPT_POSTFIELDS, implode('&', $restParams));
         if ($curlOptions = $this->getProperty('curlOptions')) {
             foreach ($curlOptions as $key => $value) {
                 curl_setopt($curl, $key, $value);
             }
         }
-        $this->lastRequestedUrl = $host . '?' . implode('&', $RESTparams);
+        $this->lastRequestedUrl = $host . '?' . implode('&', $restParams);
         $this->log($this->lastRequestedUrl, FileMaker::LOG_DEBUG);
 
         $curlResponse = curl_exec($curl);
@@ -821,9 +849,9 @@ class FileMaker
         }
         curl_close($curl);
 
-        $this->_setClientWPCSessionCookie($curlResponse);
+        $this->setClientWPCSessionCookie($curlResponse);
         if ($curlHeadersSent) {
-            $curlResponse = $this->_eliminateXMLHeader($curlResponse);
+            $curlResponse = $this->eliminateXMLHeader($curlResponse);
         }
 
         return $curlResponse;
@@ -860,15 +888,15 @@ class FileMaker
      * Set curl Sesion cookie
      * @param Resource $curl a cUrl handle ressource
      */
-    private function _setCurlWPCSessionCookie($curl)
+    private function setCurlWPCSessionCookie($curl)
     {
         if (!$this->getProperty('useCookieSession')) {
             return;
         }
         if (isset($_COOKIE["WPCSessionID"])) {
-            $WPCSessionID = $_COOKIE["WPCSessionID"];
-            if (!is_null($WPCSessionID)) {
-                $header = "WPCSessionID=" . $WPCSessionID;
+            $wpcSessionId = $_COOKIE["WPCSessionID"];
+            if (!is_null($wpcSessionId)) {
+                $header = "WPCSessionID=" . $wpcSessionId;
                 curl_setopt($curl, CURLOPT_COOKIE, $header);
             }
         }
@@ -878,7 +906,7 @@ class FileMaker
      * Pass WPC session cookie to client for later auth
      * @param string $curlResponse a curl response
      */
-    private function _setClientWPCSessionCookie($curlResponse)
+    private function setClientWPCSessionCookie($curlResponse)
     {
         if (!$this->getProperty('useCookieSession')) {
             return;
@@ -896,7 +924,7 @@ class FileMaker
      * @param string $curlResponse a curl response
      * @return int content length, -1 if not provided by headers
      */
-    private function _getContentLength($curlResponse)
+    private function getContentLength($curlResponse)
     {
         $found = preg_match('/Content-Length: (\d+)/', $curlResponse, $matches);
         if ($found) {
@@ -911,7 +939,7 @@ class FileMaker
      * @param string $curlResponse  a curl response
      * @return string curlResponse without xml header
      */
-    private function _eliminateXMLHeader($curlResponse)
+    private function eliminateXMLHeader($curlResponse)
     {
         $isXml = strpos($curlResponse, "<?xml");
         if ($isXml !== false) {
@@ -926,7 +954,7 @@ class FileMaker
      * @param string $curlResponse  a curl response
      * @return string cUrl Response without leading carriage return
      */
-    private function _eliminateContainerHeader($curlResponse)
+    private function eliminateContainerHeader($curlResponse)
     {
         $len = strlen("\r\n\r\n");
         $pos = strpos($curlResponse, "\r\n\r\n");
@@ -948,8 +976,8 @@ class FileMaker
      */
     public function __set($name, $value)
     {
-        if (array_key_exists($name, $this->_properties)) {
-            $this->_properties[$name] = $value;
+        if (array_key_exists($name, $this->properties)) {
+            $this->properties[$name] = $value;
         } else {
             throw new FileMakerException($this, 'Attempt to set an unsupported property (' . $name . ')');
         }
@@ -965,7 +993,7 @@ class FileMaker
             return $value;
         }
         if (is_array($value)) {
-            $output = array();
+            $output = [];
             foreach ($value as $key => $val) {
                 $output[$this->toOutputCharset($key)] = $this->toOutputCharset($val);
             }
@@ -986,7 +1014,10 @@ class FileMaker
         return $this->lastRequestedUrl;
     }
 
-
+    /**
+     * @param string $value
+     * @return string
+     */
     public function dateConvertInput($value)
     {
         if ($this->getProperty('dateFormat') === null) {
@@ -1001,6 +1032,10 @@ class FileMaker
         }
     }
 
+    /**
+     * @param string $value
+     * @return string
+     */
     public function dateConvertOutput($value)
     {
         if ($this->getProperty('dateFormat') === null) {
