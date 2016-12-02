@@ -298,7 +298,10 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase
             $this->assertEquals(50, (int)$result->getFoundSetCount());
             $this->assertEquals(25, (int)$result->getFetchCount());
 
-            $this->assertRegExp('#(http:\/\/|https:\/\/)?[^:\/]*(:\d{2})?\/fmi\/xml\/fmresultset\.xml\?-db=[^\&]*\&-lay=[^\&]*\&-script=[^\&]*\&-script.param=[^\&]*\&-findany#', $this->fm->lastRequestedUrl);
+            $this->assertRegExp(
+                '#(http:\/\/|https:\/\/)?[^:\/]*(:\d{2})?\/fmi\/xml\/fmresultset\.xml\?-db=[^\&]*\&-lay=[^\&]*\&-script=[^\&]*\&-script.param=[^\&]*\&-findany#',
+                $this->fm->lastRequestedUrl
+            );
         } else {
             $result = $command->execute();
         }
