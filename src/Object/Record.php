@@ -130,26 +130,16 @@ class Record
             && ($format == 'date' || $format == 'timestamp')) {
             if ($format == 'date') {
                 if (!$dateTime = \DateTime::createFromFormat('m/d/Y H:i:s', $value . ' 00:00:00')) {
-                    $error = new FileMakerException(
-                        $this->fm,
+                    return $this->fm->returnOrThrowException(
                         $field . ' could not be converted to a valid timestamp ('. $value .')'
                     );
-                    if ($this->fm->getProperty('errorHandling') === 'default') {
-                        return $error;
-                    }
-                    throw $error;
                 }
                 return $dateTime->format($this->fm->getProperty('dateFormat'));
             } else {
                 if (!$dateTime = \DateTime::createFromFormat('m/d/Y H:i:s', $value)) {
-                    $error = new FileMakerException(
-                        $this->fm,
+                    return $this->fm->returnOrThrowException(
                         $field . ' could not be converted to a valid timestamp ('. $value .')'
                     );
-                    if ($this->fm->getProperty('errorHandling') === 'default') {
-                        return $error;
-                    }
-                    throw $error;
                 }
                 return $dateTime->format($this->fm->getProperty('dateFormat') . ' H:i:s');
             }
@@ -232,14 +222,13 @@ class Record
     {
         $value      = $this->getField($field, $repetition);
         $fieldType  = $this->layout->getField($field);
-        $error      = null;
+
         $dateFormat = $this->fm->getProperty('dateFormat') !== null ? $this->fm->getProperty('dateFormat') : 'm/d/Y';
         switch ($fieldType->getResult()) {
             case 'date':
                 // e. g. "12/24/2016"
                 if (!$dateTime = \DateTime::createFromFormat($dateFormat . ' H:i:s', $value . ' 00:00:00')) {
-                    $error = new FileMakerException(
-                        $this->fm,
+                    return $this->fm->returnOrThrowException(
                         'Failed to parse "' . $value . '" as a FileMaker date value.'
                     );
                 }
@@ -247,8 +236,7 @@ class Record
             case 'time':
                 // e. g. "12:00:00"
                 if (!$dateTime = \DateTime::createFromFormat('Y-m-d H:i:s', '1970-01-01 ' . $value)) {
-                    $error = new FileMakerException(
-                        $this->fm,
+                    return $this->fm->returnOrThrowException(
                         'Failed to parse "' . $value . '" as a FileMaker time value.'
                     );
                 }
@@ -256,25 +244,16 @@ class Record
             case 'timestamp':
                 // e. g. "12/24/2016 12:00:00"
                 if (!$dateTime = \DateTime::createFromFormat($dateFormat . ' H:i:s', $value)) {
-                    $error = new FileMakerException(
-                        $this->fm,
+                    return $this->fm->returnOrThrowException(
                         'Failed to parse "' . $value . '" as a FileMaker timestamp value.'
                     );
                 }
                 break;
             default:
-                $error = new FileMakerException(
-                    $this->fm,
+                return $this->fm->returnOrThrowException(
                     'Only time, date, and timestamp fields can be converted to UNIX timestamps.'
                 );
                 break;
-        }
-        if ($error !== null) {
-            if ($this->fm->getProperty('errorHandling') === 'default') {
-                return $error;
-            } else {
-                throw $error;
-            }
         }
 
         return $dateTime->format('U');
@@ -298,11 +277,7 @@ class Record
             $field = $this->relatedSetName. '::' . $field;
         }
         if (!array_key_exists($field, $this->layout->fields)) {
-                $error = new FileMakerException($this->fm, 'Field "'.$field.'" is missing');
-            if ($this->fm->getProperty('errorHandling') === 'default') {
-                return $error;
-            }
-                throw $error;
+            return $this->fm->returnOrThrowException('Field "'.$field.'" is missing');
         }
 
         $format = $this->layout->getField($field)->result;
@@ -314,15 +289,10 @@ class Record
                     $value . ' 00:00:00',
                     new \DateTimeZone(date_default_timezone_get())
                 )) {
-                    $error = new FileMakerException(
-                        $this->fm,
+                    return $this->fm->returnOrThrowException(
                         $value . ' could not be converted to a valid timestamp for field '
                         . $field . ' (expected format '. $this->fm->getProperty('dateFormat') .')'
                     );
-                    if ($this->fm->getProperty('errorHandling') === 'default') {
-                        return $error;
-                    }
-                    throw $error;
                 }
                 $value = $dateTime->format('m/d/Y');
             } else {
@@ -331,15 +301,10 @@ class Record
                     $value,
                     new \DateTimeZone(date_default_timezone_get())
                 )) {
-                    $error = new FileMakerException(
-                        $this->fm,
+                    return $this->fm->returnOrThrowException(
                         $value . ' could not be converted to a valid timestamp for field '
                         . $field . ' (expected format '. $this->fm->getProperty('dateFormat') .')'
                     );
-                    if ($this->fm->getProperty('errorHandling') === 'default') {
-                        return $error;
-                    }
-                    throw $error;
                 }
                 $value = $dateTime->format('m/d/Y H:i:s');
             }
@@ -385,14 +350,9 @@ class Record
             case 'timestamp':
                 return $this->setField($field, date('m/d/Y H:i:s', $timestamp), $repetition);
         }
-        $error = new FileMakerException(
-            $this->fm,
+        return $this->fm->returnOrThrowException(
             'Only time, date, and timestamp fields can be set to the value of a timestamp.'
         );
-        if ($this->fm->getProperty('errorHandling') === 'default') {
-            return $error;
-        }
-        throw $error;
     }
 
     /**
@@ -431,11 +391,7 @@ class Record
     public function getRelatedSet($relatedSet)
     {
         if (!isset($this->relatedSets[$relatedSet])) {
-            $error = new FileMakerException($this->fm, 'Related set "' . $relatedSet . '" not present.');
-            if ($this->fm->getProperty('errorHandling') === 'default') {
-                return $error;
-            }
-            throw $error;
+            return $this->fm->returnOrThrowException('Related set "' . $relatedSet . '" not present.');
         }
         return $this->relatedSets[$relatedSet];
     }
@@ -532,8 +488,7 @@ class Record
             }
         } else {
             if (!$this->parent->getRecordId()) {
-                throw new FileMakerException(
-                    $this->fm,
+                return $this->fm->returnOrThrowException(
                     'You must commit the parent record first before you can commit its children.'
                 );
             }
@@ -554,11 +509,7 @@ class Record
     public function delete()
     {
         if (empty($this->recordId)) {
-            $error = new FileMakerException($this->fm, 'You cannot delete a record that does not exist on the server.');
-            if ($this->fm->getProperty('errorHandling') === 'default') {
-                return $error;
-            }
-            throw $error;
+            return $this->fm->returnOrThrowException('You cannot delete a record that does not exist on the server.');
         }
         if ($this->parent) {
             $editCommand = $this->fm->newEditCommand($this->parent->layout->getName(), $this->parent->recordId, []);
@@ -589,11 +540,7 @@ class Record
         try {
             $relatedSet = $this->getRelatedSet($relatedSetName);
         } catch (FileMakerException $e) {
-            $error = new FileMakerException($this->fm, 'Related set "' . $relatedSetName . '" not present.');
-            if ($this->fm->getProperty('errorHandling') === 'default') {
-                return $error;
-            }
-            throw $error;
+            return $this->fm->returnOrThrowException('Related set "' . $relatedSetName . '" not present.');
         }
 
         foreach ($relatedSet as $record) {
@@ -601,11 +548,7 @@ class Record
                 return $record;
             }
         }
-        $error = new FileMakerException($this->fm, 'Record not present.');
-        if ($this->fm->getProperty('errorHandling') === 'default') {
-            return $error;
-        }
-        throw $error;
+        return $this->fm->returnOrThrowException('Record not present.');
     }
 
     /**
@@ -714,11 +657,7 @@ class Record
                 break;
             }
         }
-        $error = new FileMakerException($this->fm, 'Failed to find the updated child in the response.');
-        if ($this->fm->getProperty('errorHandling') === 'default') {
-            return $error;
-        }
-        throw $error;
+        return $this->fm->returnOrThrowException('Failed to find the updated child in the response.');
     }
 
     /**
