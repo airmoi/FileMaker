@@ -145,13 +145,9 @@ class Add extends Command
             case 'timestamp':
                 return $this->setField($field, date('m/d/Y H:i:s', $timestamp), $repetition);
         }
-        $error = new FileMakerException(
-            $this->fm,
+
+        return $this->fm->returnOrThrowException(
             'Only time, date, and timestamp fields can be set to the value of a timestamp.'
         );
-        if ($this->fm->getProperty('errorHandling') === 'default') {
-            return $error;
-        }
-        throw $error;
     }
 }

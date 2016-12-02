@@ -57,19 +57,11 @@ class Edit extends Command
     {
         $params = $this->getCommandParams();
         if (empty($this->recordId)) {
-            $error = new FileMakerException($this->fm, 'Edit commands require a record id.');
-            if ($this->fm->getProperty('errorHandling') === 'default') {
-                return $error;
-            }
-            throw $error;
+            return $this->fm->returnOrThrowException('Edit commands require a record id.');
         }
         if (!count($this->fields)) {
             if ($this->deleteRelated === null) {
-                $error = new FileMakerException($this->fm, 'There are no changes to make.');
-                if ($this->fm->getProperty('errorHandling') === 'default') {
-                    return $error;
-                }
-                throw $error;
+                return $this->fm->returnOrThrowException('There are no changes to make.');
             }
         }
 
@@ -188,14 +180,9 @@ class Edit extends Command
             case 'timestamp':
                 return $this->setField($field, date('m/d/Y H:i:s', $timestamp), $repetition);
         }
-        $error = new FileMakerException(
-            $this->fm,
+        return $this->fm->returnOrThrowException(
             'Only time, date, and timestamp fields can be set to the value of a timestamp.'
         );
-        if ($this->fm->getProperty('errorHandling') === 'default') {
-            return $error;
-        }
-        throw $error;
     }
 
     /**

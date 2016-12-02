@@ -75,14 +75,9 @@ class RelatedSet
         if (isset($this->fields[$fieldName])) {
             return $this->fields[$fieldName];
         }
-        $error = new FileMakerException(
-            $this->fm,
+        return $this->fm->returnOrThrowException(
             'Field '.$fieldName.' Not Found in Layout '. $this->layout->getName()
         );
-        if ($this->fm->getProperty('errorHandling') === 'default') {
-            return $error;
-        }
-        throw $error;
     }
 
     /**
@@ -106,10 +101,6 @@ class RelatedSet
      */
     public function loadExtendedInfo()
     {
-        $error = new FileMakerException($this->fm, 'Related sets do not support extended information.');
-        if ($this->fm->getProperty('errorHandling') === 'default') {
-            return $error;
-        }
-        throw $error;
+        return $this->fm->returnOrThrowException('Related sets do not support extended information.');
     }
 }

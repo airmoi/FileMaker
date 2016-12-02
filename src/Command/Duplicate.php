@@ -41,11 +41,7 @@ class Duplicate extends Command
     public function execute()
     {
         if (empty($this->recordId)) {
-            $error = new FileMakerException($this->fm, 'Duplicate commands require a record id.');
-            if ($this->fm->getProperty('errorHandling') === 'default') {
-                return $error;
-            }
-            throw $error;
+            return $this->fm->returnOrThrowException('Duplicate commands require a record id.');
         }
         $params = $this->getCommandParams();
         $params['-dup'] = true;

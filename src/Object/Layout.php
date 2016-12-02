@@ -91,11 +91,7 @@ class Layout
             //$fieldName = substr($fieldName, $pos+1, strlen($fieldName));
             return $this->getRelatedSet($relatedSet)->getField($fieldName);
         }
-        $error = new FileMakerException($this->fm, 'Field "'.$fieldName.'" Not Found');
-        if ($this->fm->getProperty('errorHandling') === 'default') {
-            return $error;
-        }
-        throw $error;
+        return $this->fm->returnOrThrowException('Field "'.$fieldName.'" Not Found');
     }
 
     /**
@@ -134,14 +130,7 @@ class Layout
         if (isset($this->relatedSets[$relatedSet])) {
             return $this->relatedSets[$relatedSet];
         }
-        $error = new FileMakerException(
-            $this->fm,
-            'RelatedSet "'.$relatedSet.'" Not Found in layout '. $this->getName()
-        );
-        if ($this->fm->getProperty('errorHandling') === 'default') {
-            return $error;
-        }
-        throw $error;
+        return $this->fm->returnOrThrowException('RelatedSet "'.$relatedSet.'" Not Found in layout '. $this->getName());
     }
 
     /**
