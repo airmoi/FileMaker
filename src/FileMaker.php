@@ -76,7 +76,7 @@ class FileMaker
     /**
      * @var string Store the last URL call to Custom Web Publishing engine
      */
-    public $lastRequestedUrl;
+    private $lastRequestedUrl;
 
     /**
      * Find constants.
@@ -370,8 +370,14 @@ class FileMaker
      *
      * @todo $layout param unused (not supported by cwp)
      */
-    public function newFindRequest($layout)
+    public function newFindRequest($layout = null)
     {
+        if ($layout !== null) {
+            $this->log(
+                'The $layout parameter in ' . __METHOD__ . ' is deprecated and will be removed in a future version',
+                self::LOG_INFO
+            );
+        }
         return new Command\FindRequest();
     }
 
@@ -981,6 +987,30 @@ class FileMaker
         } else {
             throw new FileMakerException($this, 'Attempt to set an unsupported property (' . $name . ')');
         }
+    }
+
+    /**
+     * magic getter
+     *
+     * @param string $name
+     *
+     * @return boolean
+     * @throws FileMakerException
+     */
+    public function __get($name)
+    {
+        $getter = 'get' . $name;
+        if (array_key_exists($name, $this->properties)) {
+            return $this->properties[$name];
+        } elseif (method_exists($this, $getter)) {
+            //test if it is a valid function (no args)
+            $reflection = new \ReflectionMethod(__CLASS__, $getter);
+            if (sizeof($reflection->getParameters()) === 0 and $reflection->isPublic()) {
+                return $this->$getter();
+            }
+        }
+
+        throw new FileMakerException($this, 'Attempt to access an unsupported property (' . $name . ')');
     }
 
     /**
