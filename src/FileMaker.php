@@ -218,6 +218,7 @@ class FileMaker
             return $this->returnOrThrowException('Unsupported property ' . $prop);
         }
         $this->properties[$prop] = $value;
+        return null;
     }
 
     /**
@@ -916,7 +917,7 @@ class FileMaker
      * @param string $name
      * @param mixed $value
      *
-     * @return boolean
+     * @return FileMakerException|null
      * @throws FileMakerException
      */
     public function __set($name, $value)
@@ -926,6 +927,7 @@ class FileMaker
         } else {
             return $this->returnOrThrowException('Attempt to set an unsupported property (' . $name . ')');
         }
+        return null;
     }
 
     /**
@@ -933,7 +935,7 @@ class FileMaker
      *
      * @param string $name
      *
-     * @return boolean
+     * @return FileMakerException|string
      * @throws FileMakerException
      */
     public function __get($name)
@@ -1019,6 +1021,14 @@ class FileMaker
         }
     }
 
+    /**
+     * Return or throw a FileMakerException according to settings
+     * @param string $message
+     * @param int $code
+     * @param null $previous
+     * @return null|\Exception $previous
+     * @throws FileMakerException
+     */
     public function returnOrThrowException($message = null, $code = null, $previous = null)
     {
         $exception = new FileMakerException($this, $message, $code, $previous);
@@ -1028,6 +1038,13 @@ class FileMaker
         return $exception;
     }
 
+    /**
+     * Convert curl errors to FileMakerException
+     * @param int $curlError
+     * @param resource $curl
+     * @return FileMakerException
+     * @throws FileMakerException
+     */
     private function handleCurlError($curlError, $curl)
     {
         if ($curlError === 52) {
@@ -1048,10 +1065,9 @@ class FileMaker
                     . 'enabled for that user.'
                 );
             }
-        } else {
-            return $this->returnOrThrowException(
-                'cURL Communication Error: (' . $curlError . ') ' . curl_error($curl)
-            );
         }
+        return $this->returnOrThrowException(
+            'cURL Communication Error: (' . $curlError . ') ' . curl_error($curl)
+        );
     }
 }
