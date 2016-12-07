@@ -67,9 +67,39 @@ class DateFormatTest extends TestCase
 
         $this->record->setField('date_field', date('Y-m-d'));
         $this->assertTrue($this->record->validate('date_field'));
+        $this->assertEquals(date('Y-m-d'), $this->record->getField('date_field'));
 
         //test invalid input
         $this->expectException(FileMakerException::class);
         $this->record->setField('date_field', date('m/d/Y'));
+    }
+
+
+    public function testCommonDateFormatInput()
+    {
+        //Custom date format (International format)
+        $this->record->fm->dateFormat = 'd/m/Y';
+
+        $this->record->setField('date_field', date('d/m/Y'));
+        $this->assertTrue($this->record->validate('date_field'));
+        $this->assertEquals(date('d/m/Y'), $this->record->getField('date_field'));
+    }
+
+    public function testCommonToDefaultDateInversion()
+    {
+        //Custom date format (International format)
+        $this->record->fm->dateFormat = 'd/m/Y';
+        
+        //inject invalid m/d/Y date
+        $this->expectException(FileMakerException::class);
+        $this->record->setField('date_field', date('06/18/2016'));
+    }
+
+    public function test1digitDate()
+    {
+        //Custom date format (International format)
+        $this->record->fm->dateFormat = 'd/m/Y';
+        $this->record->setField('date_field', date('12/2/2016'));
+        $this->assertTrue($this->record->validate('date_field'));
     }
 }
