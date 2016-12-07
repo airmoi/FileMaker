@@ -49,7 +49,7 @@ class DateFormatTest extends TestCase
     public function testDefaultDateFormatInput()
     {
         //default date format handling
-        $this->fm->dateFormat = null;
+        $this->record->fm->dateFormat = null;
 
         $this->record->setField('date_field', date('m/d/Y'));
         $this->assertTrue($this->record->validate('date_field'));
@@ -63,7 +63,7 @@ class DateFormatTest extends TestCase
     public function testIsoDateFormatInput()
     {
         //Custom date format (ISO)
-        $this->fm->dateFormat = 'Y-m-d';
+        $this->record->fm->dateFormat = 'Y-m-d';
 
         $this->record->setField('date_field', date('Y-m-d'));
         $this->assertTrue($this->record->validate('date_field'));
