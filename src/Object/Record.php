@@ -7,6 +7,7 @@ namespace airmoi\FileMaker\Object;
 
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
+use airmoi\FileMaker\FileMakerValidationException;
 
 /**
  * Default Record class that represents each record of a result set.
@@ -462,8 +463,37 @@ class Record
      */
     public function validate($fieldName = null)
     {
-        $command = $this->fm->newAddCommand($this->layout->getName(), $this->fields);
-        return $command->validate($fieldName);
+        if ($fieldName !== null) {
+            $fields = [$fieldName];
+        } else {
+            $fields = $this->getFields();
+        }
+
+        $validationErrors = new FileMakerValidationException($this->fm);
+        foreach($fields as $fieldName) {
+            $field = $this->layout->getField($fieldName);
+            if (!isset($this->fields[$fieldName]) || !count($this->fields[$fieldName])) {
+                $values = [0 => null];
+            } else {
+                $values = $this->fields[$fieldName];
+            }
+            foreach ($values as $value) {
+                try {
+                    $field->validate($value);
+                } catch (FileMakerValidationException $e) {
+                    foreach ($e->getErrors() as $error) {
+                        $validationErrors->addError($error[0], $error[1], $error[2]);
+                    }
+                }
+            }
+        }
+        if ($validationErrors->numErrors()) {
+            if ($this->fm->getProperty('errorHandling') === 'default') {
+                return $validationErrors;
+            }
+            throw $validationErrors;
+        }
+        return true;
     }
 
     /**
