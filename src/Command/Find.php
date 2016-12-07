@@ -6,6 +6,8 @@
 namespace airmoi\FileMaker\Command;
 
 use airmoi\FileMaker\FileMaker;
+use airmoi\FileMaker\FileMakerException;
+use airmoi\FileMaker\Helpers\DateFormat;
 
 /**
  * Command class that finds records using the specified criteria.
@@ -29,13 +31,16 @@ class Find extends Command
      * Adds a criterion to this Find command.
      *
      * @param string $fieldname Name of the field being tested.
-     * @param string $testvalue Value of field to test against.
+     * @param string $value Value of field to test against.
      *
      * @return self
      */
-    public function addFindCriterion($fieldname, $testvalue)
+    public function addFindCriterion($fieldname, $value)
     {
-        $this->findCriteria[$fieldname] = $testvalue;
+        if ($this->getFieldResult($fieldname) == "date" || $this->getFieldResult($fieldname) == "datetime") {
+            $value = DateFormat::convertSearchCriteria($value);
+        }
+        $this->findCriteria[$fieldname] = $value;
         return $this;
     }
 
@@ -265,5 +270,33 @@ class Find extends Command
         if ($this->max) {
             $params['-max'] = $this->max;
         }
+    }
+
+    /**
+     * @return \airmoi\FileMaker\FileMakerException|\airmoi\FileMaker\Object\Layout
+     */
+    private function getLayout()
+    {
+        return $this->fm->getLayout($this->layout);
+    }
+
+    /**
+     * Get the field "type" (date/text/number...)
+     * @param $fieldName
+     *
+     * @return null|Field|FileMakerException Field object, if successful.
+     * @throws FileMakerException
+     */
+    private function getFieldResult($fieldName)
+    {
+        try {
+            $field = $this->getLayout()->getField($fieldName);
+            if(FileMaker::isError($field)) {
+                throw $field;
+            }
+        } catch ( FileMakerException $e ){
+            return null;
+        }
+        return $field->result;
     }
 }
