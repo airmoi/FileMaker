@@ -124,18 +124,19 @@ class Edit extends Command
 
         $format = FileMaker::isError($fieldInfos) ? null : $fieldInfos->result;
 
-        if (!empty($value) && $this->fm->getProperty('dateFormat') !== null
-            && ($format === 'date' || $format === 'timestamp')
-        ) {
-            if ($format === 'date') {
-                $dateTime = \DateTime::createFromFormat(
-                    $this->fm->getProperty('dateFormat') . ' H:i:s',
-                    $value . ' 00:00:00'
+        if ($format === 'date' || $format === 'timestamp') {
+            try {
+                $dateFormat = $this->fm->getProperty('dateFormat');
+                if ($format === 'date') {
+                    $value = DateFormat::convert($value, $dateFormat, 'm/d/Y');
+                } else {
+                    $value = DateFormat::convert($value, $dateFormat . ' H:i:s', 'm/d/Y H:i:s');
+                }
+            } catch (\Exception $e) {
+                return $this->fm->returnOrThrowException(
+                    $value . ' could not be converted to a valid timestamp for field '
+                    . $field . ' (expected format '. $dateFormat .')'
                 );
-                $value = $dateTime->format('m/d/Y');
-            } else {
-                $dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value);
-                $value = $dateTime->format('m/d/Y H:i:s');
             }
         }
 
@@ -164,11 +165,11 @@ class Edit extends Command
      */
     public function setFieldFromTimestamp($field, $timestamp, $repetition = 0)
     {
-        $layout = & $this->fm->getLayout($this->layout);
+        $layout = $this->fm->getLayout($this->_layout);
         if (FileMaker::isError($layout)) {
             return $layout;
         }
-        $field = & $layout->getField($field);
+        $field = $layout->getField($field);
         if (FileMaker::isError($field)) {
             return $field;
         }
@@ -180,9 +181,12 @@ class Edit extends Command
             case 'timestamp':
                 return $this->setField($field, date('m/d/Y H:i:s', $timestamp), $repetition);
         }
-        return $this->fm->returnOrThrowException(
-            'Only time, date, and timestamp fields can be set to the value of a timestamp.'
-        );
+        $this->fm->
+        $error = new FileMakerException($this->fm, 'Only time, date, and timestamp fields can be set to the value of a timestamp.');
+        if($this->fm->getProperty('errorHandling') == 'default') {
+            return $error;
+        }
+        throw $error;
     }
 
     /**

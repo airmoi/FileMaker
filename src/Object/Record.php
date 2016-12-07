@@ -8,6 +8,7 @@ namespace airmoi\FileMaker\Object;
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\FileMakerValidationException;
+use airmoi\FileMaker\Helpers\DateFormat;
 
 /**
  * Default Record class that represents each record of a result set.
@@ -109,10 +110,12 @@ class Record
         if (!is_null($this->parent) && !strpos($field, '::')) {
             $field = $this->relatedSetName. '::' . $field;
         }
+
         if (!isset($this->fields[$field])) {
             $this->fm->log('Field "' . $field . '" not found.', FileMaker::LOG_INFO);
             return null;
         }
+
         if (!isset($this->fields[$field][$repetition])) {
             $this->fm->log(
                 'Repetition "' . (int) $repetition . '" does not exist for "' . $field . '".',
@@ -120,29 +123,28 @@ class Record
             );
             return null;
         }
+
         $format = $this->layout->getField($field)->result;
         $value = $this->fields[$field][$repetition];
 
         if (empty($value) && $this->fm->getProperty('emptyAsNull')) {
             return null;
         }
-        if (!empty($value) && preg_match('/\d{2}.\d{2}.\d{4}/', $value)
-            && $this->fm->getProperty('dateFormat') !== null
-            && ($format == 'date' || $format == 'timestamp')) {
-            if ($format == 'date') {
-                if (!$dateTime = \DateTime::createFromFormat('m/d/Y H:i:s', $value . ' 00:00:00')) {
-                    return $this->fm->returnOrThrowException(
-                        $field . ' could not be converted to a valid timestamp ('. $value .')'
-                    );
+        if (
+            ($format == 'date' || $format == 'timestamp')
+            && preg_match('/\d{2}.\d{2}.\d{4}/', $value) //Test invalid fm dates
+        ) {
+            try {
+                $dateFormat = $this->fm->getProperty('dateFormat');
+                if ($format == 'date') {
+                    return DateFormat::convert($value, 'm/d/Y', $dateFormat);
+                } else {
+                    return DateFormat::convert($value, 'm/d/Y H:i:s', $dateFormat . ' H:i:s');
                 }
-                return $dateTime->format($this->fm->getProperty('dateFormat'));
-            } else {
-                if (!$dateTime = \DateTime::createFromFormat('m/d/Y H:i:s', $value)) {
-                    return $this->fm->returnOrThrowException(
-                        $field . ' could not be converted to a valid timestamp ('. $value .')'
-                    );
-                }
-                return $dateTime->format($this->fm->getProperty('dateFormat') . ' H:i:s');
+            } catch (\Exception $e) {
+                return $this->fm->returnOrThrowException(
+                    $field . ' could not be converted to a valid timestamp ('. $value .')'
+                );
             }
         } elseif (!empty($value) && $format == 'number') {
             $value = preg_replace('/,/', '.', $value);
@@ -273,42 +275,31 @@ class Record
      */
     public function setField($field, $value, $repetition = 0)
     {
-
         if (!is_null($this->parent) && !strpos($field, '::')) {
             $field = $this->relatedSetName. '::' . $field;
         }
+
         if (!array_key_exists($field, $this->layout->fields)) {
             return $this->fm->returnOrThrowException('Field "'.$field.'" is missing');
         }
 
-        $format = $this->layout->getField($field)->result;
-        if (!empty($value) && $this->fm->getProperty('dateFormat') !== null
-            && ($format == 'date' || $format == 'timestamp')) {
-            if ($format == 'date') {
-                if (!$dateTime = \DateTime::createFromFormat(
-                    $this->fm->getProperty('dateFormat') . ' H:i:s',
-                    $value . ' 00:00:00',
-                    new \DateTimeZone(date_default_timezone_get())
-                )) {
-                    return $this->fm->returnOrThrowException(
-                        $value . ' could not be converted to a valid timestamp for field '
-                        . $field . ' (expected format '. $this->fm->getProperty('dateFormat') .')'
-                    );
+        $fieldFormat = $this->layout->getField($field)->result;
+
+        if ($fieldFormat == 'date' || $fieldFormat == 'timestamp') {
+            $dateFormat = $this->fm->getProperty('dateFormat');
+            try {
+                if ($fieldFormat == 'date') {
+                    $convertedValue = DateFormat::convert($value, $dateFormat, 'm/d/Y');
+                } else {
+                    $convertedValue = DateFormat::convert($value, $dateFormat . ' H:i:s', 'm/d/Y H:i:s');
                 }
-                $value = $dateTime->format('m/d/Y');
-            } else {
-                if (!$dateTime = \DateTime::createFromFormat(
-                    $this->fm->getProperty('dateFormat') . ' H:i:s',
-                    $value,
-                    new \DateTimeZone(date_default_timezone_get())
-                )) {
-                    return $this->fm->returnOrThrowException(
-                        $value . ' could not be converted to a valid timestamp for field '
-                        . $field . ' (expected format '. $this->fm->getProperty('dateFormat') .')'
-                    );
-                }
-                $value = $dateTime->format('m/d/Y H:i:s');
+            } catch (\Exception $e) {
+                return $this->fm->returnOrThrowException(
+                    $value . ' could not be converted to a valid timestamp for field '
+                    . $field . ' (expected format '. $dateFormat .')'
+                );
             }
+            $value = $convertedValue;
         }
 
         $this->fields[$field][$repetition] = $value;
