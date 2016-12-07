@@ -4,6 +4,7 @@
  * @license BSD
  */
 namespace airmoi\FileMaker\Command;
+use airmoi\FileMaker\FileMaker;
 
 /**
  * Find Request class. Contains all the information about a single find request
@@ -19,13 +20,19 @@ class FindRequest
     public $omit;
 
     /**
+     * @var FileMaker
+     */
+    public $fm;
+
+    /**
      * Find request constructor.
      *
      * @ignore
      */
-    public function __construct()
+    public function __construct($layout)
     {
         $this->omit = false;
+        $this->layout = $layout;
     }
 
     /**

@@ -361,9 +361,8 @@ class FileMaker
      *
      * @return Command\FindRequest New Find Request command object.
      *
-     * @todo $layout param unused (not supported by cwp)
      */
-    public function newFindRequest($layout = null)
+    public function newFindRequest($layout)
     {
         if ($layout !== null) {
             $this->log(
@@ -371,7 +370,7 @@ class FileMaker
                 self::LOG_INFO
             );
         }
-        return new Command\FindRequest();
+        return new Command\FindRequest($layout);
     }
 
     /**

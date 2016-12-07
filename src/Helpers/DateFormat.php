@@ -41,4 +41,10 @@ class DateFormat
 
         return $date->format($outputFormat);
     }
+
+    public static function convertSearchCriteria($value)
+    {
+        //Handle common operators (<, >, =, ==, ...)
+        return $value;
+    }
 }
