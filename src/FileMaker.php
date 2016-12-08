@@ -366,13 +366,7 @@ class FileMaker
      */
     public function newFindRequest($layout)
     {
-        if ($layout !== null) {
-            $this->log(
-                'The $layout parameter in ' . __METHOD__ . ' is deprecated and will be removed in a future version',
-                self::LOG_INFO
-            );
-        }
-        return new Command\FindRequest($layout);
+        return new Command\FindRequest($this, $layout);
     }
 
     /**

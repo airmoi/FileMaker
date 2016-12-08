@@ -25,8 +25,11 @@ trait RequestTrait
     public function addFindCriterion($fieldName, $value)
     {
         $fieldType = $this->getFieldResult($fieldName);
-        if ($this->fm->useDateFormatInRequests && ($fieldType == "date" || $fieldType == "datetime")) {
-            $value = DateFormat::convertSearchCriteria($value);
+        if ($this->fm->useDateFormatInRequests
+            && $this->fm->dateFormat !== null
+            && ($fieldType == "date" || $fieldType == "datetime")
+        ) {
+            $value = DateFormat::convertSearchCriteria($value, $this->fm->dateFormat, 'm/d/Y');
         }
         $this->findCriteria[$fieldName] = $value;
         return $this;

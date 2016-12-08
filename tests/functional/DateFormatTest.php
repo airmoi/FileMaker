@@ -108,4 +108,16 @@ class DateFormatTest extends TestCase
         $this->record->setField('date_field', date('12/2/2016'));
         $this->assertTrue($this->record->validate('date_field'));
     }
+
+    public function testDateFormatRequetsActivation()
+    {
+        $request = $this->fm->newFindRequest('sample');
+        $request->addFindCriterion('date_field', '2016-02-12');
+        $this->assertEquals('2016-02-12', $request->findCriteria['date_field']);
+
+        $this->fm->useDateFormatInRequests = true;
+        $this->fm->dateFormat = 'Y-m-d';
+        $request->addFindCriterion('date_field', '2016-02-12');
+        $this->assertEquals('02/12/2016', $request->findCriteria['date_field']);
+    }
 }

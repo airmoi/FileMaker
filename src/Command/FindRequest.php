@@ -26,8 +26,9 @@ class FindRequest
      *
      * @param string $layout
      */
-    public function __construct($layout)
+    public function __construct(FileMaker $fm, $layout)
     {
+        $this->fm = $fm;
         $this->layout = $layout;
     }
 
@@ -43,20 +44,6 @@ class FindRequest
     public function setOmit($value)
     {
         $this->omit = $value;
-        return $this;
-    }
-
-    /**
-     * Adds a criterion to this find request.
-     *
-     * @param string $fieldname Name of the field being tested.
-     * @param string $testvalue Value of the field to test against.
-     *
-     * @return self
-     */
-    public function addFindCriterion($fieldname, $testvalue)
-    {
-        $this->findCriteria[$fieldname] = $testvalue;
         return $this;
     }
 }
