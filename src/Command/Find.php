@@ -17,48 +17,20 @@ use airmoi\FileMaker\Helpers\DateFormat;
  */
 class Find extends Command
 {
+    use RequestTrait;
 
-    protected $findCriteria = [];
     protected $sortRules = [];
     protected $sortOrders = [];
     protected $operator;
     protected $skip;
     protected $max;
-    protected $relatedsetsfilter;
-    protected $relatedsetsmax;
-
-    /**
-     * Adds a criterion to this Find command.
-     *
-     * @param string $fieldname Name of the field being tested.
-     * @param string $value Value of field to test against.
-     *
-     * @return self
-     */
-    public function addFindCriterion($fieldname, $value)
-    {
-        if ($this->getFieldResult($fieldname) == "date" || $this->getFieldResult($fieldname) == "datetime") {
-            $value = DateFormat::convertSearchCriteria($value);
-        }
-        $this->findCriteria[$fieldname] = $value;
-        return $this;
-    }
-
-    /**
-     * Clears all existing criteria from this Find command.
-     *
-     * @return self
-     */
-    public function clearFindCriteria()
-    {
-        $this->findCriteria = [];
-        return $this;
-    }
+    protected $relatedSetsFilter;
+    protected $relatedSetsMax;
 
     /**
      * Adds a sorting rule to this Find command.
      *
-     * @param string $fieldname Name of the field to sort by.
+     * @param string $fieldName Name of the field to sort by.
      * @param integer $precedence Integer from 1 to 9, inclusive. A value
      *        of 1 sorts records based on this sorting rule first, a value of
      *        2 sorts records based on this sorting rule only when two or more
@@ -70,9 +42,9 @@ class Find extends Command
      *
      * @return self
      */
-    public function addSortRule($fieldname, $precedence, $order = null)
+    public function addSortRule($fieldName, $precedence, $order = null)
     {
-         $this->sortRules[$precedence] = $fieldname;
+         $this->sortRules[$precedence] = $fieldName;
         if ($order !== null) {
             $this->sortOrders[$precedence] = $order;
         }
@@ -208,8 +180,8 @@ class Find extends Command
      */
     public function setRelatedSetsFilters($relatedsetsfilter, $relatedsetsmax = null)
     {
-        $this->relatedsetsfilter = $relatedsetsfilter;
-        $this->relatedsetsmax = $relatedsetsmax;
+        $this->relatedSetsFilter = $relatedsetsfilter;
+        $this->relatedSetsMax = $relatedsetsmax;
         return $this;
     }
 
@@ -225,8 +197,8 @@ class Find extends Command
     public function getRelatedSetsFilters()
     {
         return [
-            'relatedsetsfilter' => $this->relatedsetsfilter,
-            'relatedsetsmax' => $this->relatedsetsmax
+            'relatedsetsfilter' => $this->relatedSetsFilter,
+            'relatedsetsmax' => $this->relatedSetsMax
         ];
     }
 
@@ -236,11 +208,11 @@ class Find extends Command
      */
     protected function setRelatedSetsFiltersParams(&$params)
     {
-        if ($this->relatedsetsfilter) {
-            $params['-relatedsets.filter'] = $this->relatedsetsfilter;
+        if ($this->relatedSetsFilter) {
+            $params['-relatedsets.filter'] = $this->relatedSetsFilter;
         }
-        if ($this->relatedsetsmax) {
-            $params['-relatedsets.max'] = $this->relatedsetsmax;
+        if ($this->relatedSetsMax) {
+            $params['-relatedsets.max'] = $this->relatedSetsMax;
         }
     }
 
@@ -270,33 +242,5 @@ class Find extends Command
         if ($this->max) {
             $params['-max'] = $this->max;
         }
-    }
-
-    /**
-     * @return \airmoi\FileMaker\FileMakerException|\airmoi\FileMaker\Object\Layout
-     */
-    private function getLayout()
-    {
-        return $this->fm->getLayout($this->layout);
-    }
-
-    /**
-     * Get the field "type" (date/text/number...)
-     * @param $fieldName
-     *
-     * @return null|Field|FileMakerException Field object, if successful.
-     * @throws FileMakerException
-     */
-    private function getFieldResult($fieldName)
-    {
-        try {
-            $field = $this->getLayout()->getField($fieldName);
-            if(FileMaker::isError($field)) {
-                throw $field;
-            }
-        } catch ( FileMakerException $e ){
-            return null;
-        }
-        return $field->result;
     }
 }

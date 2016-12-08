@@ -7,6 +7,7 @@ namespace airmoi\FileMaker\Command;
 
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
+use airmoi\FileMaker\FileMakerValidationException;
 use airmoi\FileMaker\Helpers\DateFormat;
 
 /**
@@ -43,8 +44,9 @@ class Add extends Command
 
     /**
      *
-     * @return \airmoi\FileMaker\Object\Result|FileMakerException
+     * @return \airmoi\FileMaker\Object\Result|FileMakerException|FileMakerValidationException
      * @throws FileMakerException
+     * @throws FileMakerValidationException
      */
     public function execute()
     {
@@ -97,8 +99,8 @@ class Add extends Command
 
         $format = FileMaker::isError($fieldInfos) ? null : $fieldInfos->result;
         if ($format === 'date' || $format === 'timestamp') {
+            $dateFormat = $this->fm->getProperty('dateFormat');
             try {
-                $dateFormat = $this->fm->getProperty('dateFormat');
                 if ($format === 'date') {
                     $value = DateFormat::convert($value, $dateFormat, 'm/d/Y');
                 } else {

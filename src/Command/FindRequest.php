@@ -4,6 +4,7 @@
  * @license BSD
  */
 namespace airmoi\FileMaker\Command;
+
 use airmoi\FileMaker\FileMaker;
 
 /**
@@ -15,23 +16,18 @@ use airmoi\FileMaker\FileMaker;
  */
 class FindRequest
 {
+    use CommandTrait;
+    use RequestTrait;
 
-    public $findCriteria = [];
-    public $omit;
-
-    /**
-     * @var FileMaker
-     */
-    public $fm;
+    public $omit = false;
 
     /**
      * Find request constructor.
      *
-     * @ignore
+     * @param string $layout
      */
     public function __construct($layout)
     {
-        $this->omit = false;
         $this->layout = $layout;
     }
 
@@ -62,25 +58,5 @@ class FindRequest
     {
         $this->findCriteria[$fieldname] = $testvalue;
         return $this;
-    }
-
-    /**
-     * Clears all existing criteria from this find request.
-     *
-     * @return self
-     */
-    public function clearFindCriteria()
-    {
-        $this->findCriteria = [];
-        return $this;
-    }
-
-    /**
-     *
-     * @return bool true if the request as no criterion set
-     */
-    public function isEmpty()
-    {
-        return empty($this->findCriteria);
     }
 }

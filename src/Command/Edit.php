@@ -8,6 +8,7 @@ namespace airmoi\FileMaker\Command;
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\FileMakerValidationException;
+use airmoi\FileMaker\Helpers\DateFormat;
 
 /**
  * Command class that edits a single record.
@@ -51,7 +52,8 @@ class Edit extends Command
     /**
      *
      * @return \airmoi\FileMaker\Object\Result|FileMakerException|FileMakerValidationException
-     * @throws FileMakerException|FileMakerValidationException
+     * @throws FileMakerException
+     * @throws FileMakerValidationException
      */
     public function execute()
     {
@@ -125,8 +127,8 @@ class Edit extends Command
         $format = FileMaker::isError($fieldInfos) ? null : $fieldInfos->result;
 
         if ($format === 'date' || $format === 'timestamp') {
+            $dateFormat = $this->fm->getProperty('dateFormat');
             try {
-                $dateFormat = $this->fm->getProperty('dateFormat');
                 if ($format === 'date') {
                     $value = DateFormat::convert($value, $dateFormat, 'm/d/Y');
                 } else {
@@ -165,7 +167,7 @@ class Edit extends Command
      */
     public function setFieldFromTimestamp($field, $timestamp, $repetition = 0)
     {
-        $layout = $this->fm->getLayout($this->_layout);
+        $layout = $this->fm->getLayout($this->layout);
         if (FileMaker::isError($layout)) {
             return $layout;
         }
@@ -181,12 +183,9 @@ class Edit extends Command
             case 'timestamp':
                 return $this->setField($field, date('m/d/Y H:i:s', $timestamp), $repetition);
         }
-        $this->fm->
-        $error = new FileMakerException($this->fm, 'Only time, date, and timestamp fields can be set to the value of a timestamp.');
-        if($this->fm->getProperty('errorHandling') == 'default') {
-            return $error;
-        }
-        throw $error;
+        return $this->fm->returnOrThrowException(
+            'Only time, date, and timestamp fields can be set to the value of a timestamp.'
+        );
     }
 
     /**
