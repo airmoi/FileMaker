@@ -30,7 +30,13 @@ class DateFormatTest extends TestCase
      */
     protected function setUp()
     {
-        $this->fm = new FileMaker($GLOBALS['DB_FILE'], $GLOBALS['DB_HOST'], $GLOBALS['DB_USER'], $GLOBALS['DB_PASSWD'], ['errorHandling' => 'exception']);
+        $this->fm = new FileMaker(
+            $GLOBALS['DB_FILE'],
+            $GLOBALS['DB_HOST'],
+            $GLOBALS['DB_USER'],
+            $GLOBALS['DB_PASSWD'],
+            ['errorHandling' => 'exception']
+        );
         $this->fm->newPerformScriptCommand('sample', 'create sample data', 50)->execute();
 
 
