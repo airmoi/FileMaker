@@ -32,6 +32,7 @@ use airmoi\FileMaker\Object\Layout;
  * @property bool       $prevalidate        Default to false
  * @property array      $curlOptions        Default to [CURLOPT_SSL_VERIFYPEER => false]
  * @property string     $dateFormat
+ * @property bool       $useDateFormatInRequests    Whether to convert date input in query strings
  * @property bool       $useCookieSession   Default to false
  * @property bool       $emptyAsNull        Return null instead of empty strings, default to false
  * @property string     $errorHandling      exception|default, default to 'exception'
@@ -58,6 +59,7 @@ class FileMaker
         'prevalidate' => false,
         'curlOptions' => [CURLOPT_SSL_VERIFYPEER => false],
         'dateFormat' => null,
+        'useDateFormatInRequests' => false,
         'useCookieSession' => false,
         'emptyAsNull' => false, //Returns null value instead of empty strings on empty field value
         'errorHandling' => 'exception', //Default to use old school FileMaker Errors trapping
