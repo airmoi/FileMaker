@@ -5,6 +5,8 @@
  */
 namespace airmoi\FileMaker\Command;
 
+use airmoi\FileMaker\FileMaker;
+
 /**
  * Find Request class. Contains all the information about a single find request
  * for a Compound Find command.
@@ -14,18 +16,19 @@ namespace airmoi\FileMaker\Command;
  */
 class FindRequest
 {
+    use CommandTrait;
+    use RequestTrait;
 
-    public $findCriteria = [];
-    public $omit;
+    public $omit = false;
 
     /**
      * Find request constructor.
      *
-     * @ignore
+     * @param string $layout
      */
-    public function __construct()
+    public function __construct($layout)
     {
-        $this->omit = false;
+        $this->layout = $layout;
     }
 
     /**
@@ -55,25 +58,5 @@ class FindRequest
     {
         $this->findCriteria[$fieldname] = $testvalue;
         return $this;
-    }
-
-    /**
-     * Clears all existing criteria from this find request.
-     *
-     * @return self
-     */
-    public function clearFindCriteria()
-    {
-        $this->findCriteria = [];
-        return $this;
-    }
-
-    /**
-     *
-     * @return bool true if the request as no criterion set
-     */
-    public function isEmpty()
-    {
-        return empty($this->findCriteria);
     }
 }

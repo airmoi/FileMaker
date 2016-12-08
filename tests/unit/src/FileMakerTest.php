@@ -308,7 +308,7 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers airmoi\FileMaker\FileMaker::newFindAnyCommand
+     * @covers FileMaker::newFindAnyCommand
      */
     public function testNewFindAnyCommand()
     {

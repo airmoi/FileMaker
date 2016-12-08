@@ -20,20 +20,7 @@ use airmoi\FileMaker\Object\Result;
  */
 class Command
 {
-    /**
-     * Implementation. This is the object that actually implements the
-     * command base.
-     *
-     * @var FileMaker
-     * @access public
-     */
-    public $fm;
-
-    /**
-     *
-     * @var \airmoi\FileMaker\Object\Layout
-     */
-    protected $layout;
+    use CommandTrait;
 
     protected $fields = [];
     protected $resultLayout;
@@ -155,7 +142,7 @@ class Command
      * @param string $fieldName Name of field to pre-validate. If empty,
      *                          pre-validates the entire command.
      *
-     * @return bool TRUE, if pre-validation passes.
+     * @return bool|FileMakerValidationException TRUE, if pre-validation passes.
      * @throws FileMakerException
      * @throws FileMakerValidationException
      */

@@ -8,6 +8,7 @@ namespace airmoi\FileMaker\Command;
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\FileMakerValidationException;
+use airmoi\FileMaker\Helpers\DateFormat;
 
 /**
  * Command class that edits a single record.
@@ -51,7 +52,8 @@ class Edit extends Command
     /**
      *
      * @return \airmoi\FileMaker\Object\Result|FileMakerException|FileMakerValidationException
-     * @throws FileMakerException|FileMakerValidationException
+     * @throws FileMakerException
+     * @throws FileMakerValidationException
      */
     public function execute()
     {
@@ -124,18 +126,19 @@ class Edit extends Command
 
         $format = FileMaker::isError($fieldInfos) ? null : $fieldInfos->result;
 
-        if (!empty($value) && $this->fm->getProperty('dateFormat') !== null
-            && ($format === 'date' || $format === 'timestamp')
-        ) {
-            if ($format === 'date') {
-                $dateTime = \DateTime::createFromFormat(
-                    $this->fm->getProperty('dateFormat') . ' H:i:s',
-                    $value . ' 00:00:00'
+        if ($format === 'date' || $format === 'timestamp') {
+            $dateFormat = $this->fm->getProperty('dateFormat');
+            try {
+                if ($format === 'date') {
+                    $value = DateFormat::convert($value, $dateFormat, 'm/d/Y');
+                } else {
+                    $value = DateFormat::convert($value, $dateFormat . ' H:i:s', 'm/d/Y H:i:s');
+                }
+            } catch (\Exception $e) {
+                return $this->fm->returnOrThrowException(
+                    $value . ' could not be converted to a valid timestamp for field '
+                    . $field . ' (expected format '. $dateFormat .')'
                 );
-                $value = $dateTime->format('m/d/Y');
-            } else {
-                $dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value);
-                $value = $dateTime->format('m/d/Y H:i:s');
             }
         }
 
@@ -164,11 +167,11 @@ class Edit extends Command
      */
     public function setFieldFromTimestamp($field, $timestamp, $repetition = 0)
     {
-        $layout = & $this->fm->getLayout($this->layout);
+        $layout = $this->fm->getLayout($this->layout);
         if (FileMaker::isError($layout)) {
             return $layout;
         }
-        $field = & $layout->getField($field);
+        $field = $layout->getField($field);
         if (FileMaker::isError($field)) {
             return $field;
         }
