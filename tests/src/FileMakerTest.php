@@ -206,6 +206,41 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * @covers \airmoi\FileMaker\FileMaker::newEditCommand
+     * @depends testNewAddCommand
+     */
+    public function testNewRelatedRecordCommand($datas)
+    {
+        $command = $this->fm->newEditCommand('sample', $datas['recid'], ['text_field' => 'Test 2']);
+        $result = $command->execute();
+
+        $record = $result->getFirstRecord();
+        $count = sizeof($record->getRelatedSet('related_sample'));
+        $related = $record->newRelatedRecord('related_sample');
+
+        $related->setField('text_field', "This is a new related record");
+
+        $related->commit();
+
+        $relatedSet = $record->getRelatedSet('related_sample');
+        $this->assertEquals($count+1, sizeof($relatedSet));
+
+        $relatedRecord = array_pop($relatedSet);
+
+        $relatedRecord->setField('text_field', "This is an updated related record");
+        $relatedRecord->commit();
+
+        $relatedSet = $record->getRelatedSet('related_sample');
+        $updatedRecord = array_pop($relatedSet);
+        $this->assertEquals("This is an updated related record", $updatedRecord->getField('text_field'));
+
+        $deleted = $updatedRecord->delete();
+        $record = $deleted->getFirstRecord();
+        $relatedSet = $record->getRelatedSet('related_sample');
+        $this->assertEquals($count, sizeof($relatedSet));
+    }
+
+    /**
      * @covers \airmoi\FileMaker\FileMaker::newDuplicateCommand
      * @depends testNewAddCommand
      */

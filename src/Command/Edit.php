@@ -125,7 +125,12 @@ class Edit extends Command
      */
     public function setField($field, $value, $repetition = 0)
     {
-        $fieldInfos = $this->fm->getLayout($this->_layout)->getField($field);
+        if(preg_match('/(.*)(\.\d+)$/', $field, $matches)){
+            $fieldname = $matches[1];
+        } else {
+            $fieldname = $field;
+        }
+        $fieldInfos = $this->fm->getLayout($this->_layout)->getField($fieldname);
         /*if(FileMaker::isError($fieldInfos)){
             return $fieldInfos;
         }*/
