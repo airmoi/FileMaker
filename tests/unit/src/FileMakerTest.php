@@ -235,6 +235,39 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('Test 2', $record->getField('text_field'));
         $this->assertNotEquals($datas['recid'], $record->getRecordId());
     }
+
+    /**
+     * @covers \airmoi\FileMaker\FileMaker::newEditCommand
+     * @depends testNewAddCommand
+     */
+    public function testRelatedRecordCommand($datas)
+    {
+
+        $record = $this->fm->getRecordById('sample', $datas['recid']);
+        $count = sizeof($record->getRelatedSet('related_sample'));
+        $related = $record->newRelatedRecord('related_sample');
+
+        $related->setField('text_field', "This is a new related record");
+
+        $related->commit();
+
+        $relatedSet = $record->getRelatedSet('related_sample');
+        $this->assertEquals($count+1, sizeof($relatedSet));
+
+        $relatedRecord = array_pop($relatedSet);
+
+        $relatedRecord->setField('text_field', "This is an updated related record");
+        $relatedRecord->commit();
+
+        $relatedSet = $record->getRelatedSet('related_sample');
+        $updatedRecord = array_pop($relatedSet);
+        $this->assertEquals("This is an updated related record", $updatedRecord->getField('text_field'));
+
+        $deleted = $updatedRecord->delete();
+        $record = $deleted->getFirstRecord();
+        $relatedSet = $record->getRelatedSet('related_sample');
+        $this->assertEquals($count, sizeof($relatedSet));
+    }
     /**
      * @covers \airmoi\FileMaker\FileMaker::newDeleteCommand
      * @depends testNewAddCommand

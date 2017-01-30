@@ -124,7 +124,7 @@ class Edit extends Command
         } else {
             $fieldname = $field;
         }
-        $fieldInfos = $this->fm->getLayout($this->_layout)->getField($fieldname);
+        $fieldInfos = $this->fm->getLayout($this->layout)->getField($fieldname);
         /*if(FileMaker::isError($fieldInfos)){
             return $fieldInfos;
         }*/
