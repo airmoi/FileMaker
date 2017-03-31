@@ -787,31 +787,27 @@ class FileMaker
                 $error = new FileMakerException(
                     $this,
                     'cURL Communication Error: (' . $curlError . ') ' . curl_error($curl)
-                    . ' - The Web Publishing Core and/or FileMaker Server services are not running.',
-                    $curlError
+                    . ' - The Web Publishing Core and/or FileMaker Server services are not running.'
                 );
             } elseif ($curlError === 22) {
                 if (stristr("50", curl_error($curl))) {
                     $error = new FileMakerException(
                         $this,
                         'cURL Communication Error: (' . $curlError . ') ' . curl_error($curl)
-                        . ' - The Web Publishing Core and/or FileMaker Server services are not running.',
-                        $curlError
+                        . ' - The Web Publishing Core and/or FileMaker Server services are not running.'
                     );
                 } else {
                     $error = new FileMakerException(
                         $this,
                         'cURL Communication Error: (' . $curlError . ') ' . curl_error($curl)
                         . ' - This can be due to an invalid username or password, or if the FMPHP privilege is not '
-                        . 'enabled for that user.',
-                        $curlError
+                        . 'enabled for that user.'
                     );
                 }
             } else {
                 $error = new FileMakerException(
                     $this,
-                    'cURL Communication Error: (' . $curlError . ') ' . curl_error($curl),
-                    $curlError
+                    'cURL Communication Error: (' . $curlError . ') ' . curl_error($curl)
                 );
             }
             if ($this->getProperty('errorHandling') === 'default') {
