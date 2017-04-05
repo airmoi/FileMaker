@@ -96,7 +96,7 @@ class CompoundFind extends Command
             $critCount = count($findCriterias);
 
             //Handle first request omit flag
-            if ($request->omit && $precedence == 1) {
+            if ($request->omit) {
                 $query .= '!';
             }
 
@@ -117,12 +117,7 @@ class CompoundFind extends Command
             $query .= ')';
             $requestCount++;
             if ($requestCount <= $totalRequestCount) {
-                $nextRequest = $this->requests[$precedence + 1];
-                if ($nextRequest->omit === true) {
-                    $query .= ';!';
-                } else {
-                    $query .= ';';
-                }
+                $query .= ';';
             }
         }
         $params['-query'] = $query;
