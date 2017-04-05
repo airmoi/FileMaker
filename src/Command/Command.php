@@ -236,6 +236,16 @@ class Command
     }
 
     /**
+     * Return defined globals
+     *
+     * @return array
+     */
+    public function getGlobals()
+    {
+        return $this->globals;
+    }
+
+    /**
      *
      * @param string $xml
      * @return Result|FileMakerException
