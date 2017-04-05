@@ -1021,7 +1021,7 @@ class FileMaker
      * @param string $message
      * @param int $code
      * @param null $previous
-     * @return null|\Exception $previous
+     * @return null|FileMakerException $previous
      * @throws FileMakerException
      */
     public function returnOrThrowException($message = null, $code = null, $previous = null)
