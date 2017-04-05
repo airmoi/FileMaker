@@ -16,16 +16,20 @@ use airmoi\FileMaker\Object\Layout;
  */
 class FMPXMLLAYOUT
 {
+    /**
+     * @var FileMaker
+     */
+    private $fm;
 
-    private $_fields = [];
-    private $_valueLists;
-    private $_valueListTwoFields;
-    private $_fm;
-    private $_xmlParser;
-    private $_isParsed = false;
-    private $_fieldName;
-    private $_valueList;
-    private $_displayValue;
+    private $fields = [];
+    private $valueLists;
+    private $valueListTwoFields;
+    private $xmlParser;
+    private $isParsed = false;
+    private $fieldName;
+    private $valueList;
+    private $displayValue;
+    private $insideData;
 
     /**
      *
@@ -33,7 +37,7 @@ class FMPXMLLAYOUT
      */
     public function __construct(FileMaker $fm)
     {
-        $this->_fm = $fm;
+        $this->fm = $fm;
     }
 
     /**
@@ -45,41 +49,28 @@ class FMPXMLLAYOUT
     public function parse($xmlResponse)
     {
         if (empty($xmlResponse)) {
-            $error = new FileMakerException($this->_fm, 'Did not receive an XML document from the server.');
-            if ($this->_fm->getProperty('errorHandling') === 'default') {
-                return $error;
-            }
-            throw $error;
+            return $this->fm->returnOrThrowException('Did not receive an XML document from the server.');
         }
-        $this->_xmlParser = xml_parser_create();
-        xml_set_object($this->_xmlParser, $this);
-        xml_parser_set_option($this->_xmlParser, XML_OPTION_CASE_FOLDING, false);
-        xml_parser_set_option($this->_xmlParser, XML_OPTION_TARGET_ENCODING, 'UTF-8');
-        xml_set_element_handler($this->_xmlParser, '_start', '_end');
-        xml_set_character_data_handler($this->_xmlParser, '_cdata');
-        if (!@xml_parse($this->_xmlParser, $xmlResponse)) {
-             $error = new FileMakerException(
-                 $this->_fm,
-                 sprintf(
-                     'XML error: %s at line %d',
-                     xml_error_string(xml_get_error_code($this->_xmlParser)),
-                     xml_get_current_line_number($this->_xmlParser)
-                 )
-             );
-            if ($this->_fm->getProperty('errorHandling') === 'default') {
-                return $error;
-            }
-            throw $error;
+        $this->xmlParser = xml_parser_create();
+        xml_set_object($this->xmlParser, $this);
+        xml_parser_set_option($this->xmlParser, XML_OPTION_CASE_FOLDING, false);
+        xml_parser_set_option($this->xmlParser, XML_OPTION_TARGET_ENCODING, 'UTF-8');
+        xml_set_element_handler($this->xmlParser, 'start', 'end');
+        xml_set_character_data_handler($this->xmlParser, 'cdata');
+        if (!@xml_parse($this->xmlParser, $xmlResponse)) {
+            return $this->fm->returnOrThrowException(
+                sprintf(
+                    'XML error: %s at line %d',
+                    xml_error_string(xml_get_error_code($this->xmlParser)),
+                    xml_get_current_line_number($this->xmlParser)
+                )
+            );
         }
-        xml_parser_free($this->_xmlParser);
+        xml_parser_free($this->xmlParser);
         if (!empty($this->errorCode)) {
-            $error = new FileMakerException($this->_fm, null, $this->errorCode);
-            if ($this->_fm->getProperty('errorHandling') === 'default') {
-                return $error;
-            }
-            throw $error;
+            return $this->fm->returnOrThrowException(null, $this->errorCode);
         }
-        $this->_isParsed = true;
+        $this->isParsed = true;
         return true;
     }
 
@@ -92,16 +83,12 @@ class FMPXMLLAYOUT
      */
     public function setExtendedInfo(Layout $layout)
     {
-        if (!$this->_isParsed) {
-            $error = new FileMakerException($this->_fm, 'Attempt to set extended information before parsing data.');
-            if ($this->_fm->getProperty('errorHandling') === 'default') {
-                return $error;
-            }
-            throw $error;
+        if (!$this->isParsed) {
+            return $this->fm->returnOrThrowException('Attempt to set extended information before parsing data.');
         }
-        $layout->valueLists = $this->_valueLists;
-        $layout->valueListTwoFields = $this->_valueListTwoFields;
-        foreach ($this->_fields as $fieldName => $fieldInfos) {
+        $layout->valueLists = $this->valueLists;
+        $layout->valueListTwoFields = $this->valueListTwoFields;
+        foreach ($this->fields as $fieldName => $fieldInfos) {
             try {
                 $field = $layout->getField($fieldName);
                 if (!FileMaker::isError($field)) {
@@ -112,6 +99,7 @@ class FMPXMLLAYOUT
                 //Field may be missing when it is stored in a portal, ommit error
             }
         }
+        return true;
     }
 
     /**
@@ -121,28 +109,28 @@ class FMPXMLLAYOUT
      * @param string $type
      * @param array $datas
      */
-    private function _start($parser, $type, $datas)
+    private function start($parser, $type, $datas)
     {
-        $datas = $this->_fm->toOutputCharset($datas);
+        $datas = $this->fm->toOutputCharset($datas);
         switch ($type) {
             case 'FIELD':
-                $this->_fieldName = $datas['NAME'];
+                $this->fieldName = $datas['NAME'];
                 break;
             case 'STYLE':
-                $this->_fields[$this->_fieldName]['styleType'] = $datas['TYPE'];
-                $this->_fields[$this->_fieldName]['valueList'] = $datas['VALUELIST'];
+                $this->fields[$this->fieldName]['styleType'] = $datas['TYPE'];
+                $this->fields[$this->fieldName]['valueList'] = $datas['VALUELIST'];
                 break;
             case 'VALUELIST':
-                $this->_valueLists[$datas['NAME']] = array();
-                $this->_valueListTwoFields[$datas['NAME']] = array();
-                $this->_valueList = $datas['NAME'];
+                $this->valueLists[$datas['NAME']] = [];
+                $this->valueListTwoFields[$datas['NAME']] = [];
+                $this->valueList = $datas['NAME'];
                 break;
             case 'VALUE':
-                $this->_displayValue = $datas['DISPLAY'];
-                $this->_valueLists[$this->_valueList][] = '';
+                $this->displayValue = $datas['DISPLAY'];
+                $this->valueLists[$this->valueList][] = '';
                 break;
         }
-        $this->inside_data = false;
+        $this->insideData = false;
     }
 
     /**
@@ -151,18 +139,18 @@ class FMPXMLLAYOUT
      * @param resource $parser
      * @param string $type
      */
-    private function _end($parser, $type)
+    private function end($parser, $type)
     {
         switch ($type) {
             case 'FIELD':
-                $this->_fieldName = null;
+                $this->fieldName = null;
                 break;
             case 'VALUELIST':
-                $this->_valueList = null;
+                $this->valueList = null;
                 break;
         }
 
-        $this->inside_data = false;
+        $this->insideData = false;
     }
 
     /**
@@ -171,17 +159,18 @@ class FMPXMLLAYOUT
      * @param resource $parser
      * @param string $datas
      */
-    public function _cdata($parser, $datas)
+    public function cdata($parser, $datas)
     {
-        if ($this->_valueList !== null && preg_match('|\S|', $datas)) {
-            if ($this->inside_data) {
-                $value = $this->_valueListTwoFields[$this->_valueList][$this->_displayValue];
+        if ($this->valueList !== null && preg_match('|\S|', $datas)) {
+            if ($this->insideData) {
+                $value = $this->valueListTwoFields[$this->valueList][$this->displayValue];
                 $datas = $value . $datas;
             }
-            $arrayVal = array($this->_displayValue => $this->_fm->toOutputCharset($datas));
-            $this->associative_array_push($this->_valueListTwoFields[$this->_valueList], $arrayVal);
-            $this->_valueLists[$this->_valueList][count($this->_valueLists[$this->_valueList]) - 1] .= $this->_fm->toOutputCharset($datas);
-            $this->inside_data = true;
+            $arrayVal = [$this->displayValue => $this->fm->toOutputCharset($datas)];
+            $this->associativeArrayPush($this->valueListTwoFields[$this->valueList], $arrayVal);
+            $valueListNum = count($this->valueLists[$this->valueList]) - 1;
+            $this->valueLists[$this->valueList][$valueListNum] .= $this->fm->toOutputCharset($datas);
+            $this->insideData = true;
         }
     }
 
@@ -192,7 +181,7 @@ class FMPXMLLAYOUT
      * @param array $values
      * @return boolean
      */
-    public function associative_array_push(&$array, $values)
+    public function associativeArrayPush(&$array, $values)
     {
         if (is_array($values)) {
             foreach ($values as $key => $value) {

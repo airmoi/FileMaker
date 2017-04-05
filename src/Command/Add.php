@@ -7,6 +7,8 @@ namespace airmoi\FileMaker\Command;
 
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
+use airmoi\FileMaker\FileMakerValidationException;
+use airmoi\FileMaker\Helpers\DateFormat;
 
 /**
  * Command class that adds a new record.
@@ -26,7 +28,7 @@ class Add extends Command
      * use a numerically indexed array for the value of a field, with the numeric keys
      * corresponding to the repetition number to set.
      */
-    public function __construct(FileMaker $fm, $layout, $values = array())
+    public function __construct(FileMaker $fm, $layout, $values = [])
     {
         parent::__construct($fm, $layout);
         foreach ($values as $fieldname => $value) {
@@ -42,8 +44,9 @@ class Add extends Command
 
     /**
      *
-     * @return \airmoi\FileMaker\Object\Result|FileMakerException
+     * @return \airmoi\FileMaker\Object\Result|FileMakerException|FileMakerValidationException
      * @throws FileMakerException
+     * @throws FileMakerValidationException
      */
     public function execute()
     {
@@ -53,10 +56,10 @@ class Add extends Command
                 return $validation;
             }
         }
-        $layout = $this->fm->getLayout($this->_layout);
-        $params = $this->_getCommandParams();
+        $layout = $this->fm->getLayout($this->layout);
+        $params = $this->getCommandParams();
         $params['-new'] = true;
-        foreach ($this->_fields as $field => $values) {
+        foreach ($this->fields as $field => $values) {
             if (strpos($field, '.') !== false) {
                 list($fieldname, $fieldType) = explode('.', $field, 2);
                 $fieldType = '.' . $fieldType;
@@ -74,7 +77,7 @@ class Add extends Command
             }
         }
         $result = $this->fm->execute($params);
-        return $this->_getResult($result);
+        return $this->getResult($result);
     }
 
     /**
@@ -89,28 +92,29 @@ class Add extends Command
      */
     public function setField($field, $value, $repetition = 0)
     {
-        $fieldInfos = $this->fm->getLayout($this->_layout)->getField($field);
+        $fieldInfos = $this->fm->getLayout($this->layout)->getField($field);
         /* if(FileMaker::isError($fieldInfos)){
             return $fieldInfos;
         }*/
 
         $format = FileMaker::isError($fieldInfos) ? null : $fieldInfos->result;
-        if (!empty($value) && $this->fm->getProperty('dateFormat') !== null
-            && ($format === 'date' || $format === 'timestamp')
-        ) {
-            if ($format === 'date') {
-                $dateTime = \DateTime::createFromFormat(
-                    $this->fm->getProperty('dateFormat') . ' H:i:s',
-                    $value . ' 00:00:00'
+        if ($format === 'date' || $format === 'timestamp') {
+            $dateFormat = $this->fm->getProperty('dateFormat');
+            try {
+                if ($format === 'date') {
+                    $value = DateFormat::convert($value, $dateFormat, 'm/d/Y');
+                } else {
+                    $value = DateFormat::convert($value, $dateFormat . ' H:i:s', 'm/d/Y H:i:s');
+                }
+            } catch (\Exception $e) {
+                return $this->fm->returnOrThrowException(
+                    $value . ' could not be converted to a valid timestamp for field '
+                    . $field . ' (expected format '. $dateFormat .')'
                 );
-                $value = $dateTime->format('m/d/Y');
-            } else {
-                $dateTime = \DateTime::createFromFormat($this->fm->getProperty('dateFormat') . ' H:i:s', $value);
-                $value = $dateTime->format('m/d/Y H:i:s');
             }
         }
 
-        $this->_fields[$field][$repetition] = $value;
+        $this->fields[$field][$repetition] = $value;
         return $value;
     }
 
@@ -135,7 +139,7 @@ class Add extends Command
      */
     public function setFieldFromTimestamp($field, $timestamp, $repetition = 0)
     {
-        $layout = $this->fm->getLayout($this->_layout);
+        $layout = $this->fm->getLayout($this->layout);
         $fieldInfos = $layout->getField($field);
         switch ($fieldInfos->getResult()) {
             case 'date':
@@ -145,13 +149,9 @@ class Add extends Command
             case 'timestamp':
                 return $this->setField($field, date('m/d/Y H:i:s', $timestamp), $repetition);
         }
-        $error = new FileMakerException(
-            $this->fm,
+
+        return $this->fm->returnOrThrowException(
             'Only time, date, and timestamp fields can be set to the value of a timestamp.'
         );
-        if ($this->fm->getProperty('errorHandling') === 'default') {
-            return $error;
-        }
-        throw $error;
     }
 }

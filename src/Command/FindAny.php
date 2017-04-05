@@ -21,8 +21,8 @@ class FindAny extends Find
      */
     public function execute()
     {
-        $params             = $this->_getCommandParams();
+        $params             = $this->getCommandParams();
         $params['-findany'] = true;
-        return $this->_getResult($this->fm->execute($params));
+        return $this->getResult($this->fm->execute($params));
     }
 }

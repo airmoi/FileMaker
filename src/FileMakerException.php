@@ -16,7 +16,7 @@ class FileMakerException extends \Exception
      *
      * @var FileMaker
      */
-    private $_fm;
+    private $fm;
 
     /**
      *
@@ -34,7 +34,7 @@ class FileMakerException extends \Exception
      */
     public function __construct($fm, $message = null, $code = null, $previous = null)
     {
-        $this->_fm = $fm;
+        $this->fm = $fm;
         if ($code !== null) {
             $message = $this->getErrorString($code);
         }
@@ -56,7 +56,7 @@ class FileMakerException extends \Exception
     public function getErrorString($code)
     {
         // Default to English.
-        $lang = basename($this->_fm->getProperty('locale'));
+        $lang = basename($this->fm->getProperty('locale'));
         if (!$lang) {
             $lang = 'en';
         }

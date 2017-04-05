@@ -18,10 +18,10 @@ class FileMakerValidationException extends FileMakerException
     /**
      * Error array.
      *
-     * @var array
+     * @var (string|Field)[]
      * @access private
      */
-    public $_errors = array();
+    public $errors = [];
 
     /**
      * Adds an error.
@@ -34,12 +34,19 @@ class FileMakerValidationException extends FileMakerException
     public function addError(Field $field, $rule, $value)
     {
         $message = self::getValidationErrorString($field, $rule, $value);
-        $this->_errors[] = array($field, $rule, $value, $message);
+        $this->errors[] = [$field, $rule, $value, $message];
         $messages = empty($this->getMessage()) ? [] : explode("\n", $this->getMessage());
         $messages[] = $message;
         $this->message = implode("\n", $messages);
     }
 
+    /**
+     * Return validation error message
+     * @param Field $field
+     * @param int $rule
+     * @param string $value
+     * @return string
+     */
     private static function getValidationErrorString(Field $field, $rule, $value)
     {
         switch ($rule) {
@@ -91,7 +98,7 @@ class FileMakerValidationException extends FileMakerException
      */
     public function numErrors()
     {
-        return count($this->_errors);
+        return count($this->errors);
     }
 
     /**
@@ -119,11 +126,11 @@ class FileMakerValidationException extends FileMakerException
     public function getErrors($fieldName = null)
     {
         if ($fieldName === null) {
-            return $this->_errors;
+            return $this->errors;
         }
 
-        $errors = array();
-        foreach ($this->_errors as $error) {
+        $errors = [];
+        foreach ($this->errors as $error) {
             if ($error[0]->getName() == $fieldName) {
                 $errors[] = $error;
             }

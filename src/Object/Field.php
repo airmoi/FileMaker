@@ -23,7 +23,7 @@ class Field
     public $global = false;
     public $maxRepeat = 1;
     public $validationMask = 0;
-    public $validationRules = array();
+    public $validationRules = [];
     public $result;
     public $type;
     public $valueList = null;
@@ -227,7 +227,7 @@ class Field
      */
     public function getLocalValidationRules()
     {
-        $rules = array();
+        $rules = [];
         foreach (array_keys($this->validationRules) as $rule) {
             switch ($rule) {
                 case FileMaker::RULE_NOTEMPTY:
@@ -340,7 +340,7 @@ class Field
      */
     public function describeLocalValidationRules()
     {
-        $rules = array();
+        $rules = [];
         foreach ($this->validationRules as $rule => $description) {
             switch ($rule) {
                 case FileMaker::RULE_NOTEMPTY:
@@ -420,6 +420,9 @@ class Field
     public function getValueList($listName = null)
     {
         $extendedInfos = $this->layout->loadExtendedInfo($listName);
+        if (FileMaker::isError($extendedInfos)) {
+            return $extendedInfos;
+        }
         return $this->layout->getValueList($this->valueList);
     }
 
@@ -434,9 +437,17 @@ class Field
     public function getStyleType()
     {
         $extendedInfos = $this->layout->loadExtendedInfo();
+        if (FileMaker::isError($extendedInfos)) {
+            return $extendedInfos;
+        }
         return $this->styleType;
     }
 
+    /**
+     * Check if the given string is valid timestamp with 4 digit year
+     * @param string $value
+     * @return bool
+     */
     public function checkTimeStampFormatFourDigitYear($value)
     {
         return preg_match(
@@ -445,6 +456,13 @@ class Field
         );
     }
 
+    /**
+     * Check if the given string is a valide timestamp format
+     * @param string $value
+     * @return bool
+     *
+     * @todo test/handle custom date formats
+     */
     public function checkTimeStampFormat($value)
     {
         return preg_match(
@@ -453,34 +471,59 @@ class Field
         );
     }
 
+    /**
+     * Check if the given string is a valide date format
+     * @param string $value
+     * @return bool
+     *
+     * @todo test/handle custom date formats
+     */
     public function checkDateFormat($value)
     {
         return preg_match('#^[ ]*([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})([-,/,\\\\]([0-9]{1,4}))?[ ]*$#', $value);
     }
 
+    /**
+     * Check if the given string is a valide time format
+     * @param string $value
+     * @return bool
+     *
+     * @todo test/handle custom date formats
+     */
     public function checkTimeFormat($value)
     {
         return preg_match('#^[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#', $value);
     }
 
+    /**
+     * Check if the given string is numeric only
+     * @param $value
+     * @return bool
+     */
     public function checkNumericOnly($value)
     {
         return (!is_numeric($value));
     }
 
+    /**
+     * Check if the given string is a valid date
+     * @param string $value
+     * @param int $rule
+     * @param FileMakerValidationException $validationError
+     */
     public function checkDateValidity($value, $rule, FileMakerValidationException $validationError)
     {
         preg_match('#([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})([-,/,\\\\]([0-9]{1,4}))?#', $value, $matches);
         if ($matches[4]) {
-            $strlen = strlen($matches[4]);
             $year = $matches[4];
+            $strlen = strlen($year);
             if ($strlen != 4) {
                 $year = $year + 2000;
             }
-            if ($matches[4] < 1 || $matches[4] > 4000) {
+            if ($year < 1 || $year > 4000) {
                 $validationError->addError($this, $rule, $value);
             } else {
-                if (!checkdate($matches[1], $matches[2], $matches[4])) {
+                if (!checkdate($matches[1], $matches[2], $year)) {
                     $validationError->addError($this, $rule, $value);
                 }
             }
@@ -492,6 +535,13 @@ class Field
         }
     }
 
+    /**
+     * Check if the given string is a valid time
+     * @param string $value
+     * @param int $rule
+     * @param FileMakerValidationException $validationError
+     * @param bool $shortHoursFormat
+     */
     public function checkTimeValidity($value, $rule, FileMakerValidationException $validationError, $shortHoursFormat)
     {
         if ($shortHoursFormat) {
