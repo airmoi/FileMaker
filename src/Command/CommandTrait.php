@@ -1,9 +1,8 @@
 <?php
+
 /**
- * Created by PhpStorm.
- * User: romain
- * Date: 08/12/2016
- * Time: 18:25
+ * @copyright Copyright (c) 2016 by 1-more-thing (http://1-more-thing.com) All rights reserved.
+ * @license BSD
  */
 
 namespace airmoi\FileMaker\Command;
