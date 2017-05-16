@@ -94,6 +94,11 @@ class CompoundFind extends Command
         foreach ($this->requests as $precedence => $request) {
             $findCriterias = $request->findCriteria;
             $critCount = count($findCriterias);
+			
+			//If the first find request is marked as omit
+			if($this->_requests[$precedence]->omit === true && $precedence == '1'){
+				$query .= "!";
+			}
 
             //Handle first request omit flag
             if ($request->omit) {
