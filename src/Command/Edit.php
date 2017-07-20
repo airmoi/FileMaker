@@ -20,6 +20,7 @@ class Edit extends Command
 {
     protected $modificationId = null;
     protected $deleteRelated;
+    protected $useRawData = false;
 
     /**
      * Edit command constructor.
@@ -32,12 +33,14 @@ class Edit extends Command
      *        To set field repetitions, use a numerically indexed array for
      *        the value of a field, with the numeric keys corresponding to the
      *        repetition number to set.
+     * @param bool $useRawData Prevent data conversion on setField
      */
-    public function __construct(FileMaker $fm, $layout, $recordId, $updatedValues = [])
+    public function __construct(FileMaker $fm, $layout, $recordId, $updatedValues = [], $useRawData = false)
     {
         parent::__construct($fm, $layout);
         $this->recordId = $recordId;
         $this->deleteRelated = null;
+        $this->useRawData = $useRawData;
         foreach ($updatedValues as $fieldname => $value) {
             if (!is_array($value)) {
                 $this->setField($fieldname, $value, 0);
@@ -131,7 +134,7 @@ class Edit extends Command
 
         $format = FileMaker::isError($fieldInfos) ? null : $fieldInfos->result;
 
-        if ($format === 'date' || $format === 'timestamp') {
+        if (!$this->useRawData && ($format === 'date' || $format === 'timestamp')) {
             $dateFormat = $this->fm->getProperty('dateFormat');
             try {
                 if ($format === 'date') {

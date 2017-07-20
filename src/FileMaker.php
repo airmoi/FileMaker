@@ -296,9 +296,9 @@ class FileMaker
      *
      * @return Command\Edit New Edit command object.
      */
-    public function newEditCommand($layout, $recordId, $updatedValues = [])
+    public function newEditCommand($layout, $recordId, $updatedValues = [], $useRawData = false)
     {
-        return new Command\Edit($this, $layout, $recordId, $updatedValues);
+        return new Command\Edit($this, $layout, $recordId, $updatedValues, $useRawData);
     }
 
     /**
