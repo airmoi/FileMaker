@@ -377,7 +377,7 @@ class Record
      *
      * @param string $relatedSet Name of the portal to return records from.
      *
-     * @return Record[] Array of Record objects from $relatedSet.
+     * @return Record[]|FileMakerException Array of Record objects from $relatedSet.
      * @throws FileMakerException
      */
     public function getRelatedSet($relatedSet)
@@ -422,8 +422,6 @@ class Record
      * Set the parent record, if this record is a child record in a portal.
      *
      * @param Record $record
-     *
-     * @return Record Parent record.
      */
     public function setParent($record)
     {
@@ -603,7 +601,7 @@ class Record
                 }
             }
         }
-        $command = $this->fm->newEditCommand($this->layout->getName(), $this->recordId, $editedFields);
+        $command = $this->fm->newEditCommand($this->layout->getName(), $this->recordId, $editedFields, true);
         $result = $command->execute();
         if (FileMaker::isError($result)) {
             return $result;
@@ -623,7 +621,7 @@ class Record
         foreach ($this->fields as $fieldName => $repetitions) {
             $childs[$fieldName . '.0'] = $repetitions;
         }
-        $command = $this->fm->newEditCommand($this->parent->layout->getName(), $this->parent->getRecordId(), $childs);
+        $command = $this->fm->newEditCommand($this->parent->layout->getName(), $this->parent->getRecordId(), $childs, true);
         $result = $command->execute();
         if (FileMaker::isError($result)) {
             return $result;
@@ -660,7 +658,8 @@ class Record
         $editCommand = $this->fm->newEditCommand(
             $this->parent->layout->getName(),
             $this->parent->getRecordId(),
-            $modifiedFields
+            $modifiedFields,
+            true
         );
         $result = $editCommand->execute();
         if (FileMaker::isError($result)) {

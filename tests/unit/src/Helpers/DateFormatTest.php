@@ -87,6 +87,10 @@ class DateFormatTest extends \PHPUnit_Framework_TestCase
             DateFormat::convertSearchCriteria("2016-02-12...2016-06-12", "Y-m-d", 'm/d/Y')
         );
         $this->assertEquals(
+            '06/*/2016...12/*/2016',
+            DateFormat::convertSearchCriteria("2016-06-*...2016-12-*", "Y-m-d", 'm/d/Y')
+        );
+        $this->assertEquals(
             '>02/12/2016',
             DateFormat::convertSearchCriteria(">2016-02-12", "Y-m-d", 'm/d/Y')
         );

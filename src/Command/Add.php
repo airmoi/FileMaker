@@ -18,6 +18,7 @@ use airmoi\FileMaker\Helpers\DateFormat;
  */
 class Add extends Command
 {
+    protected $useRawData = false;
     /**
      * Add command constructor.
      *
@@ -27,10 +28,12 @@ class Add extends Command
      * @param array $values Associative array of field name => value pairs. To set field repetitions,
      * use a numerically indexed array for the value of a field, with the numeric keys
      * corresponding to the repetition number to set.
+     * @param bool $useRawData Prevent data conversion on setField
      */
-    public function __construct(FileMaker $fm, $layout, $values = [])
+    public function __construct(FileMaker $fm, $layout, $values = [], $useRawData = false)
     {
         parent::__construct($fm, $layout);
+        $this->useRawData = $useRawData;
         foreach ($values as $fieldname => $value) {
             if (!is_array($value)) {
                 $this->setField($fieldname, $value, 0);
@@ -98,7 +101,7 @@ class Add extends Command
         }*/
 
         $format = FileMaker::isError($fieldInfos) ? null : $fieldInfos->result;
-        if ($format === 'date' || $format === 'timestamp') {
+        if (!$this->useRawData && ($format === 'date' || $format === 'timestamp')) {
             $dateFormat = $this->fm->getProperty('dateFormat');
             try {
                 if ($format === 'date') {

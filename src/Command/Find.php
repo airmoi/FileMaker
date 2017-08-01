@@ -6,8 +6,6 @@
 namespace airmoi\FileMaker\Command;
 
 use airmoi\FileMaker\FileMaker;
-use airmoi\FileMaker\FileMakerException;
-use airmoi\FileMaker\Helpers\DateFormat;
 
 /**
  * Command class that finds records using the specified criteria.

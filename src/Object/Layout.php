@@ -123,7 +123,7 @@ class Layout
      * @param string|FileMakerException $relatedSet Name of the related table for a portal.
      * @throws FileMakerException
      *
-     * @return RelatedSet a RelatedSet object
+     * @return RelatedSet|FileMakerException a RelatedSet object
      */
     public function getRelatedSet($relatedSet)
     {
@@ -255,7 +255,7 @@ class Layout
      *        displayed.
      * @throws FileMakerException
      *
-     * @return array Array of value-list associative arrays.
+     * @return array|FileMakerException Array of value-list associative arrays.
      */
     public function getValueListsTwoFields($recid = null)
     {
@@ -273,7 +273,7 @@ class Layout
      *
      * @param string  $recid Record from which to load extended information.
      *
-     * @return boolean TRUE, if successful.
+     * @return boolean|FileMakerException TRUE, if successful.
      * @throws FileMakerException;
      */
     public function loadExtendedInfo($recid = null)

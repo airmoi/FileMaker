@@ -17,6 +17,7 @@ use airmoi\FileMaker\Object\Result;
  */
 class Duplicate extends Command
 {
+    public $recordId;
     /**
      * Duplicate command constructor.
      *
