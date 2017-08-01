@@ -18,6 +18,8 @@ use airmoi\FileMaker\Helpers\DateFormat;
  */
 class Edit extends Command
 {
+    public $recordId;
+
     protected $modificationId = null;
     protected $deleteRelated;
     protected $useRawData = false;

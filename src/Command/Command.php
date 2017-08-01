@@ -34,6 +34,11 @@ class Command
     protected $globals = [];
 
     public $recordId;
+    /**
+     * @var FileMaker
+     */
+    public $fm;
+    public $layout;
 
     /**
      * Command constructor.

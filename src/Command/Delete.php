@@ -17,6 +17,7 @@ use airmoi\FileMaker\FileMakerException;
 class Delete extends Command
 {
 
+    public $recordId;
     /**
      * Delete command constructor.
      *
