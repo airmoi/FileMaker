@@ -278,9 +278,9 @@ class FileMaker
      *
      * @return Command\Add New Add command object.
      */
-    public function newAddCommand($layout, $values = [])
+    public function newAddCommand($layout, $values = [], $useRawData = false)
     {
-        return new Command\Add($this, $layout, $values);
+        return new Command\Add($this, $layout, $values, $useRawData);
     }
 
     /**
