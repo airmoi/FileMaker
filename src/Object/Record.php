@@ -377,7 +377,7 @@ class Record
      *
      * @param string $relatedSet Name of the portal to return records from.
      *
-     * @return Record[] Array of Record objects from $relatedSet.
+     * @return Record[]|FileMakerException Array of Record objects from $relatedSet.
      * @throws FileMakerException
      */
     public function getRelatedSet($relatedSet)
@@ -422,8 +422,6 @@ class Record
      * Set the parent record, if this record is a child record in a portal.
      *
      * @param Record $record
-     *
-     * @return Record Parent record.
      */
     public function setParent($record)
     {
