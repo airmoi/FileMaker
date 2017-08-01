@@ -19,11 +19,6 @@ class FindRequest
     use CommandTrait;
     use RequestTrait;
 
-    /**
-     * @var FileMaker
-     */
-    public $fm;
-    public $layout;
     public $omit = false;
 
     /**
