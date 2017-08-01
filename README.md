@@ -7,12 +7,13 @@ This version of the PHP-API add the following feature to the offical API :
 * Error handling using Exception (you can restore the original behavior using option 'errorHandeling' => 'default')
 * PSR-4 autoloading and installation using composer
 * PHP 7.0+ compatibility
-* 'dateFormat' option to select the input/output date format (not compatible with find requets yet)
+* 'dateFormat' option to select the input/output date format
 * 'emptyAsNull' option to return empty value as null
 * Support setRange() method with PerformScript command (as supported by CWP)
 * A method to get the url of your last CWP call: `$fm->getLastRequestedUrl()`
 * A method to check if a findRequest is empty: `$request->isEmpty()`
 * A method to get the value list associated to a field from a Record: `$record->getValueListTwoField('my_field')`
+* EXPERIMENTAL 'useDateFormatInRequests' allow you to use defined 'dateFormat' in request (support wildcards and range)
 
 ## Requirements
 
@@ -100,7 +101,6 @@ You can use the offical [PHP-API guide](https://fmhelp.filemaker.com/docs/14/fr/
 ## TODO
 * Finish PHPunit test
 * Add functionnal tests
-* Support dateFormat option in requests
 * Improve parsers
 * Add new parsers
 * Documentation
