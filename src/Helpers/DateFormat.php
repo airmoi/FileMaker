@@ -50,6 +50,12 @@ class DateFormat
         return $date->format($outputFormat);
     }
 
+    /**
+     * @param $value
+     * @param string|null $inputFormat
+     * @param string|null $outputFormat
+     * @return string
+     */
     public static function convertSearchCriteria($value, $inputFormat = null, $outputFormat = null)
     {
         if (empty($value)
@@ -76,6 +82,10 @@ class DateFormat
         return $value;
     }
 
+    /**
+     * @param string $value
+     * @return string
+     */
     public static function sanitizeDateSearchString($value)
     {
         foreach (self::$omitOperatorsPattern as $pattern => $replacement) {
@@ -84,27 +94,31 @@ class DateFormat
         return $value;
     }
 
+    /**
+     * @param $format
+     * @return string
+     */
     public static function dateFormatToRegex($format)
     {
-        $keys = array(
-            'Y' => array('year', '\d{4}|\*'),
-            'y' => array('year', '\d{2}|\*'),
-            'm' => array('month', '\d{2}|\*'),
-            'n' => array('month', '\d{1,2}|\*'),
-            //'M' => array('month', '[A-Z][a-z]{3}'),
-            //'F' => array('month', '[A-Z][a-z]{2,8}'),
-            'd' => array('day', '\d{2}|\*'),
-            'j' => array('day', '\d{1,2}|\*'),
-            //'D' => array('day', '[A-Z][a-z]{2}'),
-            //'l' => array('day', '[A-Z][a-z]{6,9}'),
-            'u' => array('hour', '\d{1,6}'),
-            'h' => array('hour', '\d{2}|\*'),
-            'H' => array('hour', '\d{2}|\*'),
-            'g' => array('hour', '\d{1,2}|\*'),
-            'G' => array('hour', '\d{1,2}|\*'),
-            'i' => array('minute', '\d{2}|\*'),
-            's' => array('second', '\d{2}|\*')
-        );
+        $keys = [
+            'Y' => ['year', '\d{4}|\*'],
+            'y' => ['year', '\d{2}|\*'],
+            'm' => ['month', '\d{2}|\*'],
+            'n' => ['month', '\d{1,2}|\*'],
+            //'M' => ['month', '[A-Z][a-z]{3}'],
+            //'F' => ['month', '[A-Z][a-z]{2,8}'],
+            'd' => ['day', '\d{2}|\*'],
+            'j' => ['day', '\d{1,2}|\*'],
+            //'D' => ['day', '[A-Z][a-z]{2}'],
+            //'l' => ['day', '[A-Z][a-z]{6,9}'],
+            'u' => ['hour', '\d{1,6}'],
+            'h' => ['hour', '\d{2}|\*'],
+            'H' => ['hour', '\d{2}|\*'],
+            'g' => ['hour', '\d{1,2}|\*'],
+            'G' => ['hour', '\d{1,2}|\*'],
+            'i' => ['minute', '\d{2}|\*'],
+            's' => ['second', '\d{2}|\*']
+        ];
 
         // convert format string to regex
         $regex = '';
@@ -123,30 +137,36 @@ class DateFormat
         return $regex;
     }
 
+    /**
+     * @param string $value
+     * @param string $inputFormat
+     * @param string $outputFormat
+     * @return string
+     */
     public static function convertWithWildCards($value, $inputFormat, $outputFormat)
     {
         $inputRegex = "#" . self::dateFormatToRegex($inputFormat) . "#";
         preg_match($inputRegex, $value, $parsedDate);
 
-        $keys = array(
-            'Y' => array('year', '%04d'),
-            'y' => array('year', '%02d'),
-            'm' => array('month', '%02d'),
-            'n' => array('month', '%02d'),
-            //'M' => array('month', '%3s'),
-            //'F' => array('month', '%8s'),
-            'd' => array('day', '%02d'),
-            'j' => array('day', '%02d'),
-            //'D' => array('day', '%2s'),
-            //'l' => array('day', '%9s'),
-            //'u' => array('hour', '%06d'),
-            'h' => array('hour', '%02d'),
-            'H' => array('hour', '%02d'),
-            'g' => array('hour', '%02d'),
-            'G' => array('hour', '%02d'),
-            'i' => array('minute', '%02d'),
-            's' => array('second', '%02d')
-        );
+        $keys = [
+            'Y' => ['year', '%04d'],
+            'y' => ['year', '%02d'],
+            'm' => ['month', '%02d'],
+            'n' => ['month', '%02d'],
+            //'M' => [('month', '%3s'],
+            //'F' => array('month', '%8s'],
+            'd' => ['day', '%02d'],
+            'j' => ['day', '%02d'],
+            //'D' => ['day', '%2s'],
+            //'l' => ['day', '%9s'],
+            //'u' => ['hour', '%06d'],
+            'h' => ['hour', '%02d'],
+            'H' => ['hour', '%02d'],
+            'g' => ['hour', '%02d'],
+            'G' => ['hour', '%02d'],
+            'i' => ['minute', '%02d'],
+            's' => ['second', '%02d']
+        ];
 
         //convert to output format
         $string = '';
