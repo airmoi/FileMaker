@@ -293,6 +293,7 @@ class FileMaker
      *        repetitions, use a numerically indexed array for the value of a
      *        field, with the numeric keys corresponding to the repetition
      *        number to set.
+     * @param bool $useRawData Prevent date/time conversion when values are already
      *
      * @return Command\Edit New Edit command object.
      */
@@ -463,7 +464,7 @@ class FileMaker
         $request->setRecordId($recordId);
         $result = $request->execute();
         if (FileMaker::isError($result)) {
-            return $request;
+            return $result;
         }
 
         $record = $result->getRecords();
