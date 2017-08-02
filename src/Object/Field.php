@@ -106,22 +106,28 @@ class Field
         $isValid = false;
         $validationError = new FileMakerValidationException($this->layout->fm);
 
+        //stops everything when invalid data is provided
+        if (!self::isValideValue($value)) {
+            $validationError->addError($this, null, $value);
+            throw $validationError;
+        }
+
         foreach ($this->getValidationRules() as $rule) {
             switch ($rule) {
                 case FileMaker::RULE_NOTEMPTY:
-                    if (empty($value)) {
+                    if (self::isEmpty($value)) {
                         $validationError->addError($this, $rule, $value);
                     }
                     break;
                 case FileMaker::RULE_NUMERICONLY:
-                    if (!empty($value)) {
+                    if (!self::isEmpty($value)) {
                         if ($this->checkNumericOnly($value)) {
                             $validationError->addError($this, $rule, $value);
                         }
                     }
                     break;
                 case FileMaker::RULE_MAXCHARACTERS:
-                    if (!empty($value)) {
+                    if (!self::isEmpty($value)) {
                         $strlen = strlen($value);
                         if ($strlen > $this->maxCharacters) {
                             $validationError->addError($this, $rule, $value);
@@ -130,7 +136,7 @@ class Field
                     break;
                 case FileMaker::RULE_TIMEOFDAY:
                 case FileMaker::RULE_TIME_FIELD:
-                    if (!empty($value)) {
+                    if (!self::isEmpty($value)) {
                         if (!$this->checkTimeFormat($value)) {
                             $validationError->addError($this, $rule, $value);
                         } else {
@@ -139,7 +145,7 @@ class Field
                     }
                     break;
                 case FileMaker::RULE_TIMESTAMP_FIELD:
-                    if (!empty($value)) {
+                    if (!self::isEmpty($value)) {
                         if (!$this->checkTimeStampFormat($value)) {
                             $validationError->addError($this, $rule, $value);
                         } else {
@@ -149,7 +155,7 @@ class Field
                     }
                     break;
                 case FileMaker::RULE_DATE_FIELD:
-                    if (!empty($value)) {
+                    if (!self::isEmpty($value)) {
                         if (!$this->checkDateFormat($value)) {
                             $validationError->addError($this, $rule, $value);
                         } else {
@@ -158,7 +164,7 @@ class Field
                     }
                     break;
                 case FileMaker::RULE_FOURDIGITYEAR:
-                    if (!empty($value)) {
+                    if (!self::isEmpty($value)) {
                         switch ($this->result) {
                             case 'timestamp':
                                 if ($this->checkTimeStampFormatFourDigitYear($value)) {
@@ -451,7 +457,7 @@ class Field
     public function checkTimeStampFormatFourDigitYear($value)
     {
         return preg_match(
-            '#^[ ]*([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})[-,/,\\\\]([0-9]{4})[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#',
+            '#^[ ]*([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})[-,/,\\\\]([0-9]{4})[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#i',
             $value
         );
     }
@@ -466,7 +472,7 @@ class Field
     public function checkTimeStampFormat($value)
     {
         return preg_match(
-            '#^[ ]*([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})([-,/,\\\\]([0-9]{1,4}))?[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#',
+            '#^[ ]*([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})([-,/,\\\\]([0-9]{1,4}))?[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#i',
             $value
         );
     }
@@ -492,7 +498,7 @@ class Field
      */
     public function checkTimeFormat($value)
     {
-        return preg_match('#^[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#', $value);
+        return preg_match('#^[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#i', $value);
     }
 
     /**
@@ -564,5 +570,32 @@ class Field
                 $validationError->addError($this, $rule, $value);
             }
         }
+    }
+
+    /**
+     * @param string $value check if value is a non empty string("", null, true, false, [])
+     *
+     * @return bool
+     */
+    private static function isEmpty($value)
+    {
+        if(is_null($value) || $value === '') {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @param string $value check if value is a valid  FileMaker data("", null, true, false, [])
+     *
+     * @return bool
+     */
+    private static function isValideValue($value)
+    {
+        if (!is_string($value) && !is_numeric($value) && !is_bool($value) && !is_null($value)) {
+            return false;
+        }
+
+        return true;
     }
 }
