@@ -193,17 +193,17 @@ class Field
                                     $value,
                                     $matches
                                 );
-                                if (count($matches) !== 3) {
+                                if (count($matches) !== 4) {
                                     $validationError->addError($this, $rule, $value);
                                 } else {
-                                    $strlen = strlen($matches[2]);
+                                    $strlen = strlen($matches[3]);
                                     if ($strlen !== 4) {
                                         $validationError->addError($this, $rule, $value);
                                     } else {
-                                        if ($matches[2] < 1 || $matches[2] > 4000) {
+                                        if ($matches[3] < 1 || $matches[3] > 4000) {
                                             $validationError->addError($this, $rule, $value);
                                         } else {
-                                            if (!checkdate($matches[0], $matches[1], $matches[2])) {
+                                            if (!checkdate($matches[1], $matches[2], $matches[3])) {
                                                 $validationError->addError($this, $rule, $value);
                                             }
                                         }
