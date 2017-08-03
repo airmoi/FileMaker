@@ -96,8 +96,8 @@ class FieldTest extends \PHPUnit_Framework_TestCase
     public function testValidateNotEmpty()
     {
         //Valid values
-        $valideValues = ["0", "1", 0, 1, "toto", "06/21/2017"];
-        foreach ($valideValues as $value) {
+        $validValues = ["0", "1", 0, 1, "toto", "06/21/2017"];
+        foreach ($validValues as $value) {
             $this->record->setField('text_field', $value);
             $this->record->validate('text_field');
         }
@@ -120,8 +120,8 @@ class FieldTest extends \PHPUnit_Framework_TestCase
      */
     public function testValidateNumericOnly()
     {
-        $valideValues = ["0", "21", 0, 1];
-        foreach ($valideValues as $value) {
+        $validValues = ["0", "21", 0, 1];
+        foreach ($validValues as $value) {
             $this->record->setField('number_field', $value);
             $this->record->validate('number_field');
         }
@@ -140,6 +140,31 @@ class FieldTest extends \PHPUnit_Framework_TestCase
             try {
                 $this->record->setField('number_field', $value);
                 $this->record->validate('number_field');
+            } catch (FileMakerValidationException $e) {
+
+            }
+            $this->assertInstanceOf(FileMakerValidationException::class, $e);
+        }
+    }
+
+    /**
+     * @covers \airmoi\FileMaker\Object\Field::validate
+     */
+    public function testValidateFourDigitDate()
+    {
+        $validValues = ["06/17/2017"];
+        foreach ($validValues as $value) {
+            $this->record->setField('dateFourDigit_field', $value);
+            $this->record->validate('dateFourDigit_field');
+        }
+
+
+        $invalidValues = ["06/17/17"];
+        foreach ($invalidValues as $value) {
+            $e = null;
+            try {
+                $this->record->setField('dateFourDigit_field', $value);
+                $this->record->validate('dateFourDigit_field');
             } catch (FileMakerValidationException $e) {
 
             }
@@ -275,7 +300,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
     {
         $field = $this->record->layout->getField('timestamp_field');
         //Valid values
-        $valideValues = [
+        $validValues = [
             "06/12/2004 00:00:00",
             "06-12/2004 00:00:00",
             "06-12\\2004 00:00:00",
@@ -284,7 +309,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
             "06/12/2004 4:00 aM",
             "06/12/2004 4:00:00 Pm",
         ];
-        foreach ($valideValues as $value) {
+        foreach ($validValues as $value) {
             $this->assertEquals(1, $field->checkTimeStampFormatFourDigitYear($value), 'value : ' . $value);
         }
 
@@ -309,7 +334,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
     {
         $field = $this->record->layout->getField('timestamp_field');
         //Valid values
-        $valideValues = [
+        $validValues = [
             "06/12/04 00:00:00",
             "06-12-04 00:00:00",
             "06\\12\\04 00:00:00",
@@ -318,7 +343,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
             "06/12/4 4:00 aM",
             "06/12/2004 4:00:00 Pm",
         ];
-        foreach ($valideValues as $value) {
+        foreach ($validValues as $value) {
             $this->assertEquals(1, $field->checkTimeStampFormat($value), 'value : ' . $value);
         }
 
@@ -343,14 +368,14 @@ class FieldTest extends \PHPUnit_Framework_TestCase
     {
         $field = $this->record->layout->getField('timestamp_field');
         //Valid values
-        $valideValues = [
+        $validValues = [
             "06/12/04",
             "06-12-04",
             "06\\12\\04",
             "06/12/004",
             "06/12/2004",
         ];
-        foreach ($valideValues as $value) {
+        foreach ($validValues as $value) {
             $this->assertEquals(1, $field->checkDateFormat($value), 'value : ' . $value);
         }
 
@@ -375,7 +400,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
     {
         $field = $this->record->layout->getField('time_field');
         //Valid values
-        $valideValues = [
+        $validValues = [
             "04:30",
             "04:01:53",
             "04:01:53 PM",
@@ -385,7 +410,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
             "02:30 AM",
             "02:30 aM",
         ];
-        foreach ($valideValues as $value) {
+        foreach ($validValues as $value) {
             $this->assertEquals(1, $field->checkTimeFormat($value), 'value : ' . $value);
         }
 
@@ -409,7 +434,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
     {
         $field = $this->record->layout->getField('number_field');
         //Valid values
-        $valideValues = [
+        $validValues = [
             1,
             205,
             2E+003,
@@ -420,7 +445,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
             "0",
             10^4,
         ];
-        foreach ($valideValues as $value) {
+        foreach ($validValues as $value) {
             $this->assertFalse( $field->checkNumericOnly($value), 'value : ' . $value);
         }
 
@@ -443,7 +468,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
     {
         $field = $this->record->layout->getField('timestamp_field');
         //Valid values
-        $valideValues = [
+        $validValues = [
             "06/12/00",
             "06/12/04",
             "06-12-04",
@@ -451,7 +476,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
             "01/27/004",
             "12/30/2017",
         ];
-        foreach ($valideValues as $value) {
+        foreach ($validValues as $value) {
             $exception = new FileMakerValidationException($this->fm);
             $field->checkDateValidity($value, FileMaker::RULE_DATE_FIELD, $exception);
             $this->assertEquals(0, $exception->numErrors(), 'value : ' . $value);
@@ -477,7 +502,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
     {
         $field = $this->record->layout->getField('time_field');
         //Valid values
-        $valideValues = [
+        $validValues = [
             "04:30" => false,
             "04:01:53" => false,
             "04:01:53 PM" => true,
@@ -487,7 +512,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
             "02:30 AM" => true,
             "02:30 aM" => true,
         ];
-        foreach ($valideValues as $value => $shortFormat) {
+        foreach ($validValues as $value => $shortFormat) {
             $exception = new FileMakerValidationException($this->fm);
             $field->checkTimeValidity($value, FileMaker::RULE_DATE_FIELD, $exception, $shortFormat);
             $this->assertEquals(0, $exception->numErrors(), 'value : ' . $value);
