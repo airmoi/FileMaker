@@ -152,10 +152,54 @@ class FieldTest extends \PHPUnit_Framework_TestCase
      */
     public function testValidateFourDigitDate()
     {
-        $validValues = ["06/17/2017"];
+        //Test with date Field
+        //DateFormat auto convert 2 to 4 digits
+        $validValues = ["06/17/2017", "06/17/17"];
         foreach ($validValues as $value) {
             $this->record->setField('dateFourDigit_field', $value);
             $this->record->validate('dateFourDigit_field');
+        }
+
+
+        /*$invalidValues = ["06/17/17"];
+        foreach ($invalidValues as $value) {
+            $this->fm->dateFormat = 'm/d/y';
+            $e = null;
+            try {
+                $this->record->setField('dateFourDigit_field', $value);
+                $this->record->validate('dateFourDigit_field');
+            } catch (FileMakerValidationException $e) {
+
+            }
+            $this->assertInstanceOf(FileMakerValidationException::class, $e);
+        }*/
+
+        //Test with Timestamp Field
+        //DateFormat auto convert 2 to 4 digits
+        $validValues = ["06/17/2017 00:00:00", "06/17/17 00:00:00"];
+        foreach ($validValues as $value) {
+            $this->record->setField('timestamp_field', $value);
+            $this->record->validate('timestamp_field');
+        }
+
+
+        /*$invalidValues = ["06/17/17 00:00:00"];
+        foreach ($invalidValues as $value) {
+            $e = null;
+            try {
+                $this->record->setField('timestamp_field', $value);
+                $this->record->validate('timestamp_field');
+            } catch (FileMakerValidationException $e) {
+
+            }
+            $this->assertInstanceOf(FileMakerValidationException::class, $e);
+        }*/
+
+        //Test with text Fields
+        $validValues = ["06/17/2017"];
+        foreach ($validValues as $value) {
+            $this->record->setField('textFourDigitDate_field', $value);
+            $this->record->validate('textFourDigitDate_field');
         }
 
 
@@ -163,8 +207,8 @@ class FieldTest extends \PHPUnit_Framework_TestCase
         foreach ($invalidValues as $value) {
             $e = null;
             try {
-                $this->record->setField('dateFourDigit_field', $value);
-                $this->record->validate('dateFourDigit_field');
+                $this->record->setField('textFourDigitDate_field', $value);
+                $this->record->validate('textFourDigitDate_field');
             } catch (FileMakerValidationException $e) {
 
             }
