@@ -284,9 +284,8 @@ class Record
         }
 
         $fieldFormat = $this->layout->getField($field)->result;
-
-        if ($fieldFormat == 'date' || $fieldFormat == 'timestamp') {
-            $dateFormat = $this->fm->getProperty('dateFormat') === null ? 'm/d/Y' : $this->fm->getProperty('dateFormat');
+        $dateFormat = $this->fm->getProperty('dateFormat');
+        if ( $dateFormat !== null  && ($fieldFormat == 'date' || $fieldFormat == 'timestamp')) {
             try {
                 if ($fieldFormat == 'date') {
                     $convertedValue = DateFormat::convert($value, $dateFormat, 'm/d/Y');

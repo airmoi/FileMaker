@@ -101,8 +101,8 @@ class Add extends Command
         }*/
 
         $format = FileMaker::isError($fieldInfos) ? null : $fieldInfos->result;
-        if (!$this->useRawData && ($format === 'date' || $format === 'timestamp')) {
-            $dateFormat = $this->fm->getProperty('dateFormat') == null ? 'm/d/Y' : $this->fm->getProperty('dateFormat');
+        $dateFormat = $this->fm->getProperty('dateFormat');
+        if (!$this->useRawData && $dateFormat !== null &&  ($format === 'date' || $format === 'timestamp')) {
             try {
                 if ($format === 'date') {
                     $value = DateFormat::convert($value, $dateFormat, 'm/d/Y');
