@@ -23,7 +23,7 @@ class FileMakerValidationExceptionTest extends \PHPUnit_Framework_TestCase
     protected function setUp()
     {
         $this->fm = new FileMaker($GLOBALS['DB_FILE'], $GLOBALS['DB_HOST'], $GLOBALS['DB_USER'], $GLOBALS['DB_PASSWD']);
-        $this->locales = require(dirname(__FILE__) . '/../../src/Error/en.php');
+        $this->locales = require(dirname(__FILE__) . '/../../../src/Error/en.php');
     }
 
     /**
