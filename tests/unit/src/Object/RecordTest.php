@@ -94,14 +94,13 @@ class RecordTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetFieldAsTimestamp()
     {
-        $this->markTestIncomplete(
+        /*$this->markTestIncomplete(
             'This test has not been implemented yet.'
-        );
-        /*$ts = $this->record->getFieldAsTimestamp('date_field');
-        $dt = \DateTime::createFromFormat('U',$this->record->getFieldAsTimestamp('date_field').'.');
-        $this->assertEquals( $this->record->getField('date_field') , $dt->format('m/d/Y') );
-        $this->assertInstanceOf(\DateTime::class, $this->record->getFieldAsTimestamp('time_field'));
-        $this->assertInstanceOf(\DateTime::class, $this->record->getFieldAsTimestamp('timestamp_field'));*/
+        );*/
+        $dtObject = \DateTime::createFromFormat('U', $this->record->getFieldAsTimestamp('date_field'));
+        $dtObject->setTimezone(new \DateTimeZone(date_default_timezone_get()));
+        $this->assertEquals( $this->record->getField('date_field') , $dtObject->format('m/d/Y') );
+
     }
 
     /**
@@ -258,7 +257,6 @@ class RecordTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @covers \airmoi\FileMaker\Object\Record::setParent
-     * @todo   Implement testSetParent().
      */
     public function testSetParent()
     {
@@ -269,7 +267,6 @@ class RecordTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @covers \airmoi\FileMaker\Object\Record::validate
-     * @todo   Complete testValidate() for Four-Digit validation Rule.
      */
     public function testValidate()
     {

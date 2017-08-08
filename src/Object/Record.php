@@ -135,7 +135,7 @@ class Record
             && preg_match('/\d{2}.\d{2}.\d{4}/', $value) //Test invalid fm dates
         ) {
             try {
-                $dateFormat = $this->fm->getProperty('dateFormat');
+                $dateFormat = $this->fm->getProperty('dateFormat') == null ? 'm/d/Y' : $this->fm->getProperty('dateFormat');
                 if ($format == 'date') {
                     return DateFormat::convert($value, 'm/d/Y', $dateFormat);
                 } else {
