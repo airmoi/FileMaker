@@ -21,6 +21,12 @@ class FieldTest extends \PHPUnit_Framework_TestCase
      */
     protected $record;
 
+    public static function setUpBeforeClass()
+    {
+        parent::setUpBeforeClass();
+        $fm = new FileMaker($GLOBALS['DB_FILE'], $GLOBALS['DB_HOST'], $GLOBALS['DB_USER'], $GLOBALS['DB_PASSWD']);
+        $fm->newPerformScriptCommand('sample', 'create sample data', 10)->execute();
+    }
     /**
      * Sets up the fixture, for example, opens a network connection.
      * This method is called before a test is executed.
@@ -154,7 +160,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
     {
         //Test with date Field
         //DateFormat auto convert 2 to 4 digits
-        $validValues = ["06/17/2017", "06/17/17"];
+        $validValues = ["06/17/2017", "01/01/2000"];
         foreach ($validValues as $value) {
             $this->record->setField('dateFourDigit_field', $value);
             $this->record->validate('dateFourDigit_field');
@@ -176,7 +182,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
 
         //Test with Timestamp Field
         //DateFormat auto convert 2 to 4 digits
-        $validValues = ["06/17/2017 00:00:00", "06/17/17 00:00:00"];
+        $validValues = ["06/17/2017 00:00:00", "01/01/2017 00:00:00"];
         foreach ($validValues as $value) {
             $this->record->setField('timestamp_field', $value);
             $this->record->validate('timestamp_field');

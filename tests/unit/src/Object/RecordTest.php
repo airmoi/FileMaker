@@ -120,10 +120,16 @@ class RecordTest extends \PHPUnit_Framework_TestCase
         $this->record->setField('related_sample::text_field', __METHOD__ . 'related[2]', 1);
         $this->assertEquals(__METHOD__ . 'related[2]', $this->record->getField('related_sample::text_field', 1));
 
-        $this->record->setField('date_field', date('Y-m-d'));
-        $this->assertEquals(date('Y-m-d'), $this->record->getField('date_field'));
+        $this->record->setField('date_field', date('m/d/Y'));
+        $this->assertEquals(date('m/d/Y'), $this->record->getField('date_field'));
 
-        $this->assertInstanceOf(FileMakerException::class, $this->record->setField('missing_field', __METHOD__));
+
+        try {
+            $this->record->setField('missing_field', __METHOD__);
+            $this->fail(FileMakerException::class . ' should have been thrown');
+        } catch (\Exception $e) {
+            $this->assertInstanceOf(FileMakerException::class, $e);
+        }
 
         /**
          * Date autoformat
@@ -139,12 +145,23 @@ class RecordTest extends \PHPUnit_Framework_TestCase
         $this->record->setField('date_field', '31/12/4000');
         $this->assertEquals('12/31/4000', $this->record->fields['date_field'][0]);
 
-        $this->assertInstanceOf(FileMakerException::class, $this->record->setField('date_field', '2016-08-19'));
+
+        try {
+            $this->record->setField('date_field', '2016-08-19');
+            $this->fail(FileMakerException::class . ' should have been thrown');
+        } catch (\Exception $e) {
+            $this->assertInstanceOf(FileMakerException::class, $e);
+        }
 
         $this->record->setField('timestamp_field', '08/01/1942 00:00:00');
         $this->assertEquals('01/08/1942 00:00:00', $this->record->fields['timestamp_field'][0]);
 
-        $this->assertInstanceOf(FileMakerException::class, $this->record->setField('timestamp_field', '2016-08-19'));
+        try {
+            $this->record->setField('timestamp_field', '2016-08-19');
+            $this->fail(FileMakerException::class . ' should have been thrown');
+        } catch (\Exception $e) {
+            $this->assertInstanceOf(FileMakerException::class, $e);
+        }
     }
 
     /**
@@ -270,6 +287,7 @@ class RecordTest extends \PHPUnit_Framework_TestCase
      */
     public function testValidate()
     {
+        $this->fm->errorHandling = "default";
         $this->record->setField('date_field', 'incorrect Date');
         $this->assertInstanceOf(FileMakerValidationException::class, $this->record->validate('date_field'));
 

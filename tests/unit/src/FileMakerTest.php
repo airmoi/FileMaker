@@ -16,6 +16,12 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase
      */
     protected $fm;
 
+    public static function setUpBeforeClass()
+    {
+        parent::setUpBeforeClass();
+        $fm = new FileMaker($GLOBALS['DB_FILE'], $GLOBALS['DB_HOST'], $GLOBALS['DB_USER'], $GLOBALS['DB_PASSWD']);
+        $fm->newPerformScriptCommand('sample', 'create sample data', 50)->execute();
+    }
     /**
      * Sets up the fixture, for example, opens a network connection.
      * This method is called before a test is executed.
