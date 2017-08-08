@@ -137,7 +137,7 @@ class Edit extends Command
         $format = FileMaker::isError($fieldInfos) ? null : $fieldInfos->result;
 
         if (!$this->useRawData && ($format === 'date' || $format === 'timestamp')) {
-            $dateFormat = $this->fm->getProperty('dateFormat');
+            $dateFormat = $this->fm->getProperty('dateFormat') == null ? 'm/d/Y' : $this->fm->getProperty('dateFormat');
             try {
                 if ($format === 'date') {
                     $value = DateFormat::convert($value, $dateFormat, 'm/d/Y');
@@ -181,11 +181,11 @@ class Edit extends Command
         if (FileMaker::isError($layout)) {
             return $layout;
         }
-        $field = $layout->getField($field);
-        if (FileMaker::isError($field)) {
-            return $field;
+        $fieldInfos = $layout->getField($field);
+        if (FileMaker::isError($fieldInfos)) {
+            return $fieldInfos;
         }
-        switch ($field->getResult()) {
+        switch ($fieldInfos->getResult()) {
             case 'date':
                 return $this->setField($field, date('m/d/Y', $timestamp), $repetition);
             case 'time':
