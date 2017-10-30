@@ -751,7 +751,7 @@ class FileMaker
 
         if ($this->getProperty('username')) {
             $auth = base64_encode(
-                utf8_decode($this->getProperty('username')) . ':' . utf8_decode($this->getProperty('password'))
+                $this->getProperty('username') . ':' . $this->getProperty('password')
             );
             $authHeader = 'Authorization: Basic ' . $auth;
             curl_setopt(
