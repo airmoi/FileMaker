@@ -29,7 +29,7 @@ You can use the `composer` package manager to install. Either run:
 
 or add:
 
-    "airmoi/filemaker": "~2.1.0"
+    "airmoi/filemaker": "^2.2"
 
 to your composer.json file
 
