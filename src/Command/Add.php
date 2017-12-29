@@ -69,6 +69,9 @@ class Add extends Command
             } else {
                 $fieldname = $field;
                 $fieldInfos = $layout->getField($field);
+                if (FileMaker::isError($fieldInfos)) {
+                    return $fieldInfos;
+                }
                 if ($fieldInfos->isGlobal()) {
                     $fieldType = '.global';
                 } else {
