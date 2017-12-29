@@ -89,7 +89,11 @@ class Layout
         if ($pos = strpos($fieldName, ':')) {
             $relatedSet = substr($fieldName, 0, $pos);
             //$fieldName = substr($fieldName, $pos+1, strlen($fieldName));
-            return $this->getRelatedSet($relatedSet)->getField($fieldName);
+            $result = $this->getRelatedSet($relatedSet);
+            if (FileMaker::isError($result)) {
+                return $result;
+            }
+            return $result->getField($fieldName);
         }
         return $this->fm->returnOrThrowException('Field "'.$fieldName.'" Not Found');
     }
