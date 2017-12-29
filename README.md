@@ -4,7 +4,7 @@ It is compatible with PHP 7.0+ and uses PSR-4 autoloading specifications.
 
 ## Features
 This version of the PHP-API add the following feature to the offical API :
-* Error handling using Exception (you can restore the original behavior using option 'errorHandeling' => 'default')
+* Error handling using Exception (you can restore the original behavior using option 'errorHandling' => 'default')
 * PSR-4 autoloading and installation using composer
 * PHP 7.0+ compatibility
 * 'dateFormat' option to select the input/output date format
@@ -29,7 +29,7 @@ You can use the `composer` package manager to install. Either run:
 
 or add:
 
-    "airmoi/filemaker": "~2.1.0"
+    "airmoi/filemaker": "^2.2"
 
 to your composer.json file
 
@@ -93,7 +93,7 @@ However, you will need to changes few things in your code in order to use it
 The major changes compared to the official package are : 
 
 * Call autoloader.php instead of FileMaker.php to load the API
-* API now support Exceptions error handling, you may switch between those behaviors by changing property 'errorHandeling' to 'default' or 'exception' (default value is 'exception')
+* API now support Exceptions error handling, you may switch between those behaviors by changing property 'errorHandling' to 'default' or 'exception' (default value is 'exception')
 * There is no more 'conf.php' use "setProperty" to define specifics API's settings. You may also use an array of properties on FileMaker instanciation, ie : new FileMaker( $db, $host, $user, $pass, ['property' => 'value'])
 
 You can use the offical [PHP-API guide](https://fmhelp.filemaker.com/docs/14/fr/fms14_cwp_guide.pdf) provided by FileMaker® for everything else.
