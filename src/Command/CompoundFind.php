@@ -52,7 +52,7 @@ class CompoundFind extends Command
      *        records have the same value after the first sorting rule is
      *        applied, and so on.
      * @param mixed $order Direction of the sort. Specify the
-     *        FILEMAKER_SORT_ASCEND constant, the FILEMAKER_SORT_DESCEND
+     *        FileMaker::SORT_ASCEND constant, the FileMaker::SORT_DESCEND
      *        constant, or the name of a value list specified as a string.
      */
     public function addSortRule($fieldname, $precedence, $order = null)
