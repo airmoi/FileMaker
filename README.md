@@ -95,6 +95,8 @@ The major changes compared to the official package are :
 * Call autoloader.php instead of FileMaker.php to load the API
 * API now support Exceptions error handling, you may switch between those behaviors by changing property 'errorHandling' to 'default' or 'exception' (default value is 'exception')
 * There is no more 'conf.php' use "setProperty" to define specifics API's settings. You may also use an array of properties on FileMaker instanciation, ie : new FileMaker( $db, $host, $user, $pass, ['property' => 'value'])
+* All constants are now part of the FileMaker class, use FileMaker::<CONSTANT_NAME> instead of <CONSTANT_NAME>
+* Also notice that FILEMAKER_SORT_ASCEND/DESCEND have been renamed to FileMaker::SORT_ASCEND/FileMaker::SORT_DESCEND
 
 You can use the offical [PHP-API guide](https://fmhelp.filemaker.com/docs/14/fr/fms14_cwp_guide.pdf) provided by FileMaker® for everything else.
 
@@ -113,3 +115,4 @@ FileMaker PHP API is licensed under the BSD License - see the LICENSE file for d
 ### Contributors
 
 - Thanks to [Matthias Kühne](https://github.com/MatthiasKuehneEllerhold) for PSR-4 implementation and code doc fixes.
+- Thanks to [jeremiahsmall](https://github.com/jeremiahsmall) for improving error handling.
