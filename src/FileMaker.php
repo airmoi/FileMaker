@@ -39,7 +39,7 @@ use airmoi\FileMaker\Object\Layout;
  */
 class FileMaker
 {
-    private static $apiVersion = '2.1.0';
+    private static $apiVersion = '2.2.4';
     private static $minServerVersion = '10.0.0.0';
     /**
      *
