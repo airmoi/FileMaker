@@ -381,7 +381,7 @@ class Record
      */
     public function getRelatedSet($relatedSet)
     {
-        if (!isset($this->relatedSets[$relatedSet])) {
+        if (!isset($this->relatedSets[$relatedSet]) || empty($this->relatedSets[$relatedSet])) {
             return $this->fm->returnOrThrowException('Related set "' . $relatedSet . '" not present.');
         }
         return $this->relatedSets[$relatedSet];
