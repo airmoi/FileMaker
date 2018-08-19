@@ -47,7 +47,11 @@ trait CommandTrait
     public function getFieldResult($fieldName)
     {
         try {
-            $field = $this->getLayout()->getField($fieldName);
+            $layout = $this->getLayout();
+            if (FileMaker::isError($layout)) {
+                throw $layout;
+            }
+            $field = $layout->getField($fieldName);
             if (FileMaker::isError($field)) {
                 throw $field;
             }
