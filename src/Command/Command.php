@@ -152,6 +152,10 @@ class Command
             return true;
         }
         $layout = $this->fm->getLayout($this->layout);
+        if (FileMaker::isError($layout)) {
+            return $layout;
+        }
+
         $validationErrors = new FileMakerValidationException($this->fm);
         if ($fieldName === null) {
             foreach ($layout->getFields() as $fieldName => $field) {
@@ -172,6 +176,10 @@ class Command
             }
         } else {
             $field = $layout->getField($fieldName);
+            if (FileMaker::isError($field)) {
+                return $field;
+            }
+
             if (!isset($this->fields[$fieldName]) || !count($this->fields[$fieldName])) {
                 $values = [0 => null];
             } else {

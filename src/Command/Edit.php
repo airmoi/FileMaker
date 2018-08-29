@@ -80,6 +80,9 @@ class Edit extends Command
         }
 
         $layout = $this->fm->getLayout($this->layout);
+        if (FileMaker::isError($layout)) {
+            return $layout;
+        }
 
         $params['-edit'] = true;
         if ($this->deleteRelated === null) {
@@ -88,15 +91,19 @@ class Edit extends Command
                     list ($fieldname, $infos) = explode('.', $fieldname, 2);
                     $infos = '.' . $infos;
                 } else {
-                    $infos = $layout->getField($fieldname);
-                    if ($infos->isGlobal()) {
-                        $infos = '.global';
+                    $field = $layout->getField($fieldname);
+                    if (FileMaker::isError($field)) {
+                        return $field;
+                    }
+
+                    if ($field->isGlobal()) {
+                        $suffix = '.global';
                     } else {
-                        $infos = '';
+                        $suffix = '';
                     }
                 }
                 foreach ($values as $repetition => $value) {
-                    $params[$fieldname . '(' . ($repetition + 1) . ')' . $infos] = $value;
+                    $params[$fieldname . '(' . ($repetition + 1) . ')' . $suffix] = $value;
                 }
             }
         }
@@ -129,10 +136,15 @@ class Edit extends Command
         } else {
             $fieldname = $field;
         }
-        $fieldInfos = $this->fm->getLayout($this->layout)->getField($fieldname);
-        /*if(FileMaker::isError($fieldInfos)){
+
+        $layout = $this->fm->getLayout($this->layout);
+        if (FileMaker::isError($layout)) {
+            return $layout;
+        }
+        $fieldInfos = $layout->getField($field);
+        if(FileMaker::isError($fieldInfos)){
             return $fieldInfos;
-        }*/
+        }
 
         $format = FileMaker::isError($fieldInfos) ? null : $fieldInfos->result;
 
