@@ -22,6 +22,7 @@ use airmoi\FileMaker\Object\Layout;
  * @author Romain Dunand <airmoi@gmail.com>
  *
  * @property string     $charset            Default to 'utf-8'
+ * @property bool       $schemaCache        Default to true, enable cache to prevent unnecessary queries
  * @property string     $locale             Default to 'en' (possible values : en, de, fr, it, ja, sv)
  * @property int        $logLevel           Defult to 3 (PEAR_LOG_ERR)
  * @property string     $hostspec           Default to '127.0.0.1'
@@ -49,6 +50,7 @@ class FileMaker
      */
     private $properties = [
         'charset' => 'utf-8',
+        'schemaCache' => true,
         'locale' => 'en',
         'logLevel' => 3,
         'hostspec' => 'http://127.0.0.1',
@@ -74,6 +76,11 @@ class FileMaker
      * @var Layout[] a pseudo cache for layouts to prevent unnecessary call's to Custom Web Publishing engine
      */
     private static $layouts = [];
+
+    /**
+     * @var string[] a pseudo cache for scripts list to prevent unnecessary call's to Custom Web Publishing engine
+     */
+    private static $scripts = [];
 
     /**
      * @var string Store the last URL call to Custom Web Publishing engine
@@ -185,6 +192,7 @@ class FileMaker
      * @param string $username Account name to log into database.
      * @param string $password Password for account.
      * @param array $options An array of options.
+     * @throws FileMakerException
      */
     public function __construct($database = null, $hostspec = null, $username = null, $password = null, $options = [])
     {
@@ -484,8 +492,8 @@ class FileMaker
      */
     public function getLayout($layoutName)
     {
-        if (isset(self::$layouts[$layoutName])) {
-            return self::$layouts[$layoutName];
+        if (isset(self::$layouts[$this->connexionId()][$layoutName]) && $this->schemaCache) {
+            return self::$layouts[$this->connexionId()][$layoutName];
         }
 
         $request = $this->execute([
@@ -509,7 +517,9 @@ class FileMaker
             return $result;
         }
 
-        self::$layouts[$layoutName] = $layout;
+        if ($this->schemaCache) {
+            self::$layouts[$this->connexionId()][$layoutName] = $layout;
+        }
         return $layout;
     }
 
@@ -518,7 +528,7 @@ class FileMaker
      * server settings and the current user name and password
      * credentials.
      *
-     * @return array|FileMakerException List of database names.
+     * @return string[]|FileMakerException List of database names.
      * @throws FileMakerException
      */
     public function listDatabases()
@@ -551,6 +561,10 @@ class FileMaker
      */
     public function listScripts()
     {
+        if ($this->schemaCache && isset(self::$scripts[$this->connexionId()])) {
+            return self::$scripts[$this->connexionId()];
+        }
+
         $request = $this->execute([
             '-db' => $this->getProperty('database'),
             '-scriptnames' => true
@@ -568,6 +582,10 @@ class FileMaker
         $list = [];
         foreach ($parser->parsedResult as $data) {
             $list[] = $data['fields']['SCRIPT_NAME'][0];
+        }
+
+        if ($this->schemaCache) {
+            self::$scripts[$this->connexionId()] = $list;
         }
         return $list;
     }
@@ -1065,5 +1083,10 @@ class FileMaker
         return $this->returnOrThrowException(
             'cURL Communication Error: (' . $curlError . ') ' . curl_error($curl)
         );
+    }
+
+    private function connexionId()
+    {
+        return md5($this->hostspec & "#" & $this->database & "#" & $this->username);
     }
 }
