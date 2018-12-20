@@ -271,7 +271,7 @@ class FileMaker
         /**
          * @todo handle generic logger ?
          */
-        if (method_exists($logger, 'log')) {
+        if (!method_exists($logger, 'log')) {
             return $this->returnOrThrowException('setLogger() must be passed an class that implements log(strinq $message, int $level) method');
         }
         $this->logger = $logger;
