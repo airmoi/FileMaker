@@ -24,7 +24,7 @@ use airmoi\FileMaker\Object\Layout;
  * @property string     $charset            Default to 'utf-8'
  * @property bool       $schemaCache        Default to true, enable cache to prevent unnecessary queries
  * @property string     $locale             Default to 'en' (possible values : en, de, fr, it, ja, sv)
- * @property int        $logLevel           Defult to 3 (PEAR_LOG_ERR)
+ * @property int        $logLevel           Default to 3 (Log errors)
  * @property string     $hostspec           Default to '127.0.0.1'
  * @property string     $database
  * @property string     $username
@@ -68,7 +68,7 @@ class FileMaker
     ];
 
     /**
-     * @var \Log PEAR Log object
+     * @var Object Log object
      */
     private $logger = null;
 
@@ -258,10 +258,11 @@ class FileMaker
     }
 
     /**
-     * Associates a PEAR Log object with the API for logging requests
+     * Associates a Log object with the API for logging requests
      * and responses.
+     * Logger must implement a log(strinq $message, int $level) method
      *
-     * @param \Log|FileMakerException $logger PEAR Log object.
+     * @param Object|FileMakerException $logger Log object.
      * @return FileMakerException|void
      * @throws FileMakerException
      */
@@ -271,7 +272,7 @@ class FileMaker
          * @todo handle generic logger ?
          */
         if (method_exists($logger, 'log')) {
-            return $this->returnOrThrowException('setLogger() must be passed an instance of PEAR::Log');
+            return $this->returnOrThrowException('setLogger() must be passed an class that implements log(strinq $message, int $level) method');
         }
         $this->logger = $logger;
     }
@@ -636,17 +637,7 @@ class FileMaker
         if ($logLevel === null || $level > $logLevel) {
             return;
         }
-        switch ($level) {
-            case self::LOG_DEBUG:
-                $this->logger->log($message, PEAR_LOG_DEBUG);
-                break;
-            case self::LOG_INFO:
-                $this->logger->log($message, PEAR_LOG_INFO);
-                break;
-            case self::LOG_ERR:
-                $this->logger->log($message, PEAR_LOG_ERR);
-                break;
-        }
+        $this->logger->log($message, $level);
     }
 
     /**
@@ -800,7 +791,10 @@ class FileMaker
             }
         }
         $this->lastRequestedUrl = $host . '?' . implode('&', $restParams);
-        $this->log($this->lastRequestedUrl, FileMaker::LOG_NOTICE);
+
+        $queryFootprint = $host . '?' . implode('&', array_keys($params));
+        $this->log("Run query: " . $this->lastRequestedUrl, FileMaker::LOG_INFO);
+        $this->log("Query: " . $queryFootprint . ' - ' . json_encode($params), FileMaker::LOG_NOTICE);
 
         $curlResponse = curl_exec($curl);
         if ($curlError = curl_errno($curl)) {
