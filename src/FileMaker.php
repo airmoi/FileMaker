@@ -137,6 +137,7 @@ class FileMaker
      * Logging level constants.
      */
     const LOG_ERR = 3;
+    const LOG_NOTICE = 5;
     const LOG_INFO = 6;
     const LOG_DEBUG = 7;
 
@@ -269,7 +270,7 @@ class FileMaker
         /**
          * @todo handle generic logger ?
          */
-        if (!is_a($logger, 'Log')) {
+        if (method_exists($logger, 'log')) {
             return $this->returnOrThrowException('setLogger() must be passed an instance of PEAR::Log');
         }
         $this->logger = $logger;
@@ -799,7 +800,7 @@ class FileMaker
             }
         }
         $this->lastRequestedUrl = $host . '?' . implode('&', $restParams);
-        $this->log($this->lastRequestedUrl, FileMaker::LOG_DEBUG);
+        $this->log($this->lastRequestedUrl, FileMaker::LOG_NOTICE);
 
         $curlResponse = curl_exec($curl);
         if ($curlError = curl_errno($curl)) {
