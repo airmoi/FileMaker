@@ -794,7 +794,13 @@ class FileMaker
 
         $queryFootprint = $host . '?' . implode('&', array_keys($params));
         $this->log("Run query: " . $this->lastRequestedUrl, FileMaker::LOG_INFO);
-        $this->log("Query: " . $queryFootprint . ' - ' . json_encode($params), FileMaker::LOG_NOTICE);
+
+        $debugTrace = [
+            'footprint' => $queryFootprint,
+            'params' => $params,
+            'query' => $this->lastRequestedUrl
+        ];
+        $this->log(json_encode($debugTrace), FileMaker::LOG_NOTICE);
 
         $curlResponse = curl_exec($curl);
         if ($curlError = curl_errno($curl)) {
