@@ -65,6 +65,7 @@ class FileMaker
         'useCookieSession' => false,
         'emptyAsNull' => false, //Returns null value instead of empty strings on empty field value
         'errorHandling' => 'exception', //Default to use old school FileMaker Errors trapping
+        'enableProfiling' => false,
     ];
 
     /**
@@ -641,6 +642,38 @@ class FileMaker
     }
 
     /**
+     * @param string $token
+     */
+    public function beginProfile($token)
+    {
+        if ($this->logger === null || !$this->getProperty('enableProfiling')) {
+            return;
+        }
+
+        if (!method_exists($this->logger, 'profileBegin')) {
+            $this->log("Your logger must implement a profileBegin(\$token) method to handle profiling", self::LOG_ERR);
+            return;
+        }
+        $this->logger->profileBegin($token);
+    }
+
+    /**
+     * @param string $token
+     */
+    public function endProfile($token)
+    {
+        if ($this->logger === null || !$this->getProperty('enableProfiling')) {
+            return;
+        }
+
+        if (!method_exists($this->logger, 'profileEnd')) {
+            $this->log("Your logger must implement a profileEnd(\$token) method to handle profiling", self::LOG_ERR);
+            return;
+        }
+        $this->logger->profileEnd($token);
+    }
+
+    /**
      * Returns the data for the specified container field.
      * Pass in a URL string that represents the file path for the container
      * field contents. For example, get the image data from a container field
@@ -733,12 +766,13 @@ class FileMaker
             return $this->returnOrThrowException('cURL is required to use the FileMaker API.');
         }
 
-        $restParams = [];
+        $restParams = $footPrint = [];
         foreach ($params as $option => $value) {
             if (($value !== true) && strtolower($this->getProperty('charset')) !== 'utf-8') {
                 $value = utf8_encode($value);
             }
             $restParams[] = urlencode($option) . ($value === true ? '' : '=' . urlencode($value));
+            $footPrint[] = $option . (preg_match('.value', $option) ? ":$option" : $value);
         }
 
         $host = $this->getProperty('hostspec');
@@ -792,17 +826,19 @@ class FileMaker
         }
         $this->lastRequestedUrl = $host . '?' . implode('&', $restParams);
 
-        $queryFootprint = $host . '?' . implode('&', array_keys($params));
-        $this->log("Run query: " . $this->lastRequestedUrl, FileMaker::LOG_INFO);
+        $this->log("Perform request: " . $this->lastRequestedUrl, FileMaker::LOG_INFO);
 
         $debugTrace = [
-            'footprint' => $queryFootprint,
+            'footprint' => implode('&', $footPrint),
             'params' => $params,
             'query' => $this->lastRequestedUrl
         ];
         $this->log(json_encode($debugTrace), FileMaker::LOG_NOTICE);
 
+        $this->beginProfile($this->lastRequestedUrl);
         $curlResponse = curl_exec($curl);
+        $this->endProfile($this->lastRequestedUrl);
+
         if ($curlError = curl_errno($curl)) {
             return $this->handleCurlError($curlError, $curl);
         }
