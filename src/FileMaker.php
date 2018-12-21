@@ -772,7 +772,7 @@ class FileMaker
                 $value = utf8_encode($value);
             }
             $restParams[] = urlencode($option) . ($value === true ? '' : '=' . urlencode($value));
-            $footPrint[] = $option . (preg_match('.value', $option) ? ":$option" : $value);
+            $footPrint[] = $option . "=" . (preg_match('/\.value$/', $option) ? ":$option" : $value);
         }
 
         $host = $this->getProperty('hostspec');
