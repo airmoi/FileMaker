@@ -22,7 +22,9 @@ use airmoi\FileMaker\Object\Layout;
  * @author Romain Dunand <airmoi@gmail.com>
  *
  * @property string     $charset            Default to 'utf-8'
+ * @property Object|null     $cache              Default null
  * @property bool       $schemaCache        Default to true, enable cache to prevent unnecessary queries
+ * @property int       $schemaCacheDuration        Default to 3600
  * @property string     $locale             Default to 'en' (possible values : en, de, fr, it, ja, sv)
  * @property int        $logLevel           Default to 3 (Log errors)
  * @property string     $hostspec           Default to '127.0.0.1'
@@ -51,6 +53,8 @@ class FileMaker
     private $properties = [
         'charset' => 'utf-8',
         'schemaCache' => true,
+        'schemaCacheDuration' => 3600,
+        'cache' => null,
         'locale' => 'en',
         'logLevel' => 3,
         'hostspec' => 'http://127.0.0.1',
@@ -82,6 +86,8 @@ class FileMaker
      * @var string[] a pseudo cache for scripts list to prevent unnecessary call's to Custom Web Publishing engine
      */
     private static $scripts = [];
+
+    private static $internalCache = [];
 
     /**
      * @var string Store the last URL call to Custom Web Publishing engine
@@ -276,6 +282,25 @@ class FileMaker
             return $this->returnOrThrowException('setLogger() must be passed an class that implements log(strinq $message, int $level) method');
         }
         $this->logger = $logger;
+    }
+
+    /**
+     * Associates a Cache object with the API for caching
+     * Logger must implement a log(strinq $message, int $level) method
+     *
+     * @param Object|FileMakerException $cache Cache object.
+     * @return FileMakerException|void
+     * @throws FileMakerException
+     */
+    public function setCache($cache)
+    {
+        /**
+         * @todo handle generic logger ?
+         */
+        if (!method_exists($cache, 'set') || !method_exists($cache, 'get')) {
+            return $this->returnOrThrowException('setLogger() must be passed an class that implements log(strinq $message, int $level) method');
+        }
+        $this->cache = $cache;
     }
 
     /**
@@ -495,8 +520,10 @@ class FileMaker
      */
     public function getLayout($layoutName)
     {
-        if (isset(self::$layouts[$this->connexionId()][$layoutName]) && $this->schemaCache) {
-            return self::$layouts[$this->connexionId()][$layoutName];
+        if ($this->schemaCache) {
+            if ($layout = $this->cacheGet($layoutName)) {
+                return $layout;
+            }
         }
 
         $request = $this->execute([
@@ -521,7 +548,8 @@ class FileMaker
         }
 
         if ($this->schemaCache) {
-            self::$layouts[$this->connexionId()][$layoutName] = $layout;
+            $this->cacheSet($layoutName, $layout);
+            //self::$layouts[$this->connexionId()][$layoutName] = $layout;
         }
         return $layout;
     }
@@ -671,6 +699,27 @@ class FileMaker
             return;
         }
         $this->logger->profileEnd($token);
+    }
+
+    public function cacheGet($key)
+    {
+        if ($this->cache === null) {
+            if (isset(self::$internalCache[$this->connexionId() . '-' . $key])) {
+                return self::$internalCache[$this->connexionId() . '-' . $key];
+            }
+        } else {
+            return $this->cache->get($this->connexionId() . '-' . $key);
+        }
+        return false;
+    }
+
+    public function cacheSet($key, $value)
+    {
+        if ($this->cache === null) {
+            self::$internalCache[$this->connexionId() . '-' . $key] = $value;
+        } else {
+            return $this->cache->set($this->connexionId() . '-' . $key, $value, $this->schemaCacheDuration);
+        }
     }
 
     /**
