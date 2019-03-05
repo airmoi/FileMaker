@@ -2,11 +2,11 @@
     "name": "airmoi/filemaker",
     "description": "Rewriten FileMaker PHP-API",
     "keywords": ["filemaker","PHP-API"],
-    "license": "FileMaker Sofware license",
+    "license": "BSD-3-Clause",
     "authors": [
         {
             "name": "Romain Dunand",
-            "email": "airmoi@gmail.com"
+            "email": "romain@1-more-thing.com"
         }
     ],
     "autoload": {
