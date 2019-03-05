@@ -60,6 +60,10 @@ class Add extends Command
             }
         }
         $layout = $this->fm->getLayout($this->layout);
+        if (FileMaker::isError($layout)) {
+            return $layout;
+        }
+
         $params = $this->getCommandParams();
         $params['-new'] = true;
         foreach ($this->fields as $field => $values) {
@@ -95,13 +99,18 @@ class Add extends Command
      *        Defaults to the first repetition.
      *
      * @return string
+     * @throws FileMakerException
      */
     public function setField($field, $value, $repetition = 0)
     {
-        $fieldInfos = $this->fm->getLayout($this->layout)->getField($field);
-        /* if(FileMaker::isError($fieldInfos)){
+        $layout = $this->fm->getLayout($this->layout);
+        if (FileMaker::isError($layout)) {
+            return $layout;
+        }
+        $fieldInfos = $layout->getField($field);
+        if(FileMaker::isError($fieldInfos)){
             return $fieldInfos;
-        }*/
+        }
 
         $format = FileMaker::isError($fieldInfos) ? null : $fieldInfos->result;
         $dateFormat = $this->fm->getProperty('dateFormat');
@@ -146,7 +155,15 @@ class Add extends Command
     public function setFieldFromTimestamp($field, $timestamp, $repetition = 0)
     {
         $layout = $this->fm->getLayout($this->layout);
+        if (FileMaker::isError($layout)) {
+            return $layout;
+        }
+
         $fieldInfos = $layout->getField($field);
+        if (FileMaker::isError($fieldInfos)) {
+            return $fieldInfos;
+        }
+
         switch ($fieldInfos->getResult()) {
             case 'date':
                 return $this->setField($field, date('m/d/Y', $timestamp), $repetition);

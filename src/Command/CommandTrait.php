@@ -31,6 +31,7 @@ trait CommandTrait
 
     /**
      * @return \airmoi\FileMaker\FileMakerException|\airmoi\FileMaker\Object\Layout
+     * @throws FileMakerException
      */
     public function getLayout()
     {
@@ -42,17 +43,16 @@ trait CommandTrait
      * @param $fieldName
      *
      * @return null|Field|FileMakerException Field object, if successful.
-     * @throws FileMakerException
      */
     public function getFieldResult($fieldName)
     {
         try {
-            $layout = $this->getLayout();
+            $layout = $this->fm->getLayout($this->layout);
             if (FileMaker::isError($layout)) {
                 throw $layout;
             }
             $field = $layout->getField($fieldName);
-            if (FileMaker::isError($field)) {
+            if(FileMaker::isError($field)){
                 throw $field;
             }
         } catch (FileMakerException $e) {
