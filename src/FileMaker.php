@@ -23,7 +23,6 @@ use airmoi\FileMaker\Object\Layout;
  *
  * @property string         $charset                Default to 'utf-8'
  * @property Object|null    $cache                  Default null
- * @property bool           $useCache               Default true
  * @property bool           $schemaCache            Default to true, enable cache to prevent unnecessary queries
  * @property int            $schemaCacheDuration    Default to 3600
  * @property string         $locale                 Default to 'en' (possible values : en, de, fr, it, ja, sv)
@@ -515,10 +514,8 @@ class FileMaker
      */
     public function getLayout($layoutName)
     {
-        if ($this->schemaCache) {
-            if ($layout = $this->cacheGet($layoutName)) {
-                return $layout;
-            }
+        if ($layout = $this->cacheGet($layoutName)) {
+            return $layout;
         }
 
         $request = $this->execute([
@@ -526,6 +523,7 @@ class FileMaker
             '-lay' => $layoutName,
             '-view' => true
         ]);
+
         if (FileMaker::isError($request)) {
             return $request;
         }
@@ -542,10 +540,7 @@ class FileMaker
             return $result;
         }
 
-        if ($this->schemaCache) {
-            $this->cacheSet($layoutName, $layout);
-            //self::$layouts[$this->connexionId()][$layoutName] = $layout;
-        }
+        $this->cacheSet($layoutName, $layout);
         return $layout;
     }
 
@@ -675,11 +670,14 @@ class FileMaker
     }
 
     /**
-     * @param $key string
-     * @return bool|mixed
+     * @param $key string key identifying the cached value.
+     * @return bool|mixed The value stored in cache, false if the value is not in the cache or expired.
      */
     public function cacheGet($key)
     {
+        if (!$this->schemaCache) {
+            return false;
+        }
         if ($this->cache === null) {
             if (isset(self::$internalCache[$this->connexionId() . '-' . $key])) {
                 return self::$internalCache[$this->connexionId() . '-' . $key];
@@ -691,15 +689,18 @@ class FileMaker
     }
 
     /**
-     * @param $key string
-     * @param $value mixed
+     * @param $key string A key identifying the value to be cached.
+     * @param $value mixed The value to be cached
      * @return boolean
      */
     public function cacheSet($key, $value)
     {
+        if (!$this->schemaCache) {
+            return false;
+        }
         if ($this->cache === null) {
             self::$internalCache[$this->connexionId() . '-' . $key] = $value;
-            true;
+            return true;
         } else {
             return $this->cache->set($this->connexionId() . '-' . $key, $value, $this->schemaCacheDuration);
         }
@@ -1008,6 +1009,7 @@ class FileMaker
      *
      * @return FileMakerException|string
      * @throws FileMakerException
+     * @throws \ReflectionException
      */
     public function __get($name)
     {
