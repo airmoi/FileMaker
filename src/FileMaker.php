@@ -767,7 +767,7 @@ class FileMaker
             $hostspec = htmlspecialchars_decode($hostspec);
             $hostspec = str_replace(" ", "%20", $hostspec);
         }
-        $this->log('Request for ' . $hostspec, self::LOG_INFO);
+        //$this->log('Request for ' . $hostspec, self::LOG_INFO);
         $curl = curl_init($hostspec);
 
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
@@ -794,7 +794,14 @@ class FileMaker
                 curl_setopt($curl, $property, $value);
             }
         }
+
+        $this->lastRequestedUrl = $hostspec;
+        $this->log("Perform request: " . $this->lastRequestedUrl, FileMaker::LOG_INFO);
+
+        $this->beginProfile($hostspec);
         $curlResponse = curl_exec($curl);
+        $this->endProfile($hostspec);
+
         if ($curlError = curl_errno($curl)) {
             return $this->handleCurlError($curlError, $curl);
         }
@@ -838,7 +845,7 @@ class FileMaker
             $host .= '/';
         }
         $host .= 'fmi/xml/' . $grammar . '.xml';
-        $this->log('Request for ' . $host, FileMaker::LOG_INFO);
+        //$this->log('Request for ' . $host, FileMaker::LOG_INFO);
 
         $curl = curl_init($host);
         curl_setopt($curl, CURLOPT_POST, true);
@@ -885,13 +892,7 @@ class FileMaker
         $this->lastRequestedUrl = $host . '?' . implode('&', $restParams);
 
         $this->log("Perform request: " . $this->lastRequestedUrl, FileMaker::LOG_INFO);
-
-        $debugTrace = [
-            'footprint' => implode('&', $footPrint),
-            'params' => $params,
-            'query' => $this->lastRequestedUrl
-        ];
-        $this->log(json_encode($debugTrace), FileMaker::LOG_NOTICE);
+        $this->log('Query Footprint : ' .implode('&', $footPrint), FileMaker::LOG_DEBUG);
 
         $this->beginProfile($this->lastRequestedUrl);
         $curlResponse = curl_exec($curl);
@@ -901,13 +902,13 @@ class FileMaker
             return $this->handleCurlError($curlError, $curl);
         }
 
-        $this->log($curlResponse, FileMaker::LOG_DEBUG);
         curl_close($curl);
 
         $this->setClientWPCSessionCookie($curlResponse);
         if ($curlHeadersSent) {
             $curlResponse = $this->eliminateXMLHeader($curlResponse);
         }
+        //$this->log($curlResponse, FileMaker::LOG_DEBUG);
 
         return $curlResponse;
     }
