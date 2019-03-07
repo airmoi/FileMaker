@@ -21,22 +21,24 @@ use airmoi\FileMaker\Object\Layout;
  *
  * @author Romain Dunand <airmoi@gmail.com>
  *
- * @property string     $charset            Default to 'utf-8'
- * @property bool       $schemaCache        Default to true, enable cache to prevent unnecessary queries
- * @property string     $locale             Default to 'en' (possible values : en, de, fr, it, ja, sv)
- * @property int        $logLevel           Defult to 3 (PEAR_LOG_ERR)
- * @property string     $hostspec           Default to '127.0.0.1'
- * @property string     $database
- * @property string     $username
- * @property string     $password
- * @property string     $recordClass        Default to 'Object/Record'
- * @property bool       $prevalidate        Default to false
- * @property array      $curlOptions        Default to [CURLOPT_SSL_VERIFYPEER => false]
- * @property string     $dateFormat
- * @property bool       $useDateFormatInRequests    Whether to convert date input in query strings
- * @property bool       $useCookieSession   Default to false
- * @property bool       $emptyAsNull        Return null instead of empty strings, default to false
- * @property string     $errorHandling      exception|default, default to 'exception'
+ * @property string         $charset                Default to 'utf-8'
+ * @property Object|null    $cache                  Default null
+ * @property bool           $schemaCache            Default to true, enable cache to prevent unnecessary queries
+ * @property int            $schemaCacheDuration    Default to 3600
+ * @property string         $locale                 Default to 'en' (possible values : en, de, fr, it, ja, sv)
+ * @property int            $logLevel               Default to 3 (PEAR_LOG_ERR)
+ * @property string         $hostspec               Default to '127.0.0.1'
+ * @property string         $database
+ * @property string         $username
+ * @property string         $password
+ * @property string         $recordClass            Default to 'Object/Record'
+ * @property bool           $prevalidate            Default to false
+ * @property array          $curlOptions            Default to [CURLOPT_SSL_VERIFYPEER => false]
+ * @property string         $dateFormat
+ * @property bool           $useDateFormatInRequests    Whether to convert date input in query strings
+ * @property bool           $useCookieSession       Default to false
+ * @property bool           $emptyAsNull            Return null instead of empty strings, default to false
+ * @property string         $errorHandling          exception|default, default to 'exception'
  */
 class FileMaker
 {
@@ -50,7 +52,10 @@ class FileMaker
      */
     private $properties = [
         'charset' => 'utf-8',
+        'useCache' => true,
         'schemaCache' => true,
+        'schemaCacheDuration' => 3600,
+        'cache' => null,
         'locale' => 'en',
         'logLevel' => 3,
         'hostspec' => 'http://127.0.0.1',
@@ -73,14 +78,11 @@ class FileMaker
     private $logger = null;
 
     /**
-     * @var Layout[] a pseudo cache for layouts to prevent unnecessary call's to Custom Web Publishing engine
-     */
-    private static $layouts = [];
-
-    /**
      * @var string[] a pseudo cache for scripts list to prevent unnecessary call's to Custom Web Publishing engine
      */
     private static $scripts = [];
+
+    private static $internalCache = [];
 
     /**
      * @var string Store the last URL call to Custom Web Publishing engine
@@ -273,6 +275,26 @@ class FileMaker
             return $this->returnOrThrowException('setLogger() must be passed an instance of PEAR::Log');
         }
         $this->logger = $logger;
+    }
+
+    /**
+     * Associates a Cache object with the API for caching
+     * Cache object must implement a set(strinq $key, mixed $value, int $duration) method
+     * and a get(strinq $key) method
+     *
+     * @param Object|FileMakerException $cache Cache object.
+     * @return FileMakerException|void
+     * @throws FileMakerException
+     */
+    public function setCache($cache)
+    {
+        /**
+         * @todo handle generic logger ?
+         */
+        if (!method_exists($cache, 'set') || !method_exists($cache, 'get')) {
+            return $this->returnOrThrowException('setCache() must be passed an class that implements set(strinq $key, mixed $value, int $duration) and get(strinq $key) methods');
+        }
+        $this->cache = $cache;
     }
 
     /**
@@ -492,8 +514,8 @@ class FileMaker
      */
     public function getLayout($layoutName)
     {
-        if (isset(self::$layouts[$this->connexionId()][$layoutName]) && $this->schemaCache) {
-            return self::$layouts[$this->connexionId()][$layoutName];
+        if ($layout = $this->cacheGet($layoutName)) {
+            return $layout;
         }
 
         $request = $this->execute([
@@ -501,6 +523,7 @@ class FileMaker
             '-lay' => $layoutName,
             '-view' => true
         ]);
+
         if (FileMaker::isError($request)) {
             return $request;
         }
@@ -517,9 +540,7 @@ class FileMaker
             return $result;
         }
 
-        if ($this->schemaCache) {
-            self::$layouts[$this->connexionId()][$layoutName] = $layout;
-        }
+        $this->cacheSet($layoutName, $layout);
         return $layout;
     }
 
@@ -645,6 +666,43 @@ class FileMaker
             case self::LOG_ERR:
                 $this->logger->log($message, PEAR_LOG_ERR);
                 break;
+        }
+    }
+
+    /**
+     * @param $key string key identifying the cached value.
+     * @return bool|mixed The value stored in cache, false if the value is not in the cache or expired.
+     */
+    public function cacheGet($key)
+    {
+        if (!$this->schemaCache) {
+            return false;
+        }
+        if ($this->cache === null) {
+            if (isset(self::$internalCache[$this->connexionId() . '-' . $key])) {
+                return self::$internalCache[$this->connexionId() . '-' . $key];
+            }
+        } else {
+            return $this->cache->get($this->connexionId() . '-' . $key);
+        }
+        return null;
+    }
+
+    /**
+     * @param $key string A key identifying the value to be cached.
+     * @param $value mixed The value to be cached
+     * @return boolean
+     */
+    public function cacheSet($key, $value)
+    {
+        if (!$this->schemaCache) {
+            return false;
+        }
+        if ($this->cache === null) {
+            self::$internalCache[$this->connexionId() . '-' . $key] = $value;
+            return true;
+        } else {
+            return $this->cache->set($this->connexionId() . '-' . $key, $value, $this->schemaCacheDuration);
         }
     }
 
@@ -951,6 +1009,7 @@ class FileMaker
      *
      * @return FileMakerException|string
      * @throws FileMakerException
+     * @throws \ReflectionException
      */
     public function __get($name)
     {
