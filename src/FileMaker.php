@@ -70,10 +70,11 @@ class FileMaker
         'useCookieSession' => false,
         'emptyAsNull' => false, //Returns null value instead of empty strings on empty field value
         'errorHandling' => 'exception', //Default to use old school FileMaker Errors trapping
+        'enableProfiling' => false,
     ];
 
     /**
-     * @var \Log PEAR Log object
+     * @var Object Log object
      */
     private $logger = null;
 
@@ -139,6 +140,7 @@ class FileMaker
      * Logging level constants.
      */
     const LOG_ERR = 3;
+    const LOG_NOTICE = 5;
     const LOG_INFO = 6;
     const LOG_DEBUG = 7;
 
@@ -259,10 +261,11 @@ class FileMaker
     }
 
     /**
-     * Associates a PEAR Log object with the API for logging requests
+     * Associates a Log object with the API for logging requests
      * and responses.
+     * Logger must implement a log(strinq $message, int $level) method
      *
-     * @param \Log|FileMakerException $logger PEAR Log object.
+     * @param Object|FileMakerException $logger Log object.
      * @return FileMakerException|void
      * @throws FileMakerException
      */
@@ -271,8 +274,8 @@ class FileMaker
         /**
          * @todo handle generic logger ?
          */
-        if (!is_a($logger, 'Log')) {
-            return $this->returnOrThrowException('setLogger() must be passed an instance of PEAR::Log');
+        if (!method_exists($logger, 'log')) {
+            return $this->returnOrThrowException('setLogger() must be passed an class that implements log(strinq $message, int $level) method');
         }
         $this->logger = $logger;
     }
@@ -656,17 +659,23 @@ class FileMaker
         if ($logLevel === null || $level > $logLevel) {
             return;
         }
-        switch ($level) {
-            case self::LOG_DEBUG:
-                $this->logger->log($message, PEAR_LOG_DEBUG);
-                break;
-            case self::LOG_INFO:
-                $this->logger->log($message, PEAR_LOG_INFO);
-                break;
-            case self::LOG_ERR:
-                $this->logger->log($message, PEAR_LOG_ERR);
-                break;
+        $this->logger->log($message, $level);
+    }
+
+    /**
+     * @param string $token
+     */
+    public function beginProfile($token)
+    {
+        if ($this->logger === null || !$this->getProperty('enableProfiling')) {
+            return;
         }
+
+        if (!method_exists($this->logger, 'profileBegin')) {
+            $this->log("Your logger must implement a profileBegin(\$token) method to handle profiling", self::LOG_ERR);
+            return;
+        }
+        $this->logger->profileBegin($token);
     }
 
     /**
@@ -704,6 +713,22 @@ class FileMaker
         } else {
             return $this->cache->set($this->connexionId() . '-' . $key, $value, $this->schemaCacheDuration);
         }
+    }
+
+    /**
+     * @param string $token
+     */
+    public function endProfile($token)
+    {
+        if ($this->logger === null || !$this->getProperty('enableProfiling')) {
+            return;
+        }
+
+        if (!method_exists($this->logger, 'profileEnd')) {
+            $this->log("Your logger must implement a profileEnd(\$token) method to handle profiling", self::LOG_ERR);
+            return;
+        }
+        $this->logger->profileEnd($token);
     }
 
     /**
@@ -799,12 +824,13 @@ class FileMaker
             return $this->returnOrThrowException('cURL is required to use the FileMaker API.');
         }
 
-        $restParams = [];
+        $restParams = $footPrint = [];
         foreach ($params as $option => $value) {
             if (($value !== true) && strtolower($this->getProperty('charset')) !== 'utf-8') {
                 $value = utf8_encode($value);
             }
             $restParams[] = urlencode($option) . ($value === true ? '' : '=' . urlencode($value));
+            $footPrint[] = $option . "=" . (preg_match('/\.value$/', $option) ? ":$option" : $value);
         }
 
         $host = $this->getProperty('hostspec');
@@ -857,9 +883,20 @@ class FileMaker
             }
         }
         $this->lastRequestedUrl = $host . '?' . implode('&', $restParams);
-        $this->log($this->lastRequestedUrl, FileMaker::LOG_DEBUG);
 
+        $this->log("Perform request: " . $this->lastRequestedUrl, FileMaker::LOG_INFO);
+
+        $debugTrace = [
+            'footprint' => implode('&', $footPrint),
+            'params' => $params,
+            'query' => $this->lastRequestedUrl
+        ];
+        $this->log(json_encode($debugTrace), FileMaker::LOG_NOTICE);
+
+        $this->beginProfile($this->lastRequestedUrl);
         $curlResponse = curl_exec($curl);
+        $this->endProfile($this->lastRequestedUrl);
+
         if ($curlError = curl_errno($curl)) {
             return $this->handleCurlError($curlError, $curl);
         }
