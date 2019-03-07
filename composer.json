@@ -1,6 +1,6 @@
 {
     "name": "airmoi/filemaker",
-    "description": "Rewriten FileMaker PHP-API",
+    "description": "Rewritten FileMaker PHP-API",
     "keywords": ["filemaker","PHP-API"],
     "license": "BSD-3-Clause",
     "authors": [
