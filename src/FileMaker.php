@@ -833,7 +833,7 @@ class FileMaker
             'params' => $params,
             'query' => $this->lastRequestedUrl
         ];
-        $this->log(json_encode($debugTrace), FileMaker::LOG_NOTICE);
+        $this->log(json_encode($debugTrace), FileMaker::LOG_DEBUG);
 
         $this->beginProfile($this->lastRequestedUrl);
         $curlResponse = curl_exec($curl);
