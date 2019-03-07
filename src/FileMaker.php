@@ -280,7 +280,8 @@ class FileMaker
 
     /**
      * Associates a Cache object with the API for caching
-     * Logger must implement a log(strinq $message, int $level) method
+     * Cache object must implement a set(strinq $key, mixed $value, int $duration) method
+     * and a get(strinq $key) method
      *
      * @param Object|FileMakerException $cache Cache object.
      * @return FileMakerException|void
@@ -292,7 +293,7 @@ class FileMaker
          * @todo handle generic logger ?
          */
         if (!method_exists($cache, 'set') || !method_exists($cache, 'get')) {
-            return $this->returnOrThrowException('setLogger() must be passed an class that implements log(strinq $message, int $level) method');
+            return $this->returnOrThrowException('setCache() must be passed an class that implements set(strinq $key, mixed $value, int $duration) and get(strinq $key) methods');
         }
         $this->cache = $cache;
     }
