@@ -112,14 +112,14 @@ class Record
         }
 
         if (!isset($this->fields[$field])) {
-            $this->fm->log('Field "' . $field . '" not found.', FileMaker::LOG_INFO);
+            $this->fm->log('Field "' . $field . '" not found.', FileMaker::LOG_NOTICE);
             return null;
         }
 
         if (!isset($this->fields[$field][$repetition])) {
             $this->fm->log(
                 'Repetition "' . (int) $repetition . '" does not exist for "' . $field . '".',
-                FileMaker::LOG_INFO
+                FileMaker::LOG_NOTICE
             );
             return null;
         }
@@ -165,7 +165,7 @@ class Record
             $fieldName = $this->relatedSetName. '::' . $fieldName;
         }
         if (!isset($this->fields[$fieldName])) {
-            $this->fm->log('Field "' . $fieldName . '" not found.', FileMaker::LOG_INFO);
+            $this->fm->log('Field "' . $fieldName . '" not found.', FileMaker::LOG_NOTICE);
             return [];
         }
 
