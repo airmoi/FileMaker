@@ -1184,6 +1184,6 @@ class FileMaker
 
     private function connexionId()
     {
-        return md5($this->hostspec & "#" & $this->database & "#" & $this->username);
+        return md5($this->hostspec . "#" . $this->database . "#" . $this->username);
     }
 }
