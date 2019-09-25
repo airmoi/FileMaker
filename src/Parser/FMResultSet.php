@@ -72,15 +72,19 @@ class FMResultSet
         xml_parser_set_option($this->xmlParser, XML_OPTION_TARGET_ENCODING, 'UTF-8');
         xml_set_element_handler($this->xmlParser, 'start', 'end');
         xml_set_character_data_handler($this->xmlParser, 'cdata');
-        if (!@xml_parse($this->xmlParser, $xml)) {
-            return $this->fm->returnOrThrowException(
-                sprintf(
-                    'XML error: %s at line %d',
-                    xml_error_string(xml_get_error_code($this->xmlParser)),
-                    xml_get_current_line_number($this->xmlParser)
-                )
-            );
-        }
+        $splits = str_split($xml, 1024*1024*5);
+		foreach($splits as $split) {
+			if (!@xml_parse($this->xmlParser, $split)) {
+				return $this->fm->returnOrThrowException(
+					sprintf(
+						'XML error: %s at line %d',
+						xml_error_string(xml_get_error_code($this->xmlParser)),
+						xml_get_current_line_number($this->xmlParser)
+					)
+				);
+			}
+		}
+		xml_parse($this->xmlParser, '', true);
         xml_parser_free($this->xmlParser);
         if (!empty($this->errorCode)) {
             return $this->fm->returnOrThrowException(null, $this->errorCode);
