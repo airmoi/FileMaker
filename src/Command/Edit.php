@@ -141,7 +141,7 @@ class Edit extends Command
         if (FileMaker::isError($layout)) {
             return $layout;
         }
-        $fieldInfos = $layout->getField($field);
+        $fieldInfos = $layout->getField($fieldname);
         if(FileMaker::isError($fieldInfos)){
             return $fieldInfos;
         }
