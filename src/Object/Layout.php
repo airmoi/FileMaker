@@ -31,7 +31,7 @@ class Layout
     public $valueListTwoFields = [];
     public $database;
     public $extended = false;
-    public $table = false;
+    public $table = null;
     /**
      * Layout object constructor.
      *
@@ -222,7 +222,7 @@ class Layout
         if (FileMaker::isError($extendedInfos)) {
             return $extendedInfos;
         }
-        return isset($this->valueLists[$valueList]) ?
+        return isset($this->valueListTwoFields[$valueList]) ?
                 $this->valueListTwoFields[$valueList] : [];
     }
 
@@ -282,6 +282,13 @@ class Layout
      */
     public function loadExtendedInfo($recid = null)
     {
+        if ($this->fm->engine == "dataAPI" && $recid === null) {
+            return true;
+        } elseif ($this->fm->engine == "dataAPI") {
+            $layout = $this->fm->getLayout($this->getName(), $recid);
+            $this->valueLists = $layout->valueList;
+            $this->valueListTwoFields = $layout->valueListTwoFields;
+        }
         if (!$this->extended || $recid != null) {
             if ($recid != null) {
                 $result = $this->fm->execute([

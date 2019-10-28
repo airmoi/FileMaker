@@ -10,6 +10,8 @@
 
 namespace airmoi\FileMaker;
 
+use airmoi\FileMaker\Helpers\DataApi;
+use airmoi\FileMaker\Parser\DataApiResult;
 use airmoi\FileMaker\Parser\FMResultSet;
 use airmoi\FileMaker\Object\Layout;
 
@@ -23,6 +25,7 @@ use airmoi\FileMaker\Object\Layout;
  *
  * @property string         $charset                Default to 'utf-8'
  * @property Object|null    $cache                  Default null
+ * @property Object|null    sessionHandler          Default null
  * @property bool           $schemaCache            Default to true, enable cache to prevent unnecessary queries
  * @property int            $schemaCacheDuration    Default to 3600
  * @property string         $locale                 Default to 'en' (possible values : en, de, fr, it, ja, sv)
@@ -38,12 +41,14 @@ use airmoi\FileMaker\Object\Layout;
  * @property bool           $useDateFormatInRequests    Whether to convert date input in query strings
  * @property bool           $useCookieSession       Default to false
  * @property bool           $emptyAsNull            Return null instead of empty strings, default to false
- * @property string         $errorHandling          exception|default, default to 'exception'
+ * @property string         $engine                   cwp|dataAPI, default to 'exception'
  */
 class FileMaker
 {
-    private static $apiVersion = '2.2.4';
-    private static $minServerVersion = '10.0.0.0';
+    private static $apiVersion = '3.0.0-alpha';
+    private static $minServerVersion = '18.0.0.0';
+
+    private $token = null;
     /**
      *
      * @var array The FileMaker connection properties
@@ -56,6 +61,7 @@ class FileMaker
         'schemaCache' => true,
         'schemaCacheDuration' => 3600,
         'cache' => null,
+        'sessionHandler' => null,
         'locale' => 'en',
         'logLevel' => 3,
         'hostspec' => 'http://127.0.0.1',
@@ -71,6 +77,7 @@ class FileMaker
         'emptyAsNull' => false, //Returns null value instead of empty strings on empty field value
         'errorHandling' => 'exception', //Default to use old school FileMaker Errors trapping
         'enableProfiling' => false,
+        'engine' => 'cwp' //cwp or dataAPI
     ];
 
     /**
@@ -218,6 +225,14 @@ class FileMaker
         }
     }
 
+    public function __destruct()
+    {
+        //If no session handler and CLI, destroy the session to prevent multiple ghost sessions
+        if ($this->engine == 'dataAPI' && !$this->sessionHandler && php_sapi_name() === 'cli') {
+            $this->dataApiLogout();
+        }
+    }
+
     /**
      * Sets a property to a new value for all API calls.
      *
@@ -271,9 +286,6 @@ class FileMaker
      */
     public function setLogger($logger)
     {
-        /**
-         * @todo handle generic logger ?
-         */
         if (!method_exists($logger, 'log')) {
             return $this->returnOrThrowException('setLogger() must be passed an class that implements log(strinq $message, int $level) method');
         }
@@ -291,13 +303,32 @@ class FileMaker
      */
     public function setCache($cache)
     {
-        /**
-         * @todo handle generic logger ?
-         */
         if (!method_exists($cache, 'set') || !method_exists($cache, 'get')) {
             return $this->returnOrThrowException('setCache() must be passed an class that implements set(strinq $key, mixed $value, int $duration) and get(strinq $key) methods');
         }
         $this->cache = $cache;
+    }
+
+    /**
+     * Associates a SessionHandler object with the API for session management
+     * Session handler object must implement a set(strinq $key, mixed $value) method
+     * and a get(strinq $key) method
+     *
+     * @param Object|FileMakerException $cache Cache object.
+     * @return FileMakerException|void
+     * @throws FileMakerException
+     */
+    public function setSessionHandler($handler)
+    {
+        if (!method_exists($handler, 'set') || !method_exists($handler, 'get')) {
+            return $this->returnOrThrowException('setCache() must be passed an class that implements set(strinq $key, mixed $value) and get(string $key) methods');
+        }
+        $this->sessionHandler = $handler;
+    }
+
+    public function getToken()
+    {
+        return $this->token;
     }
 
     /**
@@ -310,6 +341,7 @@ class FileMaker
      *        repetition number to set.
      *
      * @return Command\Add New Add command object.
+     * @throws FileMakerException
      */
     public function newAddCommand($layout, $values = [], $useRawData = false)
     {
@@ -330,9 +362,9 @@ class FileMaker
      *
      * @return Command\Edit New Edit command object.
      */
-    public function newEditCommand($layout, $recordId, $updatedValues = [], $useRawData = false)
+    public function newEditCommand($layout, $recordId, $updatedValues = [], $useRawData = false, $relatedSetName = null)
     {
-        return new Command\Edit($this, $layout, $recordId, $updatedValues, $useRawData);
+        return new Command\Edit($this, $layout, $recordId, $updatedValues, $useRawData, $relatedSetName);
     }
 
     /**
@@ -500,11 +532,11 @@ class FileMaker
             return $result;
         }
 
-        $record = $result->getRecords();
+        $record = $result->getFirstRecord();
         if (!$record) {
             return $this->returnOrThrowException('Record . ' . $recordId . ' not found in layout "' . $layout . '".');
         }
-        return $record[0];
+        return $record;
     }
 
     /**
@@ -512,12 +544,14 @@ class FileMaker
      *
      * @param string $layoutName Name of the layout to describe.
      *
+     * @param null $recid
+     * @param bool $loadExtended
      * @return Layout|FileMakerException Layout.
      * @throws FileMakerException
      */
-    public function getLayout($layoutName)
+    public function getLayout($layoutName, $recid = null, $loadExtended = true)
     {
-        if ($layout = $this->cacheGet($layoutName)) {
+        if ($recid !== null || $layout = $this->cacheGet('layout-' . $layoutName)) {
             return $layout;
         }
 
@@ -531,7 +565,11 @@ class FileMaker
             return $request;
         }
 
-        $parser = new FMResultSet($this);
+        if ($this->engine == 'cwp') {
+            $parser = new FMResultSet($this);
+        } else {
+            $parser = new DataApiResult($this);
+        }
         $result = $parser->parse($request);
         if (FileMaker::isError($result)) {
             return $result;
@@ -542,8 +580,16 @@ class FileMaker
         if (FileMaker::isError($result)) {
             return $result;
         }
+        $layout->name = $layoutName;
 
-        $this->cacheSet($layoutName, $layout);
+        //Load a random record to get extra meta data
+        if (!$layout->table && $loadExtended) {
+            $this->newFindAllCommand($layout->name)->setRange(0,1)->execute();
+        }
+
+        if ($recid !== null) {
+            $this->cacheSet('layout-' . $layoutName , $layout);
+        }
         return $layout;
     }
 
@@ -562,15 +608,28 @@ class FileMaker
             return $request;
         }
 
-        $parser = new FMResultSet($this);
+
+        if ($this->engine == 'cwp') {
+            $parser = new FMResultSet($this);
+        } else {
+            $parser = new DataApiResult($this);
+        }
+
         $result = $parser->parse($request);
         if (FileMaker::isError($result)) {
             return $request;
         }
 
         $list = [];
-        foreach ($parser->parsedResult as $data) {
-            $list[] = $data['fields']['DATABASE_NAME'][0];
+
+        if ($this->engine == 'cwp') {
+            foreach ($parser->parsedResult as $data) {
+                $list[] = $data['fields']['DATABASE_NAME'][0];
+            }
+        } else {
+            foreach ($parser->parsedResult['databases'] as $data) {
+                $list[] = $data['name'];
+            }
         }
         return $list;
     }
@@ -597,15 +656,28 @@ class FileMaker
             return $request;
         }
 
-        $parser = new FMResultSet($this);
+        if ($this->engine == 'cwp') {
+            $parser = new FMResultSet($this);
+        } else {
+            $parser = new DataApiResult($this);
+        }
+
         $result = $parser->parse($request);
         if (FileMaker::isError($result)) {
             return $result;
         }
 
         $list = [];
-        foreach ($parser->parsedResult as $data) {
-            $list[] = $data['fields']['SCRIPT_NAME'][0];
+        if ($this->engine == 'cwp') {
+            foreach ($parser->parsedResult as $data) {
+                $list[] = $data['fields']['SCRIPT_NAME'][0];
+            }
+        } else {
+            foreach ($parser->parsedResult['scripts'] as $data) {
+                if (!$data['isFolder']) {
+                    $list[] = $data['name'];
+                }
+            }
         }
 
         if ($this->schemaCache) {
@@ -632,15 +704,25 @@ class FileMaker
             return $request;
         }
 
-        $parser = new FMResultSet($this);
+        if ($this->engine == 'cwp') {
+            $parser = new FMResultSet($this);
+        } else {
+            $parser = new DataApiResult($this);
+        }
         $result = $parser->parse($request);
         if (FileMaker::isError($result)) {
             return $result;
         }
 
         $list = [];
-        foreach ($parser->parsedResult as $data) {
-            $list[] = $data['fields']['LAYOUT_NAME'][0];
+        if ($this->engine == 'cwp') {
+            foreach ($parser->parsedResult as $data) {
+                $list[] = $data['fields']['LAYOUT_NAME'][0];
+            }
+        } else {
+            foreach ($parser->parsedResult['layouts'] as $data) {
+                $list[] = $data['name'];
+            }
         }
         return $list;
     }
@@ -716,6 +798,47 @@ class FileMaker
     }
 
     /**
+     * @param $key string key identifying the cached value.
+     * @return bool|mixed The value stored in cache, false if the value is not in the cache or expired.
+     */
+    public function sessionGet($key)
+    {
+        if ($this->sessionHandler === null) {
+            if (!session_id() && headers_sent()) {
+                return null; //Can't open, session while headers aleady sents
+            } elseif (!session_id()) {
+                session_start();
+            }
+            if (isset($_SESSION[$this->connexionId() . '-' . $key])) {
+                return $_SESSION[$this->connexionId() . '-' . $key];
+            }
+        } else {
+            return $this->sessionHandler->get($this->connexionId() . '-' . $key);
+        }
+        return null;
+    }
+
+    /**
+     * @param $key string A key identifying the value to be cached.
+     * @param $value mixed The value to be cached
+     * @return boolean
+     */
+    public function sessionSet($key, $value)
+    {
+        if ($this->sessionHandler === null) {
+            if (!session_id() && headers_sent()) {
+                return null; //Can't open, session while headers aleady sents
+            } elseif (!session_id()) {
+                session_start();
+            }
+            $_SESSION[$this->connexionId() . '-' . $key] = $value;
+            return true;
+        } else {
+            return $this->sessionHandler->set($this->connexionId() . '-' . $key, $value);
+        }
+    }
+
+    /**
      * @param string $token
      */
     public function endProfile($token)
@@ -756,18 +879,22 @@ class FileMaker
             return $this->returnOrThrowException('cURL is required to use the FileMaker API.');
         }
 
-        if (strncasecmp($url, '/fmi/xml/cnt', 11) !== 0) {
-            return $this->returnOrThrowException('getContainerData() does not support remote containers');
-        } else {
-            $hostspec = $this->getProperty('hostspec');
-            if (substr($hostspec, -1, 1) === '/') {
-                $hostspec = substr($hostspec, 0, -1);
+        if ($this->engine == 'cwp') {
+            if (strncasecmp($url, '/fmi/xml/cnt', 11) !== 0) {
+                return $this->returnOrThrowException('getContainerData() does not support remote containers');
+            } else {
+                $hostspec = $this->getProperty('hostspec');
+                if (substr($hostspec, -1, 1) === '/') {
+                    $hostspec = substr($hostspec, 0, -1);
+                }
+                $hostspec .= $url;
+                $hostspec = htmlspecialchars_decode($hostspec);
+                $hostspec = str_replace(" ", "%20", $hostspec);
             }
-            $hostspec .= $url;
-            $hostspec = htmlspecialchars_decode($hostspec);
-            $hostspec = str_replace(" ", "%20", $hostspec);
+            //$this->log('Request for ' . $hostspec, self::LOG_INFO);
+        } else {
+            $hostspec = $url;
         }
-        //$this->log('Request for ' . $hostspec, self::LOG_INFO);
         $curl = curl_init($hostspec);
 
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
@@ -777,22 +904,39 @@ class FileMaker
             $isHeadersSent = true;
             curl_setopt($curl, CURLOPT_HEADER, true);
         }
-        $this->setCurlWPCSessionCookie($curl);
 
-        if ($this->getProperty('username')) {
-            $authString = base64_encode($this->getProperty('username') . ':' . $this->getProperty('password'));
-            $headers    = [
-                'Authorization: Basic ' . $authString,
-                'X-FMI-PE-ExtendedPrivilege: IrG6U+Rx0F5bLIQCUb9gOw=='
-            ];
-            curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-        } else {
-            curl_setopt($curl, CURLOPT_HTTPHEADER, ['X-FMI-PE-ExtendedPrivilege: IrG6U+Rx0F5bLIQCUb9gOw==']);
-        }
-        if ($curlOptions = $this->getProperty('curlOptions')) {
-            foreach ($curlOptions as $property => $value) {
-                curl_setopt($curl, $property, $value);
+        if ($this->engine == 'cwp') {
+            $this->setCurlWPCSessionCookie($curl);
+
+            if ($this->getProperty('username')) {
+                $authString = base64_encode($this->getProperty('username') . ':' . $this->getProperty('password'));
+                $headers = [
+                    'Authorization: Basic ' . $authString,
+                    'X-FMI-PE-ExtendedPrivilege: IrG6U+Rx0F5bLIQCUb9gOw=='
+                ];
+                curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+            } else {
+                curl_setopt($curl, CURLOPT_HTTPHEADER, ['X-FMI-PE-ExtendedPrivilege: IrG6U+Rx0F5bLIQCUb9gOw==']);
             }
+            if ($curlOptions = $this->getProperty('curlOptions')) {
+                foreach ($curlOptions as $property => $value) {
+                    curl_setopt($curl, $property, $value);
+                }
+            }
+        } else {
+            $cookiePath  = tempnam(sys_get_temp_dir(), 'fmAPICookie_'. mt_rand());
+            curl_setopt($curl, CURLOPT_COOKIEJAR, $cookiePath);
+            curl_setopt($curl, CURLOPT_MAXREDIRS, 20);
+            curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
+
+            /*else if ($this->options['cookieFilePath'] != '') {
+                curl_setopt($ch, CURLOPT_COOKIEFILE, $this->options['cookieFilePath']);
+            }*/
+            /*$authString = base64_encode($this->getProperty('username') . ':' . $this->getProperty('password'));
+            $headers = [
+                'Authorization: Basic ' . $authString,
+            ];
+            curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);*/
         }
 
         $this->lastRequestedUrl = $hostspec;
@@ -801,13 +945,21 @@ class FileMaker
         $this->beginProfile($hostspec);
         $curlResponse = curl_exec($curl);
         $this->endProfile($hostspec);
+        $curlinfos = curl_getinfo($curl);
+
+        //retry on error 401
+        if ($curlinfos['http_code'] === 401) {
+            curl_setopt($curl, CURLOPT_COOKIEFILE, $cookiePath);
+            $curlResponse = curl_exec($curl);
+        }
 
         if ($curlError = curl_errno($curl)) {
             return $this->handleCurlError($curlError, $curl);
         }
         $this->log($curlResponse, FileMaker::LOG_DEBUG);
-
-        $this->setClientWPCSessionCookie($curlResponse);
+        if ($this->engine == 'cwp') {
+            $this->setClientWPCSessionCookie($curlResponse);
+        }
         if ($isHeadersSent) {
             $curlResponse = $this->eliminateContainerHeader($curlResponse);
         }
@@ -817,7 +969,7 @@ class FileMaker
     }
 
     /**
-     * Perform xml query to FM Server
+     * query to FM Server, route to cwp or dataAPI
      *
      * @param array $params
      * @param string $grammar fm xml grammar
@@ -831,6 +983,208 @@ class FileMaker
             return $this->returnOrThrowException('cURL is required to use the FileMaker API.');
         }
 
+        if ($this->getProperty('engine') === 'cwp') {
+            return $this->executeCWP($params, $grammar);
+        } else {
+            return $this->executeDataApi($params);
+        }
+    }
+
+    /**
+     * Perform dataAPI query to FM Server
+     *
+     * @param $params
+     *
+     * @return string|FileMakerException the cUrl response
+     * @throws FileMakerException
+     */
+    public function executeDataApi($params)
+    {
+        $globals = DataApi::parseGlobalFields($params);
+
+        if ($globals) {
+            $layout = $this->getLayout($params['-lay']);
+            $globalOptions = array_merge(
+                DataApi::appendTableToGlobals($globals, $layout->table),
+                ['-setGlobals' => true, '-db' => $params['-db']]
+            );
+            $globalQuery = DataApi::prepareQuery($globalOptions);
+            $globalQuery['headers'][] = 'Authorization: bearer ' . $this->getSessionBearer();
+            $response = $this->runDataApiQuery($globalQuery);
+            $parser = new DataApiResult($this);
+            $parseResult = $parser->parse($response);
+            if (FileMaker::isError($parseResult)) {
+                return $parseResult;
+            }
+        }
+        $query = DataApi::prepareQuery($params);
+        if (!isset($params['-dbnames'])) {
+            $query['headers'][] = 'Authorization: bearer ' . $this->getSessionBearer();
+        }
+
+        $response = $this->runDataApiQuery($query);
+
+        //Reset globals after query
+        if ($globals) {
+            foreach ($globalQuery['body']['globalFields'] as $field => $value) {
+                $globalQuery['body']['globalFields'][$field] = '';
+            }
+            $responseEmpty = $this->runDataApiQuery($globalQuery);
+            $parser = new DataApiResult($this);
+            $parseResult = $parser->parse($responseEmpty);
+            if (FileMaker::isError($parseResult)) {
+                return $parseResult;
+            }
+        }
+
+        return $response;
+    }
+
+    public function dataApiLogin()
+    {
+        if ($this->token) {
+            return $this->token;
+        }
+        $query = [
+            'uri' => DataApi::ENDPOINT_BASE . DataApi::ENDPOINT_LOGIN,
+            'queryParams' => null,
+            'headers' => [
+                'Authorization: basic ' . base64_encode($this->username . ':' . $this->password)
+            ],
+            'method' => 'POST',
+            'body' => [
+                'fmDataSource' => [
+                    [
+                        'database' => $this->database,
+                        'username' => $this->username,
+                        'password' => $this->password,
+                    ]
+                ]
+            ],
+            'params' => [
+                'version' =>  'vLatest',
+                'database' => $this->database,
+            ],
+        ];
+        $response = json_decode($this->runDataApiQuery($query), true);
+        if ($response['messages'][0]['code'] != 0) {
+            return $this->fm->returnOrThrowException($response['messages'][0]['message'], $response['messages'][0]['code']);
+        }
+        $this->token = $response['response']['token'];
+        return $this->token;
+    }
+
+    public function dataApiLogout()
+    {
+        if (!$this->token) {
+            return true;
+        }
+        $query = [
+            'uri' => DataApi::ENDPOINT_BASE . DataApi::ENDPOINT_LOGOUT,
+            'queryParams' => null,
+            'headers' => [
+                //'Authorization: basic ' . base64_encode($this->username . ':' . $this->password)
+            ],
+            'method' => 'DELETE',
+            'body' => null,
+            'params' => [
+                'version' =>  'vLatest',
+                'database' => $this->database,
+                'sessionToken' => $this->getSessionBearer(),
+            ],
+        ];
+        $response = json_decode($this->runDataApiQuery($query), true);
+        if (@$response['messages'][0]['code'] != 0) {
+            return $this->returnOrThrowException($response['messages'][0]['message'], $response['messages'][0]['code']);
+        }
+        $this->token = null;
+        return true;
+    }
+
+    /**
+     * @param $query
+     * @return FileMakerException|bool|string
+     * @throws FileMakerException
+     */
+    public function runDataApiQuery($query)
+    {
+        $uriParams = array_merge($query['params'], [
+            'host' => $this->hostspec
+        ]);
+
+        $uri = $query['uri'];
+        foreach ($uriParams as $key => $value) {
+            $uri = str_replace('{' . $key . '}', $value, $uri);
+        }
+        $queryParams = $footPrint = [];
+        if ($query['queryParams']) {
+            foreach ($query['queryParams'] as $option => $value) {
+                if (($value !== true) && strtolower($this->getProperty('charset')) !== 'utf-8') {
+                    $value = utf8_encode($value);
+                }
+                $queryParams[] = urlencode($option) . ($value === true ? '' : '=' . urlencode($value));
+                $footPrint[] = $option . "=" . (preg_match('/\.value$/', $option) ? ":$option" : $value);
+            }
+            $uri .= "?" . implode('&', $queryParams);
+        }
+
+        $curl = curl_init($uri);
+        curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $query['method']);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_FAILONERROR, false);
+        $headers = array_merge([], $query['headers'], [
+            'Content-Type: application/json'
+        ]);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+        if ($curlOptions = $this->getProperty('curlOptions')) {
+            foreach ($curlOptions as $key => $value) {
+                curl_setopt($curl, $key, $value);
+            }
+        }
+        if ($query['body']) {
+            $body = json_encode($query['body']);
+            curl_setopt($curl, CURLOPT_POSTFIELDS, $body);
+        }
+
+        $this->lastRequestedUrl = $uri;
+
+        $this->log("Perform request: " . $this->lastRequestedUrl, FileMaker::LOG_INFO);
+        //$this->log('Query Footprint : ' .implode('&', $footPrint), FileMaker::LOG_DEBUG);
+
+        $this->beginProfile($this->lastRequestedUrl);
+        $response = curl_exec($curl);
+        $this->endProfile($this->lastRequestedUrl);
+
+        //$responseCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+
+        if ($curlError = curl_errno($curl)) {
+            return $this->handleCurlError($curlError, $curl);
+        }
+
+        curl_close($curl);
+        return $response;
+    }
+
+    private function getSessionBearer()
+    {
+        if (!$bearer = $this->sessionGet('bearer')) {
+            $bearer = $this->dataApiLogin();
+            $this->sessionSet('bearer', $bearer);
+        }
+        return $bearer;
+    }
+
+    /**
+     * Perform xml query to FM Server
+     *
+     * @param array $params
+     * @param string $grammar fm xml grammar
+     *
+     * @return string|FileMakerException the cUrl response
+     * @throws FileMakerException
+     */
+    public function executeCWP($params, $grammar = 'fmresultset')
+    {
         $restParams = $footPrint = [];
         foreach ($params as $option => $value) {
             if (($value !== true) && strtolower($this->getProperty('charset')) !== 'utf-8') {
@@ -927,17 +1281,21 @@ class FileMaker
      */
     public function getContainerDataURL($url)
     {
-        if (strncasecmp($url, '/fmi/xml/cnt', 11) !== 0) {
-            $decodedUrl = htmlspecialchars_decode($url);
-        } else {
-            $decodedUrl = $this->getProperty('hostspec');
-            if (substr($decodedUrl, -1, 1) === '/') {
-                $decodedUrl = substr($decodedUrl, 0, -1);
+        if ($this->engine == 'cwp') {
+            if (strncasecmp($url, '/fmi/xml/cnt', 11) !== 0) {
+                $decodedUrl = htmlspecialchars_decode($url);
+            } else {
+                $decodedUrl = $this->getProperty('hostspec');
+                if (substr($decodedUrl, -1, 1) === '/') {
+                    $decodedUrl = substr($decodedUrl, 0, -1);
+                }
+                $decodedUrl .= $url;
+                $decodedUrl = htmlspecialchars_decode($decodedUrl);
             }
-            $decodedUrl .= $url;
-            $decodedUrl = htmlspecialchars_decode($decodedUrl);
+            return $decodedUrl;
+        } else {
+            return $url;
         }
-        return $decodedUrl;
     }
 
     /**

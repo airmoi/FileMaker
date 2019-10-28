@@ -9,6 +9,8 @@ use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\FileMakerValidationException;
 use airmoi\FileMaker\Helpers\DateFormat;
+use airmoi\FileMaker\Object\Result;
+use airmoi\FileMaker\Parser\DataApiResult;
 
 /**
  * Command class that adds a new record.
@@ -19,16 +21,18 @@ use airmoi\FileMaker\Helpers\DateFormat;
 class Add extends Command
 {
     protected $useRawData = false;
+
     /**
      * Add command constructor.
      *
-     * @ignore
      * @param FileMaker $fm FileMaker object the command was created by.
      * @param string $layout Layout to add a record to.
      * @param array $values Associative array of field name => value pairs. To set field repetitions,
      * use a numerically indexed array for the value of a field, with the numeric keys
      * corresponding to the repetition number to set.
      * @param bool $useRawData Prevent data conversion on setField
+     * @throws FileMakerException
+     * @ignore
      */
     public function __construct(FileMaker $fm, $layout, $values = [], $useRawData = false)
     {
@@ -88,6 +92,22 @@ class Add extends Command
         }
         $result = $this->fm->execute($params);
         return $this->getResult($result);
+    }
+
+    protected function getResult($response)
+    {
+        if ($this->fm->engine == 'cwp') {
+            $result = parent::getResult($response);
+        } else {
+            $parser      = new DataApiResult($this->fm);
+            $parseResult = $parser->parse($response);
+            if (FileMaker::isError($parseResult)) {
+                return $parseResult;
+            }
+            $result = new Result($this->fm);
+            $result->records[] = $this->fm->getRecordById($this->layout, $parser->parsedResult['recordId']);
+        }
+        return $result;
     }
 
     /**

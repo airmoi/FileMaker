@@ -9,6 +9,8 @@ use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\FileMakerValidationException;
 use airmoi\FileMaker\Helpers\DateFormat;
+use airmoi\FileMaker\Object\Result;
+use airmoi\FileMaker\Parser\DataApiResult;
 
 /**
  * Command class that edits a single record.
@@ -23,6 +25,7 @@ class Edit extends Command
     protected $modificationId = null;
     protected $deleteRelated;
     protected $useRawData = false;
+    protected $relatedSetName = null;
 
     /**
      * Edit command constructor.
@@ -37,12 +40,13 @@ class Edit extends Command
      *        repetition number to set.
      * @param bool $useRawData Prevent data conversion on setField
      */
-    public function __construct(FileMaker $fm, $layout, $recordId, $updatedValues = [], $useRawData = false)
+    public function __construct(FileMaker $fm, $layout, $recordId, $updatedValues = [], $useRawData = false, $relatedSetName = null)
     {
         parent::__construct($fm, $layout);
         $this->recordId = $recordId;
         $this->deleteRelated = null;
         $this->useRawData = $useRawData;
+        $this->relatedSetName = $relatedSetName;
         foreach ($updatedValues as $fieldname => $value) {
             if (!is_array($value)) {
                 $this->setField($fieldname, $value, 0);
@@ -85,6 +89,9 @@ class Edit extends Command
         }
 
         $params['-edit'] = true;
+        if ($this->fm->engine == 'dataAPI') {
+            $params['-relatedSet'] = $this->relatedSetName;
+        }
         if ($this->deleteRelated === null) {
             foreach ($this->fields as $fieldname => $values) {
                 $suffix = '';
@@ -116,6 +123,21 @@ class Edit extends Command
         return $this->getResult($result);
     }
 
+    protected function getResult($response)
+    {
+        if ($this->fm->engine == 'cwp') {
+            $result = parent::getResult($response);
+        } else {
+            $parser      = new DataApiResult($this->fm);
+            $parseResult = $parser->parse($response);
+            if (FileMaker::isError($parseResult)) {
+                return $parseResult;
+            }
+            $result = new Result($this->fm);
+            $result->records[] = $this->fm->getRecordById($this->layout, $this->recordId);
+        }
+        return $result;
+    }
     /**
      * Sets the new value for a field.
      *

@@ -45,9 +45,13 @@ class Result
      * result set.
      *
      * @return Layout Layout object.
+     * @throws \airmoi\FileMaker\FileMakerException
      */
     public function getLayout()
     {
+        if (is_string($this->layout)) {
+            $this->layout = $this->fm->getLayout($this->layout);
+        }
         return $this->layout;
     }
 
@@ -78,7 +82,7 @@ class Result
      */
     public function getFields()
     {
-        return $this->layout->listFields();
+        return $this->getLayout()->listFields();
     }
 
     /**

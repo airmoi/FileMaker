@@ -7,6 +7,7 @@ namespace airmoi\FileMaker\Command;
 
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\Object\Result;
+use airmoi\FileMaker\Parser\DataApiResult;
 
 /**
  * Command class that performs a ScriptMaker script.
@@ -77,9 +78,27 @@ class PerformScript extends Command
     public function execute()
     {
         $params             = $this->getCommandParams();
-        $params['-findany'] = true;
-        $this->setRangeParams($params);
+        if ($this->fm->engine == "cwp") {
+            $params['-findany'] = true;
+            $this->setRangeParams($params);
+        } else {
+            $params['-performscript'] = true;
+        }
         return $this->getResult($this->fm->execute($params));
+    }
+
+    public function getResult($response)
+    {
+        if ($this->fm->engine == "cwp") {
+            return parent::getResult($response);
+        } else {
+            $parser      = new DataApiResult($this->fm);
+            $parseResult = $parser->parse($response);
+            if (FileMaker::isError($parseResult)) {
+                return $parseResult;
+            }
+            return $parser->parsedResult;
+        }
     }
 
     /**

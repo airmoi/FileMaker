@@ -14,6 +14,10 @@
             "airmoi\\FileMaker\\": "src/"
         }
     },
+    "require": {
+        "ext-curl": "*",
+        "ext-json": "*"
+    },
     "require-dev": {
         "phpunit/phpunit": "^5.6"
     }
