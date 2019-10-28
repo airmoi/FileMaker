@@ -7,6 +7,8 @@ namespace airmoi\FileMaker\Command;
 
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
+use airmoi\FileMaker\Object\Result;
+use airmoi\FileMaker\Parser\DataApiResult;
 
 /**
  * Command class that deletes a single record.
@@ -47,5 +49,22 @@ class Delete extends Command
         $params['-recid'] = $this->recordId;
         $result = $this->fm->execute($params);
         return $this->getResult($result);
+    }
+
+    protected function getResult($response)
+    {
+        if ($this->fm->engine == 'cwp') {
+            $result = parent::getResult($response);
+        } else {
+            $parser      = new DataApiResult($this->fm);
+            $parseResult = $parser->parse($response);
+            if (FileMaker::isError($parseResult)) {
+                return $parseResult;
+            }
+            $result = new Result($this->fm);
+            /*$result->records[] = $this->fm->getRecordById($this->layout, $this->recordId);
+            $result = new Result($this->fm);*/
+        }
+        return $result;
     }
 }

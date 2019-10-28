@@ -8,6 +8,7 @@ namespace airmoi\FileMaker\Command;
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\FileMakerValidationException;
+use airmoi\FileMaker\Parser\DataApiResult;
 use airmoi\FileMaker\Parser\FMResultSet;
 use airmoi\FileMaker\Object\Result;
 
@@ -142,7 +143,7 @@ class Command
      * @param string $fieldName Name of field to pre-validate. If empty,
      *                          pre-validates the entire command.
      *
-     * @return bool|FileMakerValidationException TRUE, if pre-validation passes.
+     * @return FileMakerException|FileMakerValidationException|\airmoi\FileMaker\Object\Layout|bool
      * @throws FileMakerException
      * @throws FileMakerValidationException
      */
@@ -259,10 +260,10 @@ class Command
      * @return Result|FileMakerException
      * @throws FileMakerException
      */
-    protected function getResult($xml)
+    protected function getResult($response)
     {
-        $parser      = new FMResultSet($this->fm);
-        $parseResult = $parser->parse($xml);
+        $parser      = $this->fm->engine == 'cwp' ? new FMResultSet($this->fm) : new DataApiResult($this->fm);
+        $parseResult = $parser->parse($response);
         if (FileMaker::isError($parseResult)) {
             return $parseResult;
         }

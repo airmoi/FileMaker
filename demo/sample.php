@@ -17,7 +17,9 @@ try {
     echo "------------------------------------------" . PHP_EOL;
     echo " Test FileMaker object's main methods" . PHP_EOL;
     echo "------------------------------------------" . PHP_EOL;
-    $fm = new FileMaker('filemaker-test', 'localhost', 'filemaker', 'filemaker');
+    $fm = new FileMaker('filemaker-test', 'https://localhost.fmcloud.fm', 'filemaker', 'filemaker');
+
+    $fm->engine = "dataAPI";
 
     /* API infos */
     echo "API version : " . $fm->getAPIVersion() . PHP_EOL;
@@ -48,7 +50,8 @@ try {
     echo "Test perform function...";
     $command = $fm->newPerformScriptCommand($layouts[0], 'create sample data');
     $result = $command->execute();
-    echo implode(', ', $scripts) . '...<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
+    var_dump($result);
+    echo  '...<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
     /*
      * get layout
      */
@@ -77,8 +80,8 @@ try {
 
     echo 'Get Related sets... ' . implode(', ', $layout->listRelatedSets()) . '... <span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
     echo 'Get Valuelists list... ' . implode(', ', $layout->listValueLists()) . '... <span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
-    echo 'Get a static value list...' . (sizeof($layout->getValueList("static list")) ? sizeof($layout->getValueList("static list")) . ' values retrived... <span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>') . PHP_EOL . PHP_EOL;
-    echo 'Get a static value list...' . (sizeof($layout->getValueListTwoFields("field value list")) ? sizeof($layout->getValueListTwoFields("field value list")) . ' values retrived... <span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>') . PHP_EOL . PHP_EOL;
+    echo 'Get a static value list...' . (sizeof($layout->getValueList("sample_list")) ? sizeof($layout->getValueList("sample_list")) . ' values retrived... <span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>') . PHP_EOL . PHP_EOL;
+    echo 'Get a field value list...' . (sizeof($layout->getValueListTwoFields("ids")) ? sizeof($layout->getValueListTwoFields("ids")) . ' values retrived... <span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>') . PHP_EOL . PHP_EOL;
 
 
     /* get layout infos */
@@ -118,10 +121,10 @@ try {
     $result = $find->execute();
     echo 'Found '.$result->getFetchCount().' Expected 100...'.($result->getFetchCount() == 100 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>') . PHP_EOL . PHP_EOL;
     
-    echo 'Test FindAny command... ';
+    /*echo 'Test FindAny command... ';
     $find = $fm->newFindAnyCommand($layout->getName());
     $result = $find->execute();
-    echo 'Found '.$result->getFetchCount().' Expected 1...'.($result->getFetchCount() == 1 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>') . PHP_EOL . PHP_EOL;
+    echo 'Found '.$result->getFetchCount().' Expected 1...'.($result->getFetchCount() == 1 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>') . PHP_EOL . PHP_EOL;*/
     
     echo 'Test creating Find object from FileMaker... ';
     $find = $fm->newFindCommand($layout->getName());
@@ -134,7 +137,7 @@ try {
     
     echo 'Test adding find criterion... ';
     $find->addFindCriterion('id', 1);
-    $find->addFindCriterion('text_field', '=="record #2"');
+    $find->addFindCriterion('text_field', '>"record #2"');
     echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
     
     echo 'Test setting logical operator... ';
@@ -150,7 +153,7 @@ try {
     echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
     
     echo 'Test adding range... ';
-    $find->setRange(0, 1);
+    $find->setRange(1, 2);
     echo implode(', ', $find->getRange()).'... <span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
     
     echo 'Test perform find... ';

@@ -23,6 +23,8 @@ class Field
     public $global = false;
     public $maxRepeat = 1;
     public $validationMask = 0;
+    public $repetitionStart = 0;
+    public $repetitionEnd = 0;
     public $validationRules = [];
     public $result;
     public $type;
@@ -442,7 +444,7 @@ class Field
      */
     public function getStyleType()
     {
-        $extendedInfos = $this->layout->loadExtendedInfo();
+        $extendedInfos = $this->getLayout()->loadExtendedInfo();
         if (FileMaker::isError($extendedInfos)) {
             return $extendedInfos;
         }
