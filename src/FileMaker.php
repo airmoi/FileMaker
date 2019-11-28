@@ -585,7 +585,10 @@ class FileMaker
         //Load a random record to get extra meta data
         if (!$layout->table && $loadExtended) {
             $this->newFindAllCommand($layout->name)->setRange(0,1)->execute();
-            $layout = $this->cacheGet('layout-' . $layoutName );
+            $layoutExtended = $this->cacheGet('layout-' . $layoutName );
+            $layout->name = $layoutExtended->name;
+            $layout->database = $layoutExtended->database;
+            $layout->table = $layoutExtended->table;
         }
 
         if ($recid !== null) {
