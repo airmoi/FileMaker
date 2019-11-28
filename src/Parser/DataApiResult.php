@@ -250,7 +250,7 @@ class DataApiResult
             }
         }
 
-        if (array_key_exists($this->parsedResult, 'valueLists')){
+        if (array_key_exists('valueLists', $this->parsedResult)){
             foreach ($this->parsedResult['valueLists'] as $valueList) {
                 $layout->valueLists[$valueList['name']] = [];
                 $layout->valueListTwoFields[$valueList['name']] = [];

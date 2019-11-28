@@ -187,7 +187,7 @@ class DataApi
     public static function parseLayoutResponse($params)
     {
         if (array_key_exists('-lay.response', $params)) {
-            return ['layout.reponse' => $params['-lay.response']];
+            return ['layout.response' => $params['-lay.response']];
         }
         return [];
     }
