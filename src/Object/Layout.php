@@ -7,6 +7,7 @@ namespace airmoi\FileMaker\Object;
 
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
+use airmoi\FileMaker\Parser\DataApiResult;
 use airmoi\FileMaker\Parser\FMPXMLLAYOUT;
 
 /**
@@ -282,9 +283,9 @@ class Layout
      */
     public function loadExtendedInfo($recid = null)
     {
-        if ($this->fm->engine == "dataAPI" && $recid === null) {
+        if ($this->fm->engine != "cwp" && $recid === null) {
             return true;
-        } elseif ($this->fm->engine == "dataAPI") {
+        } elseif ($this->fm->engine != "cwp") {
             $layout = $this->fm->getLayout($this->getName(), $recid);
             $this->valueLists = $layout->valueList;
             $this->valueListTwoFields = $layout->valueListTwoFields;
@@ -304,7 +305,11 @@ class Layout
                     '-view' => null
                 ], 'FMPXMLLAYOUT');
             }
-            $parser = new FMPXMLLAYOUT($this->fm);
+            if ($this->fm->engine != "cwp") {
+                $parser = new DataApiResult($this->fm);
+            } else {
+                $parser = new FMPXMLLAYOUT($this->fm);
+            }
             $parseResult = $parser->parse($result);
             if (FileMaker::isError($parseResult)) {
                 return $parseResult;
