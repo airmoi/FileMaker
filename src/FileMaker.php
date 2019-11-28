@@ -585,6 +585,7 @@ class FileMaker
         //Load a random record to get extra meta data
         if (!$layout->table && $loadExtended) {
             $this->newFindAllCommand($layout->name)->setRange(0,1)->execute();
+            $layout = $this->cacheGet('layout-' . $layoutName );
         }
 
         if ($recid !== null) {
@@ -1121,6 +1122,8 @@ class FileMaker
             foreach ($query['queryParams'] as $option => $value) {
                 if (($value !== true) && strtolower($this->getProperty('charset')) !== 'utf-8') {
                     $value = utf8_encode($value);
+                } elseif (is_array($value)) {
+                    $value = json_encode($value);
                 }
                 $queryParams[] = urlencode($option) . ($value === true ? '' : '=' . urlencode($value));
                 $footPrint[] = $option . "=" . (preg_match('/\.value$/', $option) ? ":$option" : $value);
