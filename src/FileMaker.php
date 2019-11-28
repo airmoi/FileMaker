@@ -724,8 +724,19 @@ class FileMaker
                 $list[] = $data['fields']['LAYOUT_NAME'][0];
             }
         } else {
-            foreach ($parser->parsedResult['layouts'] as $data) {
-                $list[] = $data['name'];
+            $list = $this->parseLayoutsRecursive($parser->parsedResult['layouts']);
+        }
+        return $list;
+    }
+
+    private function parseLayoutsRecursive($layouts)
+    {
+        $list = [];
+        foreach ($layouts as $layout) {
+            if (@$layout['isFolder']) {
+                $list = array_merge($list, $this->parseLayoutsRecursive($layout['folderLayoutNames']));
+            } else {
+                $list[] = $layout['name'];
             }
         }
         return $list;
