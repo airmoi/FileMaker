@@ -305,6 +305,10 @@ class Layout
 
             $parser->setExtendedInfo($this);
             $this->extended = true;
+
+            if ($recid === null){
+                $this->fm->cacheSet($this->getName(), $this);
+            }
         }
         return $this->extended;
     }
