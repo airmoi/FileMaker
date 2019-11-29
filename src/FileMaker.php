@@ -591,7 +591,8 @@ class FileMaker
             $layout->table = $layoutExtended->table;
         }
 
-        if ($recid !== null) {
+        //Cache only if no recid provided
+        if (!$recid) {
             $this->cacheSet('layout-' . $layoutName , $layout);
         }
         return $layout;
@@ -1183,13 +1184,18 @@ class FileMaker
         }
 
         curl_close($curl);
+        //Token expired
+        if (DataApiResult::parseError($response)['code'] == 952) {
+            $this->getSessionBearer(true);
+            return $this->runDataApiQuery($query);
+        }
         return $response;
     }
 
-    private function getSessionBearer()
+    private function getSessionBearer($renew = false)
     {
         $key = md5($this->hostspec . $this->database . $this->username . $this->password);
-        if (!$bearer = $this->sessionGet('bearer-' . $key)) {
+        if ($renew or !$bearer = $this->sessionGet('bearer-' . $key)) {
             $bearer = $this->dataApiLogin();
             $this->sessionSet('bearer-' . $key, $bearer);
         }
