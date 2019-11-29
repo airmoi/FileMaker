@@ -34,6 +34,22 @@ class DataApiResult
     {
         $this->fm = $fm;
     }
+
+    public static function parseError($response)
+    {
+        $json = json_decode($response, true);
+        if (!$json) {
+            return [
+                "message" => json_last_error_msg(),
+                "code" => json_last_error()
+            ];
+        }
+
+        return [
+            "message" => $json['messages'][0]['message'],
+            "code" => $json['messages'][0]['code']
+        ];
+    }
     /**
      * Parse the provided JSON
      *
@@ -44,16 +60,9 @@ class DataApiResult
     public function parse($response)
     {
         $this->parsedResult = json_decode($response, true);
-        if (!$this->parsedResult) {
-            return $this->fm->returnOrThrowException(
-                sprintf(
-                    'JSON error: %s (%d)',
-                    json_last_error_msg(),
-                    json_last_error()
-                )
-            );
-        }
-        if ($this->parsedResult['messages'][0]['code'] != 0) {
+        $messages = self::parseError($response);
+
+        if ($messages['code'] != 0) {
             return $this->fm->returnOrThrowException(
                 $this->parsedResult['messages'][0]['message'],
                 $this->parsedResult['messages'][0]['code']
