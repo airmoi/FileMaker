@@ -1165,12 +1165,16 @@ class FileMaker
 
         $this->lastRequestedUrl = $uri;
 
-        $this->log("Perform request: " . $this->lastRequestedUrl, FileMaker::LOG_INFO);
+        $this->log("Perform request: " . $this->lastRequestedUrl
+            . (isset($body) ? PHP_EOL . 'Body: ' . $body : '')
+            , FileMaker::LOG_INFO
+        );
         //$this->log('Query Footprint : ' .implode('&', $footPrint), FileMaker::LOG_DEBUG);
 
-        $this->beginProfile($this->lastRequestedUrl);
+        $profileKey = $this->lastRequestedUrl . (isset($body) ? "-body" . $body : '');
+        $this->beginProfile($profileKey);
         $response = curl_exec($curl);
-        $this->endProfile($this->lastRequestedUrl);
+        $this->endProfile($profileKey);
 
         //$responseCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
 
