@@ -1188,9 +1188,10 @@ class FileMaker
 
     private function getSessionBearer()
     {
-        if (!$bearer = $this->sessionGet('bearer')) {
+        $key = md5($this->hostspec . $this->database . $this->username . $this->password);
+        if (!$bearer = $this->sessionGet('bearer-' . $key)) {
             $bearer = $this->dataApiLogin();
-            $this->sessionSet('bearer', $bearer);
+            $this->sessionSet('bearer-' . $key, $bearer);
         }
         return $bearer;
     }
