@@ -1171,7 +1171,7 @@ class FileMaker
         );
         //$this->log('Query Footprint : ' .implode('&', $footPrint), FileMaker::LOG_DEBUG);
 
-        $profileKey = $this->lastRequestedUrl . (isset($body) ? "-body" . $body : '');
+        $profileKey = $this->lastRequestedUrl . (isset($body) ?  PHP_EOL . 'Body: ' . $body : '');
         $this->beginProfile($profileKey);
         $response = curl_exec($curl);
         $this->endProfile($profileKey);
