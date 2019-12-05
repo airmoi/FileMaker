@@ -82,6 +82,7 @@ class FMResultSet
             );
         }
         xml_parser_free($this->xmlParser);
+        unset($this->xmlParser);
         if (!empty($this->errorCode)) {
             return $this->fm->returnOrThrowException(null, $this->errorCode);
         }
