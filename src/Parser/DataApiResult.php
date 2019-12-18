@@ -88,6 +88,11 @@ class DataApiResult
             return $this->fm->returnOrThrowException('Attempt to get a result object before parsing data.');
         }
 
+        //No parsing when records found
+        if ($this->parsedResult['messages'][0]['code'] == 401) {
+            return true;
+        }
+
         //Parse layout info only Result is empty (first pass on auto pagination)
         if (empty($this->result)) {
             $result->layout = $this->fm->getLayout($this->parsedResult['dataInfo']['layout'], null, false);
