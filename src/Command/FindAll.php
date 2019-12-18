@@ -39,7 +39,7 @@ class FindAll extends Find
 
         $pages = $result->getFoundSetCount()/100;
         for ($i = 1 ; $i < $pages; $i++) {
-            $this->setRange(($i-1)*100, 100);
+            $this->setRange($i*100, 100);
             $pageResult = $this->execute($result);
         }
         $result->fetchCount = $result->getFoundSetCount();

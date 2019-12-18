@@ -1184,6 +1184,7 @@ class FileMaker
         }
 
         curl_close($curl);
+
         //Token expired
         if (DataApiResult::parseError($response)['code'] == 952) {
             $this->getSessionBearer(true);
