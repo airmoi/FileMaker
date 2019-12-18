@@ -20,12 +20,29 @@ class FindAll extends Find
      * @return Result|\airmoi\FileMaker\FileMakerException
      * @throws \airmoi\FileMaker\FileMakerException
      */
-    public function execute()
+    public function execute($result = null)
     {
         $params             = $this->getCommandParams();
         $params['-findall'] = true;
         $this->setSortParams($params);
         $this->setRangeParams($params);
-        return $this->getResult($this->fm->execute($params));
+
+        $result = $this->getResult($this->fm->execute($params), $result);
+
+        //Handle auto pagination
+        if ($this->max
+            || $result->getFoundSetCount() == 0
+            || $result->getFoundSetCount() == $result->getFetchCount()
+        ) {
+            return $result;
+        }
+
+        $pages = $result->getFoundSetCount()/100;
+        for ($i = 1 ; $i < $pages; $i++) {
+            $this->setRange(($i-1)*100, 100);
+            $pageResult = $this->execute($result);
+        }
+        $result->fetchCount = $result->getFoundSetCount();
+        return $result;
     }
 }

@@ -86,20 +86,22 @@ class DataApiResult
         if (!$this->isParsed) {
             return $this->fm->returnOrThrowException('Attempt to get a result object before parsing data.');
         }
-        if ($this->result) {
-            return true;
+
+        //Parse layout info only Result is empty (first pass on auto pagination)
+        if (empty($this->result)) {
+            $result->layout = $this->fm->getLayout($this->parsedResult['dataInfo']['layout'], null, false);
+            $this->setLayout($result->layout);
+
+            //Update layoutCache here has record result contains extra useful metas
+            $this->fm->cacheSet('layout-' . $result->layout->getName(), $result->layout);
+
+            $result->tableCount = $this->parsedResult['dataInfo']['totalRecordCount'];
+            $result->foundSetCount = $this->parsedResult['dataInfo']['foundCount'];
+            $result->fetchCount = $this->parsedResult['dataInfo']['returnedCount'];
         }
 
-        $result->layout = $this->fm->getLayout($this->parsedResult['dataInfo']['layout'], null, false);
-        $this->setLayout($result->layout);
-
-        //Update layoutCache here has record result contains extra usefull metas
-        $this->fm->cacheSet('layout-' . $result->layout->getName(), $result->layout);
-
-        $result->tableCount = $this->parsedResult['dataInfo']['totalRecordCount'];
-        $result->foundSetCount = $this->parsedResult['dataInfo']['foundCount'];
-        $result->fetchCount = $this->parsedResult['dataInfo']['returnedCount'];
-        $records = [];
+        //Keep existing records (auto pagination handling)
+        $records = $result->records;
         foreach ($this->parsedResult['data'] as $recordData) {
             $record = new $recordClass($result->layout);
             $record->fields = $this->parseFields($recordData['fieldData']);

@@ -75,7 +75,7 @@ class PerformScript extends Command
      *
      * @return Result
      */
-    public function execute()
+    public function execute($result = null)
     {
         $params             = $this->getCommandParams();
         if ($this->fm->engine == "cwp") {
@@ -87,7 +87,7 @@ class PerformScript extends Command
         return $this->getResult($this->fm->execute($params));
     }
 
-    public function getResult($response)
+    public function getResult($response, $result = null)
     {
         if ($this->fm->engine == "cwp") {
             return parent::getResult($response);
