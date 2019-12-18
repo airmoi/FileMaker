@@ -64,7 +64,7 @@ class Edit extends Command
      * @throws FileMakerException
      * @throws FileMakerValidationException
      */
-    public function execute()
+    public function execute($result = null)
     {
         $params = $this->getCommandParams();
         if (empty($this->recordId)) {
@@ -123,7 +123,7 @@ class Edit extends Command
         return $this->getResult($result);
     }
 
-    protected function getResult($response)
+    protected function getResult($response, $result = null)
     {
         if ($this->fm->engine == 'cwp') {
             $result = parent::getResult($response);

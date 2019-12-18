@@ -260,7 +260,7 @@ class Command
      * @return Result|FileMakerException
      * @throws FileMakerException
      */
-    protected function getResult($response)
+    protected function getResult($response, $result = null)
     {
         $parser      = $this->fm->engine == 'cwp' ? new FMResultSet($this->fm) : new DataApiResult($this->fm);
         $parseResult = $parser->parse($response);
@@ -268,7 +268,9 @@ class Command
             return $parseResult;
         }
 
-        $result      = new Result($this->fm);
+        if (!$result) {
+            $result      = new Result($this->fm);
+        }
         $parseResult = $parser->setResult($result, $this->recordClass);
         if (FileMaker::isError($parseResult)) {
             return $parseResult;

@@ -19,7 +19,7 @@ class FindAny extends Find
      *
      * @return Result
      */
-    public function execute()
+    public function execute($result = null)
     {
         $params             = $this->getCommandParams();
         $params['-findany'] = true;

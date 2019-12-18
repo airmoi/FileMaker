@@ -39,7 +39,7 @@ class Delete extends Command
      * @return \airmoi\FileMaker\Object\Result|FileMakerException
      * @throws FileMakerException
      */
-    public function execute()
+    public function execute($result = null)
     {
         if (empty($this->recordId)) {
             return $this->fm->returnOrThrowException('Delete commands require a record id.');
@@ -51,7 +51,7 @@ class Delete extends Command
         return $this->getResult($result);
     }
 
-    protected function getResult($response)
+    protected function getResult($response, $result = null)
     {
         if ($this->fm->engine == 'cwp') {
             $result = parent::getResult($response);

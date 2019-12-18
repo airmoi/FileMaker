@@ -77,7 +77,7 @@ class CompoundFind extends Command
      * @return \airmoi\FileMaker\Object\Result|\airmoi\FileMaker\FileMakerException
      * @throws \airmoi\FileMaker\FileMakerException
      */
-    public function execute()
+    public function execute($result = null)
     {
         $query = null;
         $requestCount = 1;
@@ -122,8 +122,25 @@ class CompoundFind extends Command
         }
         $params['-query'] = $query;
         $params['-findquery'] = true;
-        $result = $this->fm->execute($params);
-        return $this->getResult($result);
+        $rawResult = $this->fm->execute($params);
+
+        $result = $this->getResult($rawResult, $result);
+
+        //Handle auto pagination
+        if ($this->max
+            || $result->getFoundSetCount() == 0
+            || $result->getFoundSetCount() == $result->getFetchCount()
+        ) {
+            return $result;
+        }
+
+        $pages = $result->getFoundSetCount()/100;
+        for ($i = 1 ; $i < $pages; $i++) {
+            $this->setRange(($i-1)*100, 100);
+            $pageResult = $this->execute($result);
+        }
+        $result->fetchCount = $result->getFoundSetCount();
+        return $result;
     }
 
     /**

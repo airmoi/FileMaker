@@ -55,7 +55,7 @@ class Add extends Command
      * @throws FileMakerException
      * @throws FileMakerValidationException
      */
-    public function execute()
+    public function execute($result = null)
     {
         if ($this->fm->getProperty('prevalidate')) {
             $validation = $this->validate();
@@ -94,7 +94,7 @@ class Add extends Command
         return $this->getResult($result);
     }
 
-    protected function getResult($response)
+    protected function getResult($response, $result = null)
     {
         if ($this->fm->engine == 'cwp') {
             $result = parent::getResult($response);

@@ -24,7 +24,7 @@ class Result
      * @var Layout
      */
     public $layout;
-    public $records;
+    public $records = [];
     public $tableCount;
     public $foundSetCount;
     public $fetchCount;
