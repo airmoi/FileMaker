@@ -25,6 +25,7 @@ class DataApiResult
     private $isParsed = false;
     private $result = null;
     private $layout = null;
+    private $error = ['code' => null, 'message' => null];
 
     /**
      * FMResultSet constructor.
@@ -60,13 +61,13 @@ class DataApiResult
     public function parse($response)
     {
         $this->parsedResult = json_decode($response, true);
-        $messages = self::parseError($response);
+        $this->error = self::parseError($response);
 
         //prevent throw exception when no records found.
-        if ($messages['code'] != 0 && $messages['code'] != 401) {
+        if ($this->error['code'] != 0 && $this->error['code'] != 401) {
             return $this->fm->returnOrThrowException(
-                $this->parsedResult['messages'][0]['message'],
-                $this->parsedResult['messages'][0]['code']
+                $this->error['message'],
+                $this->error['code']
             );
         }
         $this->parsedResult = $this->parsedResult['response'];
@@ -89,7 +90,7 @@ class DataApiResult
         }
 
         //No parsing when records found
-        if ($this->parsedResult['messages'][0]['code'] == 401) {
+        if ($this->error['code'] == 401) {
             return true;
         }
 
