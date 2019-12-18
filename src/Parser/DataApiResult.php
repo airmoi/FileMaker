@@ -62,7 +62,8 @@ class DataApiResult
         $this->parsedResult = json_decode($response, true);
         $messages = self::parseError($response);
 
-        if ($messages['code'] != 0) {
+        //prevent throw exception when no records found.
+        if ($messages['code'] != 0 && $messages['code'] != 401) {
             return $this->fm->returnOrThrowException(
                 $this->parsedResult['messages'][0]['message'],
                 $this->parsedResult['messages'][0]['code']
