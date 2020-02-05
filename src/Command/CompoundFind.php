@@ -32,14 +32,18 @@ class CompoundFind extends Command
      /**
      * Adds a Find Request object to this Compound Find command.
      *
-     * @param int $precedence Priority in which the find requests are added to
-     *        this compound find set.
      * @param FindRequest $findrequest {@link FindRequest} object
      *        to add to this compound find set.
+     * @param int|bool $precedence Priority in which the find requests are added to
+     *        this compound find set.
      */
-    public function add($precedence, FindRequest $findrequest)
+    public function add(FindRequest $findrequest, $precedence = false)
     {
-        $this->requests[$precedence] = $findrequest;
+        if ($precedence === false) {
+            $this->requests[] = $findrequest;
+        } else {
+            $this->requests[$precedence] = $findrequest;
+        }
     }
 
      /**
