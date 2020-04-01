@@ -90,7 +90,7 @@ class CompoundFind extends Command
 
         ksort($this->requests);
         $totalRequestCount = count($this->requests);
-        
+
         foreach ($this->requests as $precedence => $request) {
             $findCriterias = $request->findCriteria;
             $critCount = count($findCriterias);
@@ -227,7 +227,7 @@ class CompoundFind extends Command
         if ($this->skip) {
             $params['-skip'] = $this->skip;
         }
-        if ($this->max) {
+        if ($this->max !== null) {
             $params['-max'] = $this->max;
         }
     }
