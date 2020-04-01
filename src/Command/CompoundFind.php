@@ -227,7 +227,7 @@ class CompoundFind extends Command
         if ($this->skip) {
             $params['-skip'] = $this->skip;
         }
-        if ($this->max !== false) {
+        if ($this->max !== null) {
             $params['-max'] = $this->max;
         }
     }
