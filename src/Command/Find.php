@@ -237,7 +237,7 @@ class Find extends Command
         if ($this->skip) {
             $params['-skip'] = $this->skip;
         }
-        if ($this->max) {
+        if ($this->max !== null) {
             $params['-max'] = $this->max;
         }
     }
