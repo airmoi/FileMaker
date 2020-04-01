@@ -228,7 +228,7 @@ class FileMaker
     public function __destruct()
     {
         //If no session handler and CLI, destroy the session to prevent multiple ghost sessions
-        if ($this->engine == 'dataAPI' && !$this->sessionHandler && php_sapi_name() === 'cli') {
+        if ($this->engine !== 'cwp' && !$this->sessionHandler || php_sapi_name() === 'cli') {
             $this->dataApiLogout();
         }
     }
@@ -565,7 +565,7 @@ class FileMaker
             return $request;
         }
 
-        if ($this->engine == 'cwp') {
+        if ($this->engine === 'cwp') {
             $parser = new FMResultSet($this);
         } else {
             $parser = new DataApiResult($this);
@@ -614,7 +614,7 @@ class FileMaker
         }
 
 
-        if ($this->engine == 'cwp') {
+        if ($this->engine === 'cwp') {
             $parser = new FMResultSet($this);
         } else {
             $parser = new DataApiResult($this);
@@ -627,7 +627,7 @@ class FileMaker
 
         $list = [];
 
-        if ($this->engine == 'cwp') {
+        if ($this->engine === 'cwp') {
             foreach ($parser->parsedResult as $data) {
                 $list[] = $data['fields']['DATABASE_NAME'][0];
             }
@@ -661,7 +661,7 @@ class FileMaker
             return $request;
         }
 
-        if ($this->engine == 'cwp') {
+        if ($this->engine === 'cwp') {
             $parser = new FMResultSet($this);
         } else {
             $parser = new DataApiResult($this);
@@ -673,7 +673,7 @@ class FileMaker
         }
 
         $list = [];
-        if ($this->engine == 'cwp') {
+        if ($this->engine === 'cwp') {
             foreach ($parser->parsedResult as $data) {
                 $list[] = $data['fields']['SCRIPT_NAME'][0];
             }
@@ -709,7 +709,7 @@ class FileMaker
             return $request;
         }
 
-        if ($this->engine == 'cwp') {
+        if ($this->engine === 'cwp') {
             $parser = new FMResultSet($this);
         } else {
             $parser = new DataApiResult($this);
@@ -720,7 +720,7 @@ class FileMaker
         }
 
         $list = [];
-        if ($this->engine == 'cwp') {
+        if ($this->engine === 'cwp') {
             foreach ($parser->parsedResult as $data) {
                 $list[] = $data['fields']['LAYOUT_NAME'][0];
             }
@@ -895,7 +895,7 @@ class FileMaker
             return $this->returnOrThrowException('cURL is required to use the FileMaker API.');
         }
 
-        if ($this->engine == 'cwp') {
+        if ($this->engine === 'cwp') {
             if (strncasecmp($url, '/fmi/xml/cnt', 11) !== 0) {
                 return $this->returnOrThrowException('getContainerData() does not support remote containers');
             } else {
@@ -921,7 +921,7 @@ class FileMaker
             curl_setopt($curl, CURLOPT_HEADER, true);
         }
 
-        if ($this->engine == 'cwp') {
+        if ($this->engine === 'cwp') {
             $this->setCurlWPCSessionCookie($curl);
 
             if ($this->getProperty('username')) {
@@ -973,7 +973,7 @@ class FileMaker
             return $this->handleCurlError($curlError, $curl);
         }
         $this->log($curlResponse, FileMaker::LOG_DEBUG);
-        if ($this->engine == 'cwp') {
+        if ($this->engine === 'cwp') {
             $this->setClientWPCSessionCookie($curlResponse);
         }
         if ($isHeadersSent) {
@@ -1310,7 +1310,7 @@ class FileMaker
      */
     public function getContainerDataURL($url)
     {
-        if ($this->engine == 'cwp') {
+        if ($this->engine === 'cwp') {
             if (strncasecmp($url, '/fmi/xml/cnt', 11) !== 0) {
                 $decodedUrl = htmlspecialchars_decode($url);
             } else {
