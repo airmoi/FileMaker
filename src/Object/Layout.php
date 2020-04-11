@@ -278,7 +278,7 @@ class Layout
      * @param string  $recid Record from which to load extended information.
      *
      * @return boolean|FileMakerException TRUE, if successful.
-     * @throws FileMakerException;
+     * @throws FileMakerException
      */
     public function loadExtendedInfo($recid = null)
     {

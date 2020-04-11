@@ -942,7 +942,7 @@ class FileMaker
 
     /**
      * Set curl Sesion cookie
-     * @param Resource $curl a cUrl handle ressource
+     * @param resource $curl a cUrl handle ressource
      */
     private function setCurlWPCSessionCookie($curl)
     {

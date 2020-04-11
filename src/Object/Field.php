@@ -99,7 +99,7 @@ class Field
      * @param mixed $value Value to pre-validate.
      *
      * @return boolean Result of field  pre-validation on $value.
-     * @throws FileMakerValidationException;
+     * @throws FileMakerValidationException
      */
     public function validate($value)
     {
