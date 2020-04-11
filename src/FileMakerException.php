@@ -67,14 +67,14 @@ class FileMakerException extends \Exception
             } else {
                 $path = dirname(__FILE__) . '/Error/en.php';
             }
-            $strings[$lang] = require($path);
+            self::$strings[$lang] = require($path);
         }
 
-        if (isset($strings[$lang][$code])) {
-            return $strings[$lang][$code];
+        if (isset(self::$strings[$lang][$code])) {
+            return self::$strings[$lang][$code];
         }
 
-        return $strings[$lang][-1];
+        return self::$strings[$lang][-1];
     }
 
     /**
