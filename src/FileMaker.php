@@ -1026,7 +1026,15 @@ class FileMaker
             );
             $globalQuery = DataApi::prepareQuery($globalOptions);
             $globalQuery['headers'][] = 'Authorization: bearer ' . $this->getSessionBearer();
+
             $response = $this->runDataApiQuery($globalQuery);
+            //Token expired
+            if (DataApiResult::parseError($response)['code'] == 952) {
+                $this->getSessionBearer(true);
+                //replay query after token renew
+                return $this->executeDataApi($params);
+            }
+
             $parser = new DataApiResult($this);
             $parseResult = $parser->parse($response);
             if (FileMaker::isError($parseResult)) {
@@ -1039,6 +1047,12 @@ class FileMaker
         }
 
         $response = $this->runDataApiQuery($query);
+        //Token expired
+        if (DataApiResult::parseError($response)['code'] == 952) {
+            $this->getSessionBearer(true);
+            //replay query after token renew
+            return $this->executeDataApi($params);
+        }
 
         //Reset globals after query
         if ($globals) {
@@ -1185,11 +1199,6 @@ class FileMaker
 
         curl_close($curl);
 
-        //Token expired
-        if (DataApiResult::parseError($response)['code'] == 952) {
-            $this->getSessionBearer(true);
-            return $this->runDataApiQuery($query);
-        }
         return $response;
     }
 
