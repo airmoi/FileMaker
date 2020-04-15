@@ -78,7 +78,7 @@ class PerformScript extends Command
     public function execute($result = null)
     {
         $params             = $this->getCommandParams();
-        if ($this->fm->engine == "cwp") {
+        if (!$this->fm->useDataApi) {
             $params['-findany'] = true;
             $this->setRangeParams($params);
         } else {
@@ -89,7 +89,7 @@ class PerformScript extends Command
 
     public function getResult($response, $result = null)
     {
-        if ($this->fm->engine == "cwp") {
+        if (!$this->fm->useDataApi) {
             return parent::getResult($response);
         } else {
             $parser      = new DataApiResult($this->fm);

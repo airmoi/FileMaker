@@ -38,7 +38,7 @@ class FileMakerTest extends \PHPUnit_Framework_TestCase
     protected function setUp()
     {
         $this->fm = self::$connection;
-        $this->fm->engine = $GLOBALS['ENGINE'];
+        $this->fm->useDataApi = $GLOBALS['USE_DATA_API'];
         //$this->fm->newPerformScriptCommand('sample', 'cleanup db')->execute();
         if (!$this->hasDependencies()) {
             $this->fm->newPerformScriptCommand('sample', 'create sample data', 50)->execute();

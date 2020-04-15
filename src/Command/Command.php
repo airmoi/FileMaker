@@ -262,7 +262,7 @@ class Command
      */
     protected function getResult($response, $result = null)
     {
-        $parser      = $this->fm->engine == 'cwp' ? new FMResultSet($this->fm) : new DataApiResult($this->fm);
+        $parser      = !$this->fm->useDataApi ? new FMResultSet($this->fm) : new DataApiResult($this->fm);
         $parseResult = $parser->parse($response);
         if (FileMaker::isError($parseResult)) {
             return $parseResult;

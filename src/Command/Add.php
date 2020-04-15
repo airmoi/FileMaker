@@ -96,7 +96,7 @@ class Add extends Command
 
     protected function getResult($response, $result = null)
     {
-        if ($this->fm->engine == 'cwp') {
+        if (!$this->fm->useDataApi) {
             $result = parent::getResult($response);
         } else {
             $parser      = new DataApiResult($this->fm);

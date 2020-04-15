@@ -26,5 +26,7 @@
         <var name="DB_USER" value="filemaker" />
         <var name="DB_PASSWD" value="filemaker" />
         <var name="DB_FILE" value="filemaker-test" />
+        <var name="OFFICIAL_API" value="0" />
+        <var name="USE_DATA_API" value="false" />
     </php>
 </phpunit>
