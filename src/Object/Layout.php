@@ -283,9 +283,9 @@ class Layout
      */
     public function loadExtendedInfo($recid = null)
     {
-        if ($this->fm->engine != "cwp" && $recid === null) {
+        if ($this->fm->useDataApi && $recid === null) {
             return true;
-        } elseif ($this->fm->engine != "cwp") {
+        } elseif ($this->fm->useDataApi) {
             $layout = $this->fm->getLayout($this->getName(), $recid);
             $this->valueLists = $layout->valueList;
             $this->valueListTwoFields = $layout->valueListTwoFields;
@@ -305,7 +305,7 @@ class Layout
                     '-view' => null
                 ], 'FMPXMLLAYOUT');
             }
-            if ($this->fm->engine != "cwp") {
+            if ($this->fm->useDataApi) {
                 $parser = new DataApiResult($this->fm);
             } else {
                 $parser = new FMPXMLLAYOUT($this->fm);

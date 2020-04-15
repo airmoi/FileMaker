@@ -89,7 +89,7 @@ class Edit extends Command
         }
 
         $params['-edit'] = true;
-        if ($this->fm->engine == 'dataAPI') {
+        if ($this->fm->useDataApi) {
             $params['-relatedSet'] = $this->relatedSetName;
         }
         if ($this->deleteRelated === null) {
@@ -125,7 +125,7 @@ class Edit extends Command
 
     protected function getResult($response, $result = null)
     {
-        if ($this->fm->engine == 'cwp') {
+        if (!$this->fm->useDataApi) {
             $result = parent::getResult($response);
         } else {
             $parser      = new DataApiResult($this->fm);

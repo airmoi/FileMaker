@@ -19,7 +19,7 @@ try {
     echo "------------------------------------------" . PHP_EOL;
     $fm = new FileMaker('filemaker-test', 'https://localhost.fmcloud.fm', 'filemaker', 'filemaker');
 
-    $fm->engine = "dataAPI";
+    $fm->useDataApi = true;
 
     /* API infos */
     echo "API version : " . $fm->getAPIVersion() . PHP_EOL;
@@ -103,7 +103,7 @@ try {
     } catch (FileMakerValidationException $ex) {
         echo 'Test EMPTY validation <span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
     }
-    
+
     echo 'Test Max Length validation (' . $field->maxCharacters . ')... ';
     try {
         $field->validate(str_repeat('a', 51));
@@ -111,75 +111,75 @@ try {
     } catch (FileMakerValidationException $ex) {
         echo '<span style="color:green">SUCCESS</span> ' . PHP_EOL . PHP_EOL;
     }
-    
+
     echo "------------------------------------------" . PHP_EOL;
     echo " Test Find object's main methods" . PHP_EOL;
     echo "------------------------------------------" . PHP_EOL;
-    
+
     echo 'Test FindAll command... ';
     $find = $fm->newFindAllCommand($layout->getName());
     $result = $find->execute();
     echo 'Found '.$result->getFetchCount().' Expected 100...'.($result->getFetchCount() == 100 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>') . PHP_EOL . PHP_EOL;
-    
+
     /*echo 'Test FindAny command... ';
     $find = $fm->newFindAnyCommand($layout->getName());
     $result = $find->execute();
     echo 'Found '.$result->getFetchCount().' Expected 1...'.($result->getFetchCount() == 1 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>') . PHP_EOL . PHP_EOL;*/
-    
+
     echo 'Test creating Find object from FileMaker... ';
     $find = $fm->newFindCommand($layout->getName());
     echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
-    
-    
+
+
     echo 'Test adding preCommandScript... ';
     $find->setPreCommandScript('create sample data');;
     echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
-    
+
     echo 'Test adding find criterion... ';
     $find->addFindCriterion('id', 1);
     $find->addFindCriterion('text_field', '>"record #2"');
     echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
-    
+
     echo 'Test setting logical operator... ';
     $find->setLogicalOperator(FileMaker::FIND_OR);
     echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
-    
+
     echo 'Test adding preSortScript... ';
     $find->setPreSortScript('Set Order');
     echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
-    
+
     echo 'Test adding sort rule... ';
     $find->addSortRule('number_field', 1, FileMaker::SORT_DESCEND);
     echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
-    
+
     echo 'Test adding range... ';
     $find->setRange(1, 2);
     echo implode(', ', $find->getRange()).'... <span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
-    
+
     echo 'Test perform find... ';
     $result = $find->execute();
     echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
-    
+
     echo 'Check result consistency...'. PHP_EOL;
     echo 'Record count... ';
     $count = $result->getFetchCount();
     echo 'Expected 1, returned '.$count.'... ' . ($count == 1 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>') . PHP_EOL . PHP_EOL;
-    
+
     echo 'Record total count... ';
     $count = $result->getFoundSetCount();
     echo 'Expected 2, returned '.$count.'... ' . ($count == 2 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>') . PHP_EOL . PHP_EOL;
-    
+
     echo 'Try to get First Record... ';
     $record = $result->getFirstRecord();
     echo ($record instanceof \airmoi\FileMaker\Object\Record ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>') . PHP_EOL . PHP_EOL;
-    
+
     echo 'Check if expected record (ID = 2)... ';
     echo 'returned '.$record->getField('id').'... ' . ($record->getField('id') == 2 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>') . PHP_EOL . PHP_EOL;
-    
+
     echo 'Test Create CompoundFind... ';
     $request = $fm->newCompoundFindCommand($layout->getName());
     echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
-    
+
     echo 'Test Create FindRequets... ';
     $findReq1 = $fm->newFindRequest($layout->getName());
     $findReq1->addFindCriterion('id', '1');
@@ -189,51 +189,51 @@ try {
     $findReq3->addFindCriterion('id', '3...4');
     $findReq3->setOmit(true);
     echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
-    
+
     echo 'Add FindRequets to compoundFind... ';
     $request->add(1, $findReq1);
     $request->add(2, $findReq2);
     $request->add(3, $findReq3);
     echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
-    
+
     echo 'Test adding sort rule to CompoundFind... ';
     $request->addSortRule('id', 1, FileMaker::SORT_DESCEND);
     echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
-    
+
     echo 'Test adding range... ';
     $request->setRange(0, 2);
     echo implode(', ', $find->getRange()).'... <span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
-    
+
     echo 'Add RelatedSet Filters... ';
     $request->setRelatedSetsFilters('none', 'all');
     echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
-    
+
     echo 'Get RelatedSet Filters... ';
     $filters = $request->getRelatedSetsFilters('related_sample');
     echo implode(', ', $filters).'... <span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
-    
+
     echo 'Execute CompoundFind... ';
     $result = $request->execute();
     echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
-    
+
     echo 'Check result consistency...'. PHP_EOL;
     echo 'Record count... ';
     $count = $result->getFetchCount();
     echo 'Expected 2, returned '.$count.'... ' . ($count == 2 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>') . PHP_EOL . PHP_EOL;
-    
+
     echo 'Record total count... ';
     $count = $result->getFoundSetCount();
     echo 'Expected 2, returned '.$count.'... ' . ($count == 2 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>') . PHP_EOL . PHP_EOL;
-    
+
     echo 'Try to get First Record... ';
     $record = $result->getFirstRecord();
     echo ($record instanceof \airmoi\FileMaker\Object\Record ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>') . PHP_EOL . PHP_EOL;
-    
+
     echo 'Check if expected record (ID = 2)... ';
     echo 'returned '.$record->getField('id').'... ' . ($record->getField('id') == 2 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>') . PHP_EOL . PHP_EOL;
-    
-    
-    
+
+
+
     echo "------------------------------------------" . PHP_EOL;
     echo " Test Record object's main methods" . PHP_EOL;
     echo "------------------------------------------" . PHP_EOL;
@@ -245,50 +245,50 @@ try {
     echo 'Related Sets : '. implode(', ', array_keys($relatedSets)). PHP_EOL ;
     foreach ( $relatedSets as $relatedSetName => $relatedSet)
         echo 'Related Records in '.$relatedSetName.': '. sizeof($record->getRelatedSet($relatedSetName)). PHP_EOL ;
-    
+
     echo PHP_EOL;
-    
+
    echo 'Get record field Value... ';
    $value = $record->getField('date_field');
    echo ($value != "" ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>'). PHP_EOL . PHP_EOL;
-   
-    
+
+
    echo 'Get record container... ';
    $container = base64_encode($fm->getContainerData($record->getField('container_field')));
    echo "<img src='data:image/png;base64,$container' />";
    echo (sizeof($container) > 0 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>'). PHP_EOL . PHP_EOL;
-   
+
    echo 'Get simple field Value List... ';
    $list = $record->getFieldValueListTwoFields('text_field');
    echo (sizeof($list) == 5 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>'). PHP_EOL . PHP_EOL;
-   
+
    echo 'Get record related ValueList... ';
    $list = $record->getFieldValueListTwoFields('number_field', true);
    echo (sizeof($list) == sizeof($record->getRelatedSet($relatedSetName)) ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>' ). PHP_EOL . PHP_EOL ;
-   
+
    echo 'Get a related Record... ';
    $relatedRecord = $record->getRelatedSet($relatedSetName)[0];
    echo ($relatedRecord instanceof \airmoi\FileMaker\Object\Record ? $relatedRecord->getField($relatedSetName.'::id').'... <span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>'). PHP_EOL . PHP_EOL;
 
    echo 'Check child parent... ';
    echo ($relatedRecord->getParent() == $record ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>'). PHP_EOL . PHP_EOL;
-   
-   
+
+
    echo 'Get a related Record By RecId... ';
    $relatedRecord2 = $record->getRelatedRecordById($relatedSetName, $relatedRecord->getRecordId());
    echo ($relatedRecord == $relatedRecord2 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>'). PHP_EOL . PHP_EOL;
-   
+
    echo 'Testing setField... ';
    $relatedRecord->setField('text_field', 'TEST COMMIT WITH RELATED RECORDS');
    echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
-    
+
    echo 'Commit changes to related record...';
    $relatedRecord->commit();
    echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
-   
+
    echo "Test if modifed related record match parent's relatedRecord... ";
    echo ($record->getRelatedSet($relatedSetName)[0] == $relatedRecord ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>'). PHP_EOL . PHP_EOL;
-   
+
    echo "Test creation of related record.. ";
    $currentRelatedSetCount = sizeof($record->getRelatedSet($relatedSetName));
    $newRelatedRecord = $record->newRelatedRecord($relatedSetName);
@@ -301,7 +301,7 @@ try {
    $newRelatedRecord->setField('timestamp_field', date('m/d/Y H:i:s', $time));
    $newRelatedRecord->commit();
    echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
-   
+
    echo "Check if parent's relatedSet has been updated... ";
    echo (sizeof($record->getRelatedSet($relatedSetName)) == $currentRelatedSetCount+1 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>' ) . PHP_EOL . PHP_EOL;
 
@@ -309,7 +309,7 @@ try {
    $duplicateCommand = $fm->newDuplicateCommand($layout->getName(), $record->getRecordId());
    $result = $duplicateCommand->execute();
    echo 'New record count '.$result->getTableRecordCount().'... <span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
-   
+
    echo "test create record... ";
    $newRecord = $fm->newAddCommand($layout->getName());
    $time = time();
@@ -323,13 +323,13 @@ try {
    $recordId = $result->getFirstRecord()->getRecordId();
    echo 'New record count '.$result->getTableRecordCount().'... ';
    echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
-   
+
    echo "test delete record... ";
    $delCommand = $fm->newDeleteCommand($layout->getName(), $recordId);
    $result = $delCommand->execute();
    echo 'New record count '.$result->getTableRecordCount().'... <span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
-   
-   
+
+
    echo "test Record validation rules... ";
    $updateCommand = $fm->newEditCommand($layout->getName(), $record->getRecordId(), ['text_field'=> str_repeat('a', 51)]);
    try {
@@ -340,7 +340,7 @@ try {
        else
         echo '... <span style="color:red">FAIL</span>' . PHP_EOL . PHP_EOL;
    }
-   
+
    echo "test Add record... ";
    $addCommand = $fm->newAddCommand($layout->getName(), ['text_field' => 'Test Add Command']);
    $addCommand->setField('number_field', rand(1,2000));
@@ -349,9 +349,9 @@ try {
    $addCommand->setFieldFromTimestamp('time_field', time());
    $result = $addCommand->execute();
    echo 'New record count '.$result->getTableRecordCount().'... <span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
-   
- 
-    
+
+
+
 } catch (FileMakerException $e) {
     echo PHP_EOL;
     echo "EXCEPTION :" . PHP_EOL;
