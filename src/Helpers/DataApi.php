@@ -20,7 +20,7 @@ class DataApi
     const ENDPOINT_GLOBAL = '/databases/{database}/globals';
     const ENDPOINT_SCRIPT = '/databases/{database}/layouts/{layout}/script/{scriptName}';
 
-    public static function prepareQuery($params)
+    public static function prepareQuery(array $params)
     {
         $query = [
             'uri' => self::ENDPOINT_BASE,
@@ -149,7 +149,7 @@ class DataApi
         return $query;
     }
 
-    public static function parseSort($params, $prefix = '')
+    public static function parseSort(array $params, string $prefix = '')
     {
         $sort = [];
 
@@ -170,7 +170,7 @@ class DataApi
         return [];
     }
 
-    public static function parseRange($params, $prefix = '')
+    public static function parseRange(array $params, string $prefix = '')
     {
         $range = [];
 
@@ -184,7 +184,7 @@ class DataApi
         return $range;
     }
 
-    public static function parseLayoutResponse($params)
+    public static function parseLayoutResponse(array $params)
     {
         if (array_key_exists('-lay.response', $params)) {
             return ['layout.response' => $params['-lay.response']];
@@ -192,7 +192,7 @@ class DataApi
         return [];
     }
 
-    public static function parseScripts($params)
+    public static function parseScripts(array $params)
     {
         $scripts = [];
         if (array_key_exists('-script', $params)) {
@@ -210,13 +210,19 @@ class DataApi
         return $scripts;
     }
 
-    public static function parseFind($params)
+    /**
+     * @param array $params
+     */
+    public static function parseFind(array $params)
     {
         $crits = self::parseFields($params);
         return ['query' => [$crits]];
     }
 
-    public static function parseFindQuery($params)
+    /**
+     * @param array $params
+     */
+    public static function parseFindQuery(array $params)
     {
         $queries = [];
         $requests = explode(';', $params['-query']);
@@ -246,7 +252,7 @@ class DataApi
     }
 
 
-    public static function parseFields($params)
+    public static function parseFields(array $params)
     {
         $fieldData = [];
         $fields = [
@@ -267,7 +273,7 @@ class DataApi
         return $fieldData;
     }
 
-    public static function parseGlobalFields($params)
+    public static function parseGlobalFields(array $params)
     {
         $fieldData = [];
         $fields = [
@@ -299,7 +305,10 @@ class DataApi
         return $globalResult;
     }
 
-    public static function parsePortalFields($params)
+    /**
+     * @param array $params
+     */
+    public static function parsePortalFields(array $params)
     {
         $portalData = [];
         if (!isset($params['-relatedSet'])) {

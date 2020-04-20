@@ -87,6 +87,9 @@ class PerformScript extends Command
         return $this->getResult($this->fm->execute($params));
     }
 
+    /**
+     * @param \airmoi\FileMaker\FileMakerException|string $response
+     */
     public function getResult($response, $result = null)
     {
         if (!$this->fm->useDataApi) {

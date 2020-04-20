@@ -255,9 +255,12 @@ class Command
     }
 
     /**
-     *
      * @param string $xml
+     * @param FileMakerException|string $response
+     * @param FileMakerException|Result|null $result
+     *
      * @return Result|FileMakerException
+     *
      * @throws FileMakerException
      */
     protected function getResult($response, $result = null)

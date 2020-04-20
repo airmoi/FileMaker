@@ -51,6 +51,9 @@ class Delete extends Command
         return $this->getResult($result);
     }
 
+    /**
+     * @param FileMakerException|string $response
+     */
     protected function getResult($response, $result = null)
     {
         if (!$this->fm->useDataApi) {

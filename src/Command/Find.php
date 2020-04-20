@@ -63,8 +63,12 @@ class Find extends Command
 
     /**
      * Execute the command
+     *
      * @return \airmoi\FileMaker\FileMakerException|\airmoi\FileMaker\Object\Result|string
+     *
      * @throws \airmoi\FileMaker\FileMakerException
+     *
+     * @param \airmoi\FileMaker\FileMakerException|\airmoi\FileMaker\Object\Result|null $result
      */
     public function execute($result = null)
     {

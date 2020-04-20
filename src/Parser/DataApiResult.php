@@ -36,6 +36,9 @@ class DataApiResult
         $this->fm = $fm;
     }
 
+    /**
+     * @param FileMakerException|bool|string $response
+     */
     public static function parseError($response)
     {
         $json = json_decode($response, true);

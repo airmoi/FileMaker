@@ -544,14 +544,14 @@ class FileMaker
      *
      * @param string $layoutName Name of the layout to describe.
      *
-     * @param null $recid
+     * @param string|null $recid
      * @param bool $loadExtended
      * @return Layout|FileMakerException Layout.
      * @throws FileMakerException
      */
     public function getLayout($layoutName, $recid = null, $loadExtended = true)
     {
-        if ($recid !== null || $layout = $this->cacheGet('layout-' . $layoutName)) {
+        if ($recid === null && $layout = $this->cacheGet('layout-' . $layoutName)) {
             return $layout;
         }
 
@@ -730,7 +730,7 @@ class FileMaker
         return $list;
     }
 
-    private function parseLayoutsRecursive($layouts)
+    private function parseLayoutsRecursive(Object\Record $layouts)
     {
         $list = [];
         foreach ($layouts as $layout) {
@@ -778,9 +778,10 @@ class FileMaker
 
     /**
      * @param $key string key identifying the cached value.
+     *
      * @return bool|mixed The value stored in cache, false if the value is not in the cache or expired.
      */
-    public function cacheGet($key)
+    public function cacheGet(string $key)
     {
         if (!$this->schemaCache) {
             return false;
@@ -798,9 +799,11 @@ class FileMaker
     /**
      * @param $key string A key identifying the value to be cached.
      * @param $value mixed The value to be cached
+     * @param FileMakerException|Layout $value
+     *
      * @return boolean
      */
-    public function cacheSet($key, $value)
+    public function cacheSet(string $key, $value)
     {
         if (!$this->schemaCache) {
             return false;
@@ -815,9 +818,10 @@ class FileMaker
 
     /**
      * @param $key string key identifying the cached value.
+     *
      * @return bool|mixed The value stored in cache, false if the value is not in the cache or expired.
      */
-    public function sessionGet($key)
+    public function sessionGet(string $key)
     {
         if ($this->sessionHandler === null) {
             if (!session_id() && headers_sent()) {
@@ -837,9 +841,10 @@ class FileMaker
     /**
      * @param $key string A key identifying the value to be cached.
      * @param $value mixed The value to be cached
+     *
      * @return boolean
      */
-    public function sessionSet($key, $value)
+    public function sessionSet(string $key, $value)
     {
         if ($this->sessionHandler === null) {
             if (!session_id() && headers_sent()) {
@@ -1012,9 +1017,10 @@ class FileMaker
      * @param $params
      *
      * @return string|FileMakerException the cUrl response
+     *
      * @throws FileMakerException
      */
-    public function executeDataApi($params)
+    public function executeDataApi(array $params)
     {
         $globals = DataApi::parseGlobalFields($params);
 
@@ -1133,10 +1139,13 @@ class FileMaker
 
     /**
      * @param $query
+     * @param ((mixed|string|string[][])[]|null|string)[] $query
+     *
      * @return FileMakerException|bool|string
+     *
      * @throws FileMakerException
      */
-    public function runDataApiQuery($query)
+    public function runDataApiQuery(array $query)
     {
         $uriParams = array_merge($query['params'], [
             'host' => $this->hostspec
@@ -1202,7 +1211,7 @@ class FileMaker
         return $response;
     }
 
-    private function getSessionBearer($renew = false)
+    private function getSessionBearer(bool $renew = false)
     {
         $key = md5($this->hostspec . $this->database . $this->username . $this->password);
         if ($renew or !$bearer = $this->sessionGet('bearer-' . $key)) {

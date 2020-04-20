@@ -73,9 +73,11 @@ class CompoundFind extends Command
     }
 
     /**
-     *
      * @return \airmoi\FileMaker\Object\Result|\airmoi\FileMaker\FileMakerException
+     *
      * @throws \airmoi\FileMaker\FileMakerException
+     *
+     * @param \airmoi\FileMaker\FileMakerException|\airmoi\FileMaker\Object\Result|null $result
      */
     public function execute($result = null)
     {
@@ -209,9 +211,10 @@ class CompoundFind extends Command
 
     /**
      * Build relatedSets Filter params
+     *
      * @param $params
      */
-    public function setRelatedSetsFiltersParams(&$params)
+    public function setRelatedSetsFiltersParams(array &$params)
     {
         if ($this->relatedsetsfilter) {
             $params['-relatedsets.filter'] = $this->relatedsetsfilter;
@@ -223,9 +226,10 @@ class CompoundFind extends Command
 
     /**
      * Build sort params
+     *
      * @param $params
      */
-    public function setSortParams(&$params)
+    public function setSortParams(array &$params)
     {
         foreach ($this->sortFields as $precedence => $fieldname) {
             $params['-sortfield.' . $precedence] = $fieldname;
@@ -237,9 +241,10 @@ class CompoundFind extends Command
 
     /**
      * Build range params
+     *
      * @param $params
      */
-    public function setRangeParams(&$params)
+    public function setRangeParams(array &$params)
     {
         if ($this->skip) {
             $params['-skip'] = $this->skip;

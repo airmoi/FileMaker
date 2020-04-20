@@ -54,9 +54,10 @@ class DateFormat
      * @param $value
      * @param string|null $inputFormat
      * @param string|null $outputFormat
+     *
      * @return string
      */
-    public static function convertSearchCriteria($value, $inputFormat = null, $outputFormat = null)
+    public static function convertSearchCriteria(string $value, $inputFormat = null, $outputFormat = null)
     {
         if (empty($value)
             || in_array($value, self::$byPassOperators)
@@ -96,9 +97,10 @@ class DateFormat
 
     /**
      * @param $format
+     *
      * @return string
      */
-    public static function dateFormatToRegex($format)
+    public static function dateFormatToRegex(string $format)
     {
         $keys = [
             'Y' => ['year', '\d{4}|\*'],

@@ -264,6 +264,7 @@ class FMResultSet
      * @param resource $parser
      * @param string $tag
      * @param array $datas
+     * @return void
      */
     private function start($parser, $tag, $datas)
     {
@@ -321,6 +322,7 @@ class FMResultSet
      *
      * @param mixed $parser
      * @param string $tag
+     * @return void
      */
     private function end($parser, $tag)
     {
@@ -356,6 +358,7 @@ class FMResultSet
      *
      * @param resource $parser
      * @param string $data
+     * @return void
      */
     private function cdata($parser, $data)
     {

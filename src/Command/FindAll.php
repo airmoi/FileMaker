@@ -16,9 +16,11 @@ use airmoi\FileMaker\Object\Result;
 class FindAll extends Find
 {
     /**
-     *
      * @return Result|\airmoi\FileMaker\FileMakerException
+     *
      * @throws \airmoi\FileMaker\FileMakerException
+     *
+     * @param Result|\airmoi\FileMaker\FileMakerException|null $result
      */
     public function execute($result = null)
     {
