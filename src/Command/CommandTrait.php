@@ -49,10 +49,12 @@ trait CommandTrait
         try {
             $layout = $this->fm->getLayout($this->layout);
             if (FileMaker::isError($layout)) {
+                /** @psalm-suppress InvalidThrow */
                 throw $layout;
             }
             $field = $layout->getField($fieldName);
             if(FileMaker::isError($field)){
+                /** @psalm-suppress InvalidThrow */
                 throw $field;
             }
         } catch (FileMakerException $e) {

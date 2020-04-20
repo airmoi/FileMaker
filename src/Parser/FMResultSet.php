@@ -70,7 +70,9 @@ class FMResultSet
         xml_set_object($this->xmlParser, $this);
         xml_parser_set_option($this->xmlParser, XML_OPTION_CASE_FOLDING, false);
         xml_parser_set_option($this->xmlParser, XML_OPTION_TARGET_ENCODING, 'UTF-8');
+        /** @psalm-suppress UndefinedFunction */
         xml_set_element_handler($this->xmlParser, 'start', 'end');
+        /** @psalm-suppress UndefinedFunction */
         xml_set_character_data_handler($this->xmlParser, 'cdata');
         if (!@xml_parse($this->xmlParser, $xml)) {
             return $this->fm->returnOrThrowException(
