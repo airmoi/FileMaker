@@ -8,6 +8,7 @@ namespace airmoi\FileMaker\Parser;
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\Object\Layout;
+use Exception;
 
 /**
  * Class used to parse FMPXMLLAYOUT structure
@@ -24,7 +25,6 @@ class FMPXMLLAYOUT
     private $fields = [];
     private $valueLists;
     private $valueListTwoFields;
-    private $xmlParser;
     private $isParsed = false;
     private $fieldName;
     private $valueList;
@@ -51,24 +51,24 @@ class FMPXMLLAYOUT
         if (empty($xmlResponse)) {
             return $this->fm->returnOrThrowException('Did not receive an XML document from the server.');
         }
-        $this->xmlParser = xml_parser_create();
-        xml_set_object($this->xmlParser, $this);
-        xml_parser_set_option($this->xmlParser, XML_OPTION_CASE_FOLDING, false);
-        xml_parser_set_option($this->xmlParser, XML_OPTION_TARGET_ENCODING, 'UTF-8');
+        $xmlParser = xml_parser_create();
+        xml_set_object($xmlParser, $this);
+        xml_parser_set_option($xmlParser, XML_OPTION_CASE_FOLDING, false);
+        xml_parser_set_option($xmlParser, XML_OPTION_TARGET_ENCODING, 'UTF-8');
         /** @psalm-suppress UndefinedFunction */
-        xml_set_element_handler($this->xmlParser, 'start', 'end');
+        xml_set_element_handler($xmlParser, 'start', 'end');
         /** @psalm-suppress UndefinedFunction */
-        xml_set_character_data_handler($this->xmlParser, 'cdata');
-        if (!@xml_parse($this->xmlParser, $xmlResponse)) {
+        xml_set_character_data_handler($xmlParser, 'cdata');
+        if (!@xml_parse($xmlParser, $xmlResponse)) {
             return $this->fm->returnOrThrowException(
                 sprintf(
                     'XML error: %s at line %d',
-                    xml_error_string(xml_get_error_code($this->xmlParser)),
-                    xml_get_current_line_number($this->xmlParser)
+                    xml_error_string(xml_get_error_code($xmlParser)),
+                    xml_get_current_line_number($xmlParser)
                 )
             );
         }
-        xml_parser_free($this->xmlParser);
+        xml_parser_free($xmlParser);
         if (!empty($this->errorCode)) {
             return $this->fm->returnOrThrowException(null, $this->errorCode);
         }
@@ -80,7 +80,7 @@ class FMPXMLLAYOUT
      * Add extended infos to a Layout object
      *
      * @param Layout $layout
-     * @return FileMakerException
+     * @return FileMakerException|bool
      * @throws FileMakerException
      */
     public function setExtendedInfo(Layout $layout)
@@ -97,7 +97,7 @@ class FMPXMLLAYOUT
                     $field->styleType = $fieldInfos['styleType'];
                     $field->valueList = $fieldInfos['valueList'] ? $fieldInfos['valueList'] : null;
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 //Field may be missing when it is stored in a portal, ommit error
             }
         }
@@ -181,7 +181,7 @@ class FMPXMLLAYOUT
      *
      * @param array $array
      * @param array $values
-     * @return boolean
+     * @return array|bool
      */
     public function associativeArrayPush(&$array, $values)
     {

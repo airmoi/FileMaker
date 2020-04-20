@@ -14,6 +14,10 @@ use airmoi\FileMaker\Helpers\DataApi;
 use airmoi\FileMaker\Parser\DataApiResult;
 use airmoi\FileMaker\Parser\FMResultSet;
 use airmoi\FileMaker\Object\Layout;
+use DateTime;
+use Exception;
+use ReflectionException;
+use ReflectionMethod;
 
 /**
  * Base FileMaker class. Defines database properties, connects to a database,
@@ -86,7 +90,7 @@ class FileMaker
     private $logger = null;
 
     /**
-     * @var string[] a pseudo cache for scripts list to prevent unnecessary call's to Custom Web Publishing engine
+     * @var array[] a pseudo cache for scripts list to prevent unnecessary call's to Custom Web Publishing engine
      */
     private static $scripts = [];
 
@@ -225,6 +229,9 @@ class FileMaker
         }
     }
 
+    /**
+     * @throws FileMakerException
+     */
     public function __destruct()
     {
         //If no session handler and CLI, destroy the session to prevent multiple ghost sessions
@@ -314,7 +321,7 @@ class FileMaker
      * Session handler object must implement a set(strinq $key, mixed $value) method
      * and a get(strinq $key) method
      *
-     * @param Object|FileMakerException $cache Cache object.
+     * @param $handler
      * @return FileMakerException|void
      * @throws FileMakerException
      */
@@ -340,6 +347,7 @@ class FileMaker
      *        the value of a field, with the numeric keys corresponding to the
      *        repetition number to set.
      *
+     * @param bool $useRawData
      * @return Command\Add New Add command object.
      * @throws FileMakerException
      */
@@ -360,7 +368,9 @@ class FileMaker
      *        number to set.
      * @param bool $useRawData Prevent date/time conversion when values are already
      *
+     * @param null $relatedSetName
      * @return Command\Edit New Edit command object.
+     * @throws FileMakerException
      */
     public function newEditCommand($layout, $recordId, $updatedValues = [], $useRawData = false, $relatedSetName = null)
     {
@@ -494,6 +504,8 @@ class FileMaker
     {
         $layout = $this->getLayout($layoutName);
         $record = new $this->properties['recordClass']($layout);
+        $error = false;
+
         /* @var $record Object\Record */
         if (is_array($fieldValues)) {
             foreach ($fieldValues as $fieldName => $fieldValue) {
@@ -777,11 +789,11 @@ class FileMaker
     }
 
     /**
-     * @param $key string key identifying the cached value.
+     * @param string $key string key identifying the cached value.
      *
      * @return bool|mixed The value stored in cache, false if the value is not in the cache or expired.
      */
-    public function cacheGet(string $key)
+    public function cacheGet($key)
     {
         if (!$this->schemaCache) {
             return false;
@@ -797,13 +809,12 @@ class FileMaker
     }
 
     /**
-     * @param $key string A key identifying the value to be cached.
-     * @param $value mixed The value to be cached
+     * @param string $key string A key identifying the value to be cached.
      * @param FileMakerException|Layout $value
      *
      * @return boolean
      */
-    public function cacheSet(string $key, $value)
+    public function cacheSet($key, $value)
     {
         if (!$this->schemaCache) {
             return false;
@@ -817,11 +828,11 @@ class FileMaker
     }
 
     /**
-     * @param $key string key identifying the cached value.
+     * @param string $key string key identifying the cached value.
      *
      * @return bool|mixed The value stored in cache, false if the value is not in the cache or expired.
      */
-    public function sessionGet(string $key)
+    public function sessionGet($key)
     {
         if ($this->sessionHandler === null) {
             if (!session_id() && headers_sent()) {
@@ -839,12 +850,12 @@ class FileMaker
     }
 
     /**
-     * @param $key string A key identifying the value to be cached.
+     * @param string $key string A key identifying the value to be cached.
      * @param $value mixed The value to be cached
      *
      * @return boolean
      */
-    public function sessionSet(string $key, $value)
+    public function sessionSet($key, $value)
     {
         if ($this->sessionHandler === null) {
             if (!session_id() && headers_sent()) {
@@ -949,15 +960,6 @@ class FileMaker
             curl_setopt($curl, CURLOPT_COOKIEJAR, $cookiePath);
             curl_setopt($curl, CURLOPT_MAXREDIRS, 20);
             curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
-
-            /*else if ($this->options['cookieFilePath'] != '') {
-                curl_setopt($ch, CURLOPT_COOKIEFILE, $this->options['cookieFilePath']);
-            }*/
-            /*$authString = base64_encode($this->getProperty('username') . ':' . $this->getProperty('password'));
-            $headers = [
-                'Authorization: Basic ' . $authString,
-            ];
-            curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);*/
         }
 
         $this->lastRequestedUrl = $hostspec;
@@ -969,7 +971,7 @@ class FileMaker
         $curlinfos = curl_getinfo($curl);
 
         //retry on error 401
-        if ($curlinfos['http_code'] === 401) {
+        if ($curlinfos['http_code'] === 401 && isset($cookiePath)) {
             curl_setopt($curl, CURLOPT_COOKIEFILE, $cookiePath);
             $curlResponse = curl_exec($curl);
         }
@@ -1019,11 +1021,12 @@ class FileMaker
      * @return string|FileMakerException the cUrl response
      *
      * @throws FileMakerException
+     * @throws Exception
      */
     public function executeDataApi(array $params)
     {
         $globals = DataApi::parseGlobalFields($params);
-
+        $globalQuery = [];
         if ($globals) {
             $layout = $this->getLayout($params['-lay']);
             $globalOptions = array_merge(
@@ -1076,6 +1079,10 @@ class FileMaker
         return $response;
     }
 
+    /**
+     * @return mixed|null
+     * @throws FileMakerException
+     */
     public function dataApiLogin()
     {
         if ($this->token) {
@@ -1104,12 +1111,16 @@ class FileMaker
         ];
         $response = json_decode($this->runDataApiQuery($query), true);
         if ($response['messages'][0]['code'] != 0) {
-            return $this->fm->returnOrThrowException($response['messages'][0]['message'], $response['messages'][0]['code']);
+            return $this->returnOrThrowException($response['messages'][0]['message'], $response['messages'][0]['code']);
         }
         $this->token = $response['response']['token'];
         return $this->token;
     }
 
+    /**
+     * @return FileMakerException|bool|null
+     * @throws FileMakerException
+     */
     public function dataApiLogout()
     {
         if (!$this->token) {
@@ -1211,7 +1222,12 @@ class FileMaker
         return $response;
     }
 
-    private function getSessionBearer(bool $renew = false)
+    /**
+     * @param bool $renew
+     * @return bool|mixed|null
+     * @throws FileMakerException
+     */
+    private function getSessionBearer($renew = false)
     {
         $key = md5($this->hostspec . $this->database . $this->username . $this->password);
         if ($renew or !$bearer = $this->sessionGet('bearer-' . $key)) {
@@ -1452,7 +1468,7 @@ class FileMaker
      *
      * @return FileMakerException|string
      * @throws FileMakerException
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     public function __get($name)
     {
@@ -1461,7 +1477,7 @@ class FileMaker
             return $this->properties[$name];
         } elseif (method_exists($this, $getter)) {
             //test if it is a valid function (no args)
-            $reflection = new \ReflectionMethod(__CLASS__, $getter);
+            $reflection = new ReflectionMethod(__CLASS__, $getter);
             if (sizeof($reflection->getParameters()) === 0 and $reflection->isPublic()) {
                 return $this->$getter();
             }
@@ -1511,9 +1527,9 @@ class FileMaker
             return $value;
         }
         try {
-            $date = \DateTime::createFromFormat($this->getProperty('dateFormat'), $value);
+            $date = DateTime::createFromFormat($this->getProperty('dateFormat'), $value);
             return $date->format('m/d/Y');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->log('Could not convert string to a valid DateTime : ' . $e->getMessage(), FileMaker::LOG_ERR);
             return $value;
         }
@@ -1529,9 +1545,9 @@ class FileMaker
             return $value;
         }
         try {
-            $date = \DateTime::createFromFormat('m/d/Y', $value);
+            $date = DateTime::createFromFormat('m/d/Y', $value);
             return $date->format($this->getProperty('dateFormat'));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->log('Could not convert string to a valid DateTime : ' . $e->getMessage(), FileMaker::LOG_ERR);
             return $value;
         }

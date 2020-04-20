@@ -9,6 +9,7 @@ use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\Object\Layout;
 use airmoi\FileMaker\Object\Field;
+use airmoi\FileMaker\Object\Record;
 use airmoi\FileMaker\Object\RelatedSet;
 use airmoi\FileMaker\Object\Result;
 
@@ -25,7 +26,7 @@ class FMResultSet
 
     /**
      * Array that stores parsed records
-     * @var \airmoi\FileMaker\Object\Record[]
+     * @var Record[]
      */
     public $parsedResult = [];
 
@@ -40,7 +41,6 @@ class FMResultSet
     private $parentRecord;
     private $currentField;
     private $cdata;
-    private $xmlParser;
     private $isParsed = false;
     private $result;
     private $layout;
@@ -66,25 +66,25 @@ class FMResultSet
         if (empty($xml)) {
             return $this->fm->returnOrThrowException('Did not receive an XML document from the server.');
         }
-        $this->xmlParser = xml_parser_create('UTF-8');
-        xml_set_object($this->xmlParser, $this);
-        xml_parser_set_option($this->xmlParser, XML_OPTION_CASE_FOLDING, false);
-        xml_parser_set_option($this->xmlParser, XML_OPTION_TARGET_ENCODING, 'UTF-8');
+        $xmlParser = xml_parser_create('UTF-8');
+        xml_set_object($xmlParser, $this);
+        xml_parser_set_option($xmlParser, XML_OPTION_CASE_FOLDING, false);
+        xml_parser_set_option($xmlParser, XML_OPTION_TARGET_ENCODING, 'UTF-8');
         /** @psalm-suppress UndefinedFunction */
-        xml_set_element_handler($this->xmlParser, 'start', 'end');
+        xml_set_element_handler($xmlParser, 'start', 'end');
         /** @psalm-suppress UndefinedFunction */
-        xml_set_character_data_handler($this->xmlParser, 'cdata');
-        if (!@xml_parse($this->xmlParser, $xml)) {
+        xml_set_character_data_handler($xmlParser, 'cdata');
+        if (!@xml_parse($xmlParser, $xml)) {
             return $this->fm->returnOrThrowException(
                 sprintf(
                     'XML error: %s at line %d',
-                    xml_error_string(xml_get_error_code($this->xmlParser)),
-                    xml_get_current_line_number($this->xmlParser)
+                    xml_error_string(xml_get_error_code($xmlParser)),
+                    xml_get_current_line_number($xmlParser)
                 )
             );
         }
-        xml_parser_free($this->xmlParser);
-        unset($this->xmlParser);
+        xml_parser_free($xmlParser);
+        unset($xmlParser);
         if (!empty($this->errorCode)) {
             return $this->fm->returnOrThrowException(null, $this->errorCode);
         }
@@ -101,7 +101,7 @@ class FMResultSet
     /**
      * Populate a result object with parsed datas
      *
-     * @param \airmoi\FileMaker\Object\Result $result
+     * @param Result $result
      * @param string $recordClass string representing the record class name to use
      * @return FileMakerException|boolean
      * @throws FileMakerException

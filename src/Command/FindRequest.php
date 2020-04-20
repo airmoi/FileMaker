@@ -24,6 +24,7 @@ class FindRequest
     /**
      * Find request constructor.
      *
+     * @param FileMaker $fm
      * @param string $layout
      */
     public function __construct(FileMaker $fm, $layout)

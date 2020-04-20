@@ -8,6 +8,7 @@ use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\Object\Field;
 use airmoi\FileMaker\Object\Layout;
+use airmoi\FileMaker\Object\Record;
 use airmoi\FileMaker\Object\RelatedSet;
 use airmoi\FileMaker\Object\Result;
 
@@ -19,7 +20,7 @@ class DataApiResult
     private $fm;
     /**
      * Array that stores parsed records
-     * @var \airmoi\FileMaker\Object\Record[]
+     * @var Record[]
      */
     public $parsedResult = [];
     private $isParsed = false;
@@ -38,6 +39,7 @@ class DataApiResult
 
     /**
      * @param FileMakerException|bool|string $response
+     * @return array
      */
     public static function parseError($response)
     {
@@ -81,7 +83,7 @@ class DataApiResult
     /**
      * Populate a result object with parsed datas
      *
-     * @param \airmoi\FileMaker\Object\Result $result
+     * @param Result $result
      * @param string $recordClass string representing the record class name to use
      * @return FileMakerException|boolean
      * @throws FileMakerException

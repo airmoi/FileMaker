@@ -11,6 +11,7 @@ use airmoi\FileMaker\FileMakerValidationException;
 use airmoi\FileMaker\Helpers\DateFormat;
 use airmoi\FileMaker\Object\Result;
 use airmoi\FileMaker\Parser\DataApiResult;
+use Exception;
 
 /**
  * Command class that edits a single record.
@@ -30,7 +31,6 @@ class Edit extends Command
     /**
      * Edit command constructor.
      *
-     * @ignore
      * @param FileMaker $fm FileMaker object the command was created by.
      * @param string $layout Layout the record is part of.
      * @param string $recordId ID of the record to edit.
@@ -39,6 +39,9 @@ class Edit extends Command
      *        the value of a field, with the numeric keys corresponding to the
      *        repetition number to set.
      * @param bool $useRawData Prevent data conversion on setField
+     * @param null $relatedSetName
+     * @throws FileMakerException
+     * @ignore
      */
     public function __construct(FileMaker $fm, $layout, $recordId, $updatedValues = [], $useRawData = false, $relatedSetName = null)
     {
@@ -60,7 +63,8 @@ class Edit extends Command
 
     /**
      *
-     * @return \airmoi\FileMaker\Object\Result|FileMakerException|FileMakerValidationException
+     * @param null $result
+     * @return Result|FileMakerException|FileMakerValidationException
      * @throws FileMakerException
      * @throws FileMakerValidationException
      */
@@ -125,6 +129,9 @@ class Edit extends Command
 
     /**
      * @param FileMakerException|string $response
+     * @param null $result
+     * @return FileMakerException|Result|bool
+     * @throws FileMakerException
      */
     protected function getResult($response, $result = null)
     {
@@ -179,7 +186,7 @@ class Edit extends Command
                 } else {
                     $value = DateFormat::convert($value, $dateFormat . ' H:i:s', 'm/d/Y H:i:s');
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 return $this->fm->returnOrThrowException(
                     $value . ' could not be converted to a valid timestamp for field '
                     . $field . ' (expected format '. $dateFormat .')'

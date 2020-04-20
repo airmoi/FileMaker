@@ -5,6 +5,9 @@
  */
 namespace airmoi\FileMaker\Command;
 
+use airmoi\FileMaker\FileMakerException;
+use airmoi\FileMaker\Object\Result;
+
 /**
  * Command class that performs multiple find requests, also known as a compound
  * find set.
@@ -73,11 +76,11 @@ class CompoundFind extends Command
     }
 
     /**
-     * @return \airmoi\FileMaker\Object\Result|\airmoi\FileMaker\FileMakerException
+     * @param FileMakerException|Result|null $result
+     *@return Result|FileMakerException
      *
-     * @throws \airmoi\FileMaker\FileMakerException
+     * @throws FileMakerException
      *
-     * @param \airmoi\FileMaker\FileMakerException|\airmoi\FileMaker\Object\Result|null $result
      */
     public function execute($result = null)
     {
@@ -139,7 +142,7 @@ class CompoundFind extends Command
         $pages = $result->getFoundSetCount()/100;
         for ($i = 1 ; $i < $pages; $i++) {
             $this->setRange($i*100, 100);
-            $pageResult = $this->execute($result);
+            $this->execute($result);
         }
         $result->fetchCount = $result->getFoundSetCount();
         return $result;

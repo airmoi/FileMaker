@@ -37,6 +37,7 @@ class Duplicate extends Command
      * Return a Result object with the duplicated record
      * use Result->getFirstRecord() to get the record
      *
+     * @param null $result
      * @return Result|FileMakerException
      * @throws FileMakerException
      */
@@ -54,6 +55,9 @@ class Duplicate extends Command
 
     /**
      * @param FileMakerException|string $response
+     * @param null $result
+     * @return FileMakerException|Result|bool
+     * @throws FileMakerException
      */
     protected function getResult($response, $result = null)
     {

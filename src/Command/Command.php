@@ -8,6 +8,7 @@ namespace airmoi\FileMaker\Command;
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\FileMakerValidationException;
+use airmoi\FileMaker\Object\Layout;
 use airmoi\FileMaker\Parser\DataApiResult;
 use airmoi\FileMaker\Parser\FMResultSet;
 use airmoi\FileMaker\Object\Result;
@@ -143,7 +144,7 @@ class Command
      * @param string $fieldName Name of field to pre-validate. If empty,
      *                          pre-validates the entire command.
      *
-     * @return FileMakerException|FileMakerValidationException|\airmoi\FileMaker\Object\Layout|bool
+     * @return FileMakerException|FileMakerValidationException|Layout|bool
      * @throws FileMakerException
      * @throws FileMakerValidationException
      */
@@ -208,7 +209,7 @@ class Command
     /**
      * Executes the command.
      *
-     * @return Result Result object.
+     * @return void Result object.
      */
     public function execute()
     {
@@ -255,7 +256,6 @@ class Command
     }
 
     /**
-     * @param string $xml
      * @param FileMakerException|string $response
      * @param FileMakerException|Result|null $result
      *

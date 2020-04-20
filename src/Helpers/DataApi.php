@@ -3,6 +3,8 @@
 
 namespace airmoi\FileMaker\Helpers;
 
+use Exception;
+
 class DataApi
 {
     const ENDPOINT_BASE = '{host}/fmi/data/{version}';
@@ -20,6 +22,11 @@ class DataApi
     const ENDPOINT_GLOBAL = '/databases/{database}/globals';
     const ENDPOINT_SCRIPT = '/databases/{database}/layouts/{layout}/script/{scriptName}';
 
+    /**
+     * @param array $params
+     * @return array
+     * @throws Exception
+     */
     public static function prepareQuery(array $params)
     {
         $query = [
@@ -141,7 +148,7 @@ class DataApi
                 'globalFields' => self::parseFields($params)
             ];
         } elseif (array_key_exists('-findany', $params)) {
-            throw new \Exception('Find any function not supported by dataAPI');
+            throw new Exception('Find any function not supported by dataAPI');
         }
 
         //$query['uri'] = str_replace(array_keys($query['params']), array_values($query['params']), $query['uri']);
@@ -149,7 +156,12 @@ class DataApi
         return $query;
     }
 
-    public static function parseSort(array $params, string $prefix = '')
+    /**
+     * @param array $params
+     * @param string $prefix
+     * @return array
+     */
+    public static function parseSort(array $params, $prefix = null)
     {
         $sort = [];
 
@@ -170,7 +182,12 @@ class DataApi
         return [];
     }
 
-    public static function parseRange(array $params, string $prefix = '')
+    /**
+     * @param array $params
+     * @param string $prefix
+     * @return array
+     */
+    public static function parseRange(array $params, $prefix = null)
     {
         $range = [];
 
@@ -212,6 +229,7 @@ class DataApi
 
     /**
      * @param array $params
+     * @return \array[][]
      */
     public static function parseFind(array $params)
     {
@@ -221,6 +239,7 @@ class DataApi
 
     /**
      * @param array $params
+     * @return array[]
      */
     public static function parseFindQuery(array $params)
     {
@@ -307,6 +326,7 @@ class DataApi
 
     /**
      * @param array $params
+     * @return array
      */
     public static function parsePortalFields(array $params)
     {

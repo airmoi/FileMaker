@@ -287,7 +287,7 @@ class Layout
             return true;
         } elseif ($this->fm->useDataApi) {
             $layout = $this->fm->getLayout($this->getName(), $recid);
-            $this->valueLists = $layout->valueList;
+            $this->valueLists = $layout->valueLists;
             $this->valueListTwoFields = $layout->valueListTwoFields;
         }
         if (!$this->extended || $recid != null) {

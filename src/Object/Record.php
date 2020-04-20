@@ -9,6 +9,8 @@ use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\FileMakerValidationException;
 use airmoi\FileMaker\Helpers\DateFormat;
+use DateTime;
+use Exception;
 
 /**
  * Default Record class that represents each record of a result set.
@@ -70,6 +72,7 @@ class Record
      * Returns the layout this record is associated with.
      *
      * @return Layout This record's layout.
+     * @throws FileMakerException
      */
     public function getLayout()
     {
@@ -87,6 +90,7 @@ class Record
      * parent object's {@link Result::getLayout()} method.
      *
      * @return array List of field names as strings.
+     * @throws FileMakerException
      */
     public function getFields()
     {
@@ -144,7 +148,7 @@ class Record
                 } else {
                     return DateFormat::convert($value, 'm/d/Y H:i:s', $dateFormat . ' H:i:s');
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 return $this->fm->returnOrThrowException(
                     $field . ' could not be converted to a valid timestamp ('. $value .')'
                 );
@@ -159,8 +163,9 @@ class Record
      * Returns the two field value list associated with the given field in Record's layout.
      *
      * @param string $fieldName Field's Name
-     * @return array|\airmoi\FileMaker\FileMakerException
+     * @return array|FileMakerException
      * @see Layout::getValueListTwoFields
+     * @throws FileMakerException
      */
     public function getFieldValueListTwoFields($fieldName)
     {
@@ -194,12 +199,13 @@ class Record
      *
      * This method does not convert special characters in the field value to
      * HTML entities.
-     * @deprecated since version 2.0 use getField($field, $repetition = 0, $unencoded = true) instead
      * @param string $field Name of field.
      * @param integer $repetition Field repetition number to get.
      *        Defaults to the first repetition.
      *
      * @return string Unencoded field value.
+     * @throws FileMakerException
+     * @deprecated since version 2.0 use getField($field, $repetition = 0, $unencoded = true) instead
      */
     public function getFieldUnencoded($field, $repetition = 0)
     {
@@ -233,7 +239,7 @@ class Record
         switch ($fieldType->getResult()) {
             case 'date':
                 // e. g. "12/24/2016"
-                if (!$dateTime = \DateTime::createFromFormat($dateFormat . ' H:i:s', $value . ' 00:00:00')) {
+                if (!$dateTime = DateTime::createFromFormat($dateFormat . ' H:i:s', $value . ' 00:00:00')) {
                     return $this->fm->returnOrThrowException(
                         'Failed to parse "' . $value . '" as a FileMaker date value.'
                     );
@@ -241,7 +247,7 @@ class Record
                 break;
             case 'time':
                 // e. g. "12:00:00"
-                if (!$dateTime = \DateTime::createFromFormat('Y-m-d H:i:s', '1970-01-01 ' . $value)) {
+                if (!$dateTime = DateTime::createFromFormat('Y-m-d H:i:s', '1970-01-01 ' . $value)) {
                     return $this->fm->returnOrThrowException(
                         'Failed to parse "' . $value . '" as a FileMaker time value.'
                     );
@@ -249,7 +255,7 @@ class Record
                 break;
             case 'timestamp':
                 // e. g. "12/24/2016 12:00:00"
-                if (!$dateTime = \DateTime::createFromFormat($dateFormat . ' H:i:s', $value)) {
+                if (!$dateTime = DateTime::createFromFormat($dateFormat . ' H:i:s', $value)) {
                     return $this->fm->returnOrThrowException(
                         'Failed to parse "' . $value . '" as a FileMaker timestamp value.'
                     );
@@ -295,7 +301,7 @@ class Record
                 } else {
                     $convertedValue = DateFormat::convert($value, $dateFormat . ' H:i:s', 'm/d/Y H:i:s');
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 return $this->fm->returnOrThrowException(
                     $value . ' could not be converted to a valid timestamp for field '
                     . $field . ' (expected format '. $dateFormat .')'
@@ -449,8 +455,8 @@ class Record
      * @param string $fieldName Name of field to pre-validate. If empty,
      *        pre-validates the entire record.
      *
-     * @return boolean|\airmoi\FileMaker\FileMakerValidationException TRUE, if pre-validation passes for $value.
-     * @throws \airmoi\FileMaker\FileMakerValidationException
+     * @return boolean|FileMakerValidationException TRUE, if pre-validation passes for $value.
+     * @throws FileMakerValidationException|FileMakerException
      */
     public function validate($fieldName = null)
     {

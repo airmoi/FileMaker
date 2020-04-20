@@ -36,7 +36,8 @@ class Delete extends Command
 
     /**
      *
-     * @return \airmoi\FileMaker\Object\Result|FileMakerException
+     * @param null $result
+     * @return Result|FileMakerException
      * @throws FileMakerException
      */
     public function execute($result = null)
@@ -53,6 +54,9 @@ class Delete extends Command
 
     /**
      * @param FileMakerException|string $response
+     * @param null $result
+     * @return FileMakerException|Result|bool
+     * @throws FileMakerException
      */
     protected function getResult($response, $result = null)
     {

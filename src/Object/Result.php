@@ -6,6 +6,7 @@
 namespace airmoi\FileMaker\Object;
 
 use airmoi\FileMaker\FileMaker;
+use airmoi\FileMaker\FileMakerException;
 
 /**
  * Result set description class. Contains all the information about a set of
@@ -45,7 +46,7 @@ class Result
      * result set.
      *
      * @return Layout Layout object.
-     * @throws \airmoi\FileMaker\FileMakerException
+     * @throws FileMakerException
      */
     public function getLayout()
     {
@@ -79,6 +80,7 @@ class Result
      * {@link getLayout()} method.
      *
      * @return array List of field names as strings.
+     * @throws FileMakerException
      */
     public function getFields()
     {

@@ -10,6 +10,9 @@
 
 namespace airmoi\FileMaker\Helpers;
 
+use DateTime;
+use Exception;
+
 /**
  * Class DateTimeHelper
  * Provide methods to convert date input/output
@@ -31,7 +34,7 @@ class DateFormat
      * @param string $inputFormat
      * @param string $outputFormat
      * @return string
-     * @throws \Exception
+     * @throws Exception
      */
     public static function convert($value, $inputFormat = null, $outputFormat = null)
     {
@@ -42,22 +45,22 @@ class DateFormat
         //Parse value to detect incorrect date format
         $parsedDate = date_parse_from_format($inputFormat, $value);
         if ($parsedDate['error_count'] || $parsedDate['warning_count']) {
-            throw new \Exception('invalid date format');
+            throw new Exception('invalid date format');
         }
 
-        $date = \DateTime::createFromFormat($inputFormat, $value);
+        $date = DateTime::createFromFormat($inputFormat, $value);
 
         return $date->format($outputFormat);
     }
 
     /**
-     * @param $value
+     * @param string $value
      * @param string|null $inputFormat
      * @param string|null $outputFormat
      *
      * @return string
      */
-    public static function convertSearchCriteria(string $value, $inputFormat = null, $outputFormat = null)
+    public static function convertSearchCriteria($value, $inputFormat = null, $outputFormat = null)
     {
         if (empty($value)
             || in_array($value, self::$byPassOperators)
@@ -96,11 +99,11 @@ class DateFormat
     }
 
     /**
-     * @param $format
+     * @param string $format
      *
      * @return string
      */
-    public static function dateFormatToRegex(string $format)
+    public static function dateFormatToRegex($format)
     {
         $keys = [
             'Y' => ['year', '\d{4}|\*'],

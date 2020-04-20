@@ -11,6 +11,7 @@ use airmoi\FileMaker\FileMakerValidationException;
 use airmoi\FileMaker\Helpers\DateFormat;
 use airmoi\FileMaker\Object\Result;
 use airmoi\FileMaker\Parser\DataApiResult;
+use Exception;
 
 /**
  * Command class that adds a new record.
@@ -51,7 +52,8 @@ class Add extends Command
 
     /**
      *
-     * @return \airmoi\FileMaker\Object\Result|FileMakerException|FileMakerValidationException
+     * @param null $result
+     * @return Result|FileMakerException|FileMakerValidationException
      * @throws FileMakerException
      * @throws FileMakerValidationException
      */
@@ -96,6 +98,9 @@ class Add extends Command
 
     /**
      * @param FileMakerException|string $response
+     * @param null $result
+     * @return FileMakerException|Result|bool
+     * @throws FileMakerException
      */
     protected function getResult($response, $result = null)
     {
@@ -144,7 +149,7 @@ class Add extends Command
                 } else {
                     $value = DateFormat::convert($value, $dateFormat . ' H:i:s', 'm/d/Y H:i:s');
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 return $this->fm->returnOrThrowException(
                     $value . ' could not be converted to a valid timestamp for field '
                     . $field . ' (expected format '. $dateFormat .')'

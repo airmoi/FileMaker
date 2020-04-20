@@ -6,6 +6,8 @@
 namespace airmoi\FileMaker\Command;
 
 use airmoi\FileMaker\FileMaker;
+use airmoi\FileMaker\FileMakerException;
+use airmoi\FileMaker\Object\Record;
 use airmoi\FileMaker\Object\Result;
 use airmoi\FileMaker\Parser\DataApiResult;
 
@@ -27,7 +29,7 @@ class PerformScript extends Command
      * PerformScript command constructor.
      *
      * @ignore
-     * @param \airmoi\FileMaker\FileMaker $fm FileMaker object the command was created by.
+     * @param FileMaker $fm FileMaker object the command was created by.
      * @param string $layout Layout to use for script context.
      * @param string $scriptName Name of the script to run.
      * @param string $scriptParameters Any parameters to pass to the script.
@@ -73,7 +75,9 @@ class PerformScript extends Command
 
     /**
      *
+     * @param null $result
      * @return Result
+     * @throws FileMakerException
      */
     public function execute($result = null)
     {
@@ -88,7 +92,10 @@ class PerformScript extends Command
     }
 
     /**
-     * @param \airmoi\FileMaker\FileMakerException|string $response
+     * @param FileMakerException|string $response
+     * @param null $result
+     * @return FileMakerException|Record[]|Result|bool
+     * @throws FileMakerException
      */
     public function getResult($response, $result = null)
     {
