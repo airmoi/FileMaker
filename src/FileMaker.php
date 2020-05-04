@@ -950,16 +950,17 @@ class FileMaker
             } else {
                 curl_setopt($curl, CURLOPT_HTTPHEADER, ['X-FMI-PE-ExtendedPrivilege: IrG6U+Rx0F5bLIQCUb9gOw==']);
             }
-            if ($curlOptions = $this->getProperty('curlOptions')) {
-                foreach ($curlOptions as $property => $value) {
-                    curl_setopt($curl, $property, $value);
-                }
-            }
         } else {
             $cookiePath  = tempnam(sys_get_temp_dir(), 'fmAPICookie_'. mt_rand());
             curl_setopt($curl, CURLOPT_COOKIEJAR, $cookiePath);
             curl_setopt($curl, CURLOPT_MAXREDIRS, 20);
             curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
+        }
+
+        if ($curlOptions = $this->getProperty('curlOptions')) {
+            foreach ($curlOptions as $key => $value) {
+                curl_setopt($curl, $key, $value);
+            }
         }
 
         $this->lastRequestedUrl = $hostspec;
