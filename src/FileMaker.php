@@ -742,7 +742,7 @@ class FileMaker
         return $list;
     }
 
-    private function parseLayoutsRecursive(Object\Record $layouts)
+    private function parseLayoutsRecursive(array $layouts)
     {
         $list = [];
         foreach ($layouts as $layout) {
