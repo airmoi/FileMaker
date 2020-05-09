@@ -53,7 +53,6 @@ class DataApi
         } elseif (array_key_exists('-find', $params)) {
             $query['uri'] .= self::ENDPOINT_FIND;
             $query['method'] = 'POST';
-            //$query['queryParams']['sort'] = rawurlencode(json_encode(self::parseSort($params)));
             $query['body'] = array_merge(
                 self::parseRange($params),
                 self::parseLayoutResponse($params),
@@ -78,8 +77,8 @@ class DataApi
                 $query['queryParams'],
                 self::parseRange($params, '_'),
                 self::parseLayoutResponse($params),
-                self::parseScripts($params),
-                self::parseSort($params, '_')
+                self::parseScripts($params, true),
+                self::parseSort($params, '_', true)
             );
         } elseif (array_key_exists('-new', $params)) {
             $query['uri'] .= self::ENDPOINT_RECORDS;
@@ -140,7 +139,7 @@ class DataApi
             $query['uri'] .= self::ENDPOINT_SCRIPT;
             $query['method'] = 'GET';
             $query['params']['scriptName'] = rawurlencode($params['-script']);
-            $query['queryParams']['script.param'] =  @$params['-script.param'];
+            $query['queryParams']['script.param'] =  rawurlencode(@$params['-script.param']);
         } elseif (array_key_exists('-setGlobals', $params)) { //Custom handler
             $query['uri'] .= self::ENDPOINT_GLOBAL;
             $query['method'] = 'PATCH';
@@ -159,9 +158,10 @@ class DataApi
     /**
      * @param array $params
      * @param string $prefix
+     * @param bool $encoded
      * @return array
      */
-    public static function parseSort(array $params, $prefix = null)
+    public static function parseSort(array $params, $prefix = null, $encoded = false)
     {
         $sort = [];
 
@@ -169,7 +169,7 @@ class DataApi
             if (substr($key, 0, 11) === '-sortfield.') {
                 $precedence = (int) substr($key, 11, strlen($key)-11);
                 $sort[$precedence] = [
-                    'fieldName' => rawurlencode($field),
+                    'fieldName' => $encoded ? rawurlencode($field) : $field,
                     'sortOrder' => array_key_exists('-sortorder.' . $precedence, $params) ?
                         $params['-sortorder.' . $precedence]
                         : 'ascend',
@@ -209,20 +209,25 @@ class DataApi
         return [];
     }
 
-    public static function parseScripts(array $params)
+    public static function parseScripts(array $params, $encoded = false)
     {
         $scripts = [];
         if (array_key_exists('-script', $params)) {
-            $scripts['script'] = rawurlencode($params['-script']);
-            $scripts['script.param'] = rawurlencode(@$params['-script.param']);
+            $scripts['script'] = $params['-script'];
+            $scripts['script.param'] = @$params['-script.param'];
         }
         if (array_key_exists('-script', $params)) {
-            $scripts['script.prerequest'] = rawurlencode($params['-script.prefind']);
-            $scripts['script.prerequest.param'] = rawurlencode(@$params['-script.prefind.param']);
+            $scripts['script.prerequest'] = $params['-script.prefind'];
+            $scripts['script.prerequest.param'] = @$params['-script.prefind.param'];
         }
         if (array_key_exists('-script', $params)) {
-            $scripts['script.presort'] = rawurlencode($params['-script.presort']);
-            $scripts['script.presort.param'] = rawurlencode(@$params['-script.presort.param']);
+            $scripts['script.presort'] = $params['-script.presort'];
+            $scripts['script.presort.param'] = @$params['-script.presort.param'];
+        }
+        if ($encoded) {
+            foreach($scripts as $key => $value) {
+                $scripts[$key] = rawurldecode($value);
+            }
         }
         return $scripts;
     }
@@ -263,7 +268,7 @@ class DataApi
             $criterias = explode(',', $matches[1]);
             foreach ($criterias as $index) {
                 $i = preg_replace('/[^0-9]/', '', $index);
-                $query[key($searchCriterias[$i])] = $searchCriterias[$i][key($searchCriterias[$i])];
+                $query[rawurlencode(key($searchCriterias[$i]))] = $searchCriterias[$i][key($searchCriterias[$i])];
             }
             $queries[] = $query;
         }
@@ -286,7 +291,7 @@ class DataApi
             if (!empty($matches['global'])) {
                 #TODO Handle globals
             } else {
-                $fieldData[$field] = $value;
+                $fieldData[urldecode($field)] = urldecode($value);
             }
         }
         return $fieldData;
