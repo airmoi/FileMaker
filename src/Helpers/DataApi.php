@@ -216,11 +216,11 @@ class DataApi
             $scripts['script'] = $params['-script'];
             $scripts['script.param'] = @$params['-script.param'];
         }
-        if (array_key_exists('-script', $params)) {
+        if (array_key_exists('-script.prefind', $params)) {
             $scripts['script.prerequest'] = $params['-script.prefind'];
             $scripts['script.prerequest.param'] = @$params['-script.prefind.param'];
         }
-        if (array_key_exists('-script', $params)) {
+        if (array_key_exists('-script.presort', $params)) {
             $scripts['script.presort'] = $params['-script.presort'];
             $scripts['script.presort.param'] = @$params['-script.presort.param'];
         }
