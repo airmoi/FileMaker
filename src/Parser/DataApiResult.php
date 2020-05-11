@@ -279,7 +279,7 @@ class DataApiResult
                 $layout->valueListTwoFields[$valueList['name']] = [];
                 foreach ($valueList['values'] as $value) {
                     $layout->valueLists[$valueList['name']][$value['value']] = $value['value'];
-                    $layout->valueListTwoFields[$valueList['name']][$value['value']] = $value['displayValue'];
+                    $layout->valueListTwoFields[$valueList['name']][$value['displayValue']] = $value['value'];
                 }
             }
         }
