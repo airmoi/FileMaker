@@ -179,45 +179,45 @@ class DataApiResult
             foreach ($this->parsedResult['fieldMetaData'] as $fieldInfos) {
                 $field = new Field($layout);
                 $field->name = $fieldInfos['name'];
-                $field->autoEntered = (bool) ($fieldInfos['autoEnter'] === 'yes');
-                $field->global = (bool) ($fieldInfos['global'] === 'yes');
+                $field->autoEntered = $fieldInfos['autoEnter'];
+                $field->global = $fieldInfos['global'];
                 $field->maxRepeat = (int) $fieldInfos['maxRepeat'];
                 $field->result = $fieldInfos['result'];
                 $field->type = $fieldInfos['type'];
                 $field->styleType = strtoupper($fieldInfos['displayType']);
-                $field->valueList = @$fieldInfos['valueList'];
+                $field->valueList = isset($fieldInfos['valueList']) ? $fieldInfos['valueList'] : null;
                 $field->repetitionStart = @$fieldInfos['repetitionStart'];
                 $field->repetitionEnd = @$fieldInfos['repetitionEnd'];
-                if ($fieldInfos['notEmpty'] === 'yes') {
+                if ($fieldInfos['notEmpty']) {
                     $field->validationRules[FileMaker::RULE_NOTEMPTY] = true;
                     $field->validationMask |= FileMaker::RULE_NOTEMPTY;
                 }
-                if ($fieldInfos['numeric'] === 'yes') {
+                if ($fieldInfos['numeric']) {
                     $field->validationRules[FileMaker::RULE_NUMERICONLY] = true;
                     $field->validationMask |= FileMaker::RULE_NUMERICONLY;
                 }
-                if (array_key_exists('maxCharacters', $fieldInfos)) {
+                if ($fieldInfos['maxCharacters']) {
                     $field->maxCharacters = (int) $fieldInfos['maxCharacters'];
                     $field->validationRules[FileMaker::RULE_MAXCHARACTERS] = true;
                     $field->validationMask |= FileMaker::RULE_MAXCHARACTERS;
                 }
-                if ($fieldInfos['fourDigitYear'] === 'yes') {
+                if ($fieldInfos['fourDigitYear']) {
                     $field->validationRules[FileMaker::RULE_FOURDIGITYEAR] = true;
                     $field->validationMask |= FileMaker::RULE_FOURDIGITYEAR;
                 }
-                if ($fieldInfos['timeOfDay'] === 'yes') {
+                if ($fieldInfos['timeOfDay']) {
                     $field->validationRules[FileMaker::RULE_TIMEOFDAY] = true;
                     $field->validationMask |= FileMaker::RULE_TIMEOFDAY;
                 }
-                if ($fieldInfos['fourDigitYear'] === 'no' && $fieldInfos['result'] === 'timestamp') {
+                if (!$fieldInfos['fourDigitYear'] && $fieldInfos['result'] === 'timestamp') {
                     $field->validationRules[FileMaker::RULE_TIMESTAMP_FIELD] = true;
                     $field->validationMask |= FileMaker::RULE_TIMESTAMP_FIELD;
                 }
-                if ($fieldInfos['fourDigitYear'] === 'no' && $fieldInfos['result'] === 'date') {
+                if (!$fieldInfos['fourDigitYear'] && $fieldInfos['result'] === 'date') {
                     $field->validationRules[FileMaker::RULE_DATE_FIELD] = true;
                     $field->validationMask |= FileMaker::RULE_DATE_FIELD;
                 }
-                if ($fieldInfos['timeOfDay'] === 'no' && $fieldInfos['result'] === 'time') {
+                if (!$fieldInfos['timeOfDay'] && $fieldInfos['result'] === 'time') {
                     $field->validationRules[FileMaker::RULE_TIME_FIELD] = true;
                     $field->validationMask |= FileMaker::RULE_TIME_FIELD;
                 }
@@ -229,41 +229,41 @@ class DataApiResult
                 foreach ($fields as $fieldInfos) {
                     $field = new Field($layout);
                     $field->name = $fieldInfos['name'];
-                    $field->autoEntered = (bool) ($fieldInfos['autoEnter'] === 'yes');
-                    $field->global = (bool) ($fieldInfos['global'] === 'yes');
+                    $field->autoEntered = $fieldInfos['autoEnter'];
+                    $field->global = $fieldInfos['global'];
                     $field->maxRepeat = (int) $fieldInfos['maxRepeat'];
                     $field->result = $fieldInfos['result'];
                     $field->type = $fieldInfos['type'];
-                    if ($fieldInfos['notEmpty'] === 'yes') {
+                    if ($fieldInfos['notEmpty']) {
                         $field->validationRules[FileMaker::RULE_NOTEMPTY] = true;
                         $field->validationMask |= FileMaker::RULE_NOTEMPTY;
                     }
-                    if ($fieldInfos['numeric'] === 'yes') {
+                    if ($fieldInfos['numeric']) {
                         $field->validationRules[FileMaker::RULE_NUMERICONLY] = true;
                         $field->validationMask |= FileMaker::RULE_NUMERICONLY;
                     }
-                    if (array_key_exists('maxCharacters', $fieldInfos)) {
+                    if ($fieldInfos['maxCharacters']) {
                         $field->maxCharacters = (int) $fieldInfos['maxCharacters'];
                         $field->validationRules[FileMaker::RULE_MAXCHARACTERS] = true;
                         $field->validationMask |= FileMaker::RULE_MAXCHARACTERS;
                     }
-                    if ($fieldInfos['fourDigitYear'] === 'yes') {
+                    if ($fieldInfos['fourDigitYear']) {
                         $field->validationRules[FileMaker::RULE_FOURDIGITYEAR] = true;
                         $field->validationMask |= FileMaker::RULE_FOURDIGITYEAR;
                     }
-                    if ($fieldInfos['timeOfDay'] === 'yes' || $fieldInfos['result'] === 'time') {
+                    if ($fieldInfos['timeOfDay'] || $fieldInfos['result'] === 'time') {
                         $field->validationRules[FileMaker::RULE_TIMEOFDAY] = true;
                         $field->validationMask |= FileMaker::RULE_TIMEOFDAY;
                     }
-                    if ($fieldInfos['fourDigitYear'] === 'no' && $fieldInfos['result'] === 'timestamp') {
+                    if (!$fieldInfos['fourDigitYear'] && $fieldInfos['result'] === 'timestamp') {
                         $field->validationRules[FileMaker::RULE_TIMESTAMP_FIELD] = true;
                         $field->validationMask |= FileMaker::RULE_TIMESTAMP_FIELD;
                     }
-                    if ($fieldInfos['fourDigitYear'] === 'no' && $fieldInfos['result'] === 'date') {
+                    if (!$fieldInfos['fourDigitYear'] && $fieldInfos['result'] === 'date') {
                         $field->validationRules[FileMaker::RULE_DATE_FIELD] = true;
                         $field->validationMask |= FileMaker::RULE_DATE_FIELD;
                     }
-                    if ($fieldInfos['timeOfDay'] === 'no' && $fieldInfos['result'] === 'time') {
+                    if (!$fieldInfos['timeOfDay'] && $fieldInfos['result'] === 'time') {
                         $field->validationRules[FileMaker::RULE_TIME_FIELD] = true;
                         $field->validationMask |= FileMaker::RULE_TIME_FIELD;
                     }
