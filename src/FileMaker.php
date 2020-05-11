@@ -795,10 +795,7 @@ class FileMaker
      */
     public function cacheGet($key)
     {
-        if (!$this->schemaCache) {
-            return false;
-        }
-        if ($this->cache === null) {
+        if ($this->cache === null || !$this->schemaCache) {
             if (isset(self::$internalCache[$this->connexionId() . '-' . $key])) {
                 return self::$internalCache[$this->connexionId() . '-' . $key];
             }
@@ -816,10 +813,7 @@ class FileMaker
      */
     public function cacheSet($key, $value)
     {
-        if (!$this->schemaCache) {
-            return false;
-        }
-        if ($this->cache === null) {
+        if ($this->cache === null || !!$this->schemaCache) {
             self::$internalCache[$this->connexionId() . '-' . $key] = $value;
             return true;
         } else {
