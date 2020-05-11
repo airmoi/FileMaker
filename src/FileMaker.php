@@ -813,7 +813,7 @@ class FileMaker
      */
     public function cacheSet($key, $value)
     {
-        if ($this->cache === null || !!$this->schemaCache) {
+        if ($this->cache === null || !$this->schemaCache) {
             self::$internalCache[$this->connexionId() . '-' . $key] = $value;
             return true;
         } else {
