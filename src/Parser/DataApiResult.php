@@ -291,7 +291,7 @@ class DataApiResult
     {
         $fields = [];
         foreach ($rawFields as $fieldName => $value) {
-            preg_match('/(?<name>.*)\(?(?<repetition>\d?)\)?$/U', $fieldName, $matches);
+            preg_match('/(?<name>.*)(\((?<repetition>\d+)\))?$/U', $fieldName, $matches);
             if (!isset($fields[$matches['name']])) {
                 $fields[$matches['name']] = [];
             }
