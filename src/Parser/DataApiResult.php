@@ -182,7 +182,7 @@ class DataApiResult
                 $field->autoEntered = $fieldInfos['autoEnter'];
                 $field->global = $fieldInfos['global'];
                 $field->maxRepeat = (int) $fieldInfos['maxRepeat'];
-                $field->result = $fieldInfos['result'];
+                $field->result = strtolower($fieldInfos['result']);
                 $field->type = $fieldInfos['type'];
                 $field->styleType = strtoupper($fieldInfos['displayType']);
                 $field->valueList = isset($fieldInfos['valueList']) ? $fieldInfos['valueList'] : null;
@@ -232,7 +232,7 @@ class DataApiResult
                     $field->autoEntered = $fieldInfos['autoEnter'];
                     $field->global = $fieldInfos['global'];
                     $field->maxRepeat = (int) $fieldInfos['maxRepeat'];
-                    $field->result = $fieldInfos['result'];
+                    $field->result = strtolower($fieldInfos['result']);
                     $field->type = $fieldInfos['type'];
                     if ($fieldInfos['notEmpty']) {
                         $field->validationRules[FileMaker::RULE_NOTEMPTY] = true;
