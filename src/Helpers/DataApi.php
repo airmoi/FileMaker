@@ -268,7 +268,7 @@ class DataApi
             $criterias = explode(',', $matches[1]);
             foreach ($criterias as $index) {
                 $i = preg_replace('/[^0-9]/', '', $index);
-                $query[rawurlencode(key($searchCriterias[$i]))] = $searchCriterias[$i][key($searchCriterias[$i])];
+                $query[key($searchCriterias[$i])] = $searchCriterias[$i][key($searchCriterias[$i])];
             }
             $queries[] = $query;
         }
