@@ -1001,7 +1001,7 @@ class FileMaker
             return $this->returnOrThrowException('cURL is required to use the FileMaker API.');
         }
 
-        if ($this->getProperty('engine') === 'cwp') {
+        if (!$this->getProperty('useDataApi')) {
             return $this->executeCWP($params, $grammar);
         } else {
             return $this->executeDataApi($params);
