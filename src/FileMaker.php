@@ -1429,7 +1429,7 @@ class FileMaker
     private function eliminateContainerHeader($curlResponse)
     {
         $len = strlen("\r\n\r\n");
-        $pos = strpos($curlResponse, "\r\n\r\n");
+        $pos = strrpos($curlResponse, "\r\n\r\n");
         if ($pos !== false) {
             return substr($curlResponse, $pos + $len);
         } else {
