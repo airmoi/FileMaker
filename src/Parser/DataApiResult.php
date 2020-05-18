@@ -279,7 +279,13 @@ class DataApiResult
                 $layout->valueListTwoFields[$valueList['name']] = [];
                 foreach ($valueList['values'] as $value) {
                     $layout->valueLists[$valueList['name']][$value['value']] = $value['value'];
-                    $layout->valueListTwoFields[$valueList['name']][$value['displayValue']] = $value['value'];
+
+                    //Handle missing 'displayValue' when a value is empty
+                    if(array_key_exists('displayValue', $value)) {
+                        $layout->valueListTwoFields[$valueList['name']][$value['displayValue']] = $value['value'];
+                    } else {
+                        $layout->valueListTwoFields[$valueList['name']][$value['value']] = $value['value'];
+                    }
                 }
             }
         }
