@@ -138,8 +138,8 @@ class DataApi
         } elseif (array_key_exists('-performscript', $params)) { //Custom handler
             $query['uri'] .= self::ENDPOINT_SCRIPT;
             $query['method'] = 'GET';
-            $query['params']['scriptName'] = rawurlencode($params['-script']);
-            $query['queryParams']['script.param'] =  rawurlencode(@$params['-script.param']);
+            $query['params']['scriptName'] = $params['-script'];
+            $query['queryParams']['script.param'] =  @$params['-script.param'];
         } elseif (array_key_exists('-setGlobals', $params)) { //Custom handler
             $query['uri'] .= self::ENDPOINT_GLOBAL;
             $query['method'] = 'PATCH';
