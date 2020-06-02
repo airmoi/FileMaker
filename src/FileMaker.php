@@ -1159,7 +1159,7 @@ class FileMaker
 
         $uri = $query['uri'];
         foreach ($uriParams as $key => $value) {
-            $uri = str_replace('{' . $key . '}', $value, $uri);
+            $uri = str_replace('{' . $key . '}', urlencode($value), $uri);
         }
         $queryParams = $footPrint = [];
         if ($query['queryParams']) {
