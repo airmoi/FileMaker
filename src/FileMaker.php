@@ -1157,7 +1157,7 @@ class FileMaker
         $uri = str_replace('{host}', $this->hostspec, $uri);
 
         foreach ($query['params'] as $key => $value) {
-            $uri = str_replace('{' . $key . '}', urlencode($value), $uri);
+            $uri = str_replace('{' . $key . '}', rawurlencode($value), $uri);
         }
         $queryParams = $footPrint = [];
         if ($query['queryParams']) {
