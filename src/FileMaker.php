@@ -1153,12 +1153,10 @@ class FileMaker
      */
     public function runDataApiQuery(array $query)
     {
-        $uriParams = array_merge($query['params'], [
-            'host' => $this->hostspec
-        ]);
-
         $uri = $query['uri'];
-        foreach ($uriParams as $key => $value) {
+        $uri = str_replace('{host}', $this->hostspec, $uri);
+
+        foreach ($query['params'] as $key => $value) {
             $uri = str_replace('{' . $key . '}', urlencode($value), $uri);
         }
         $queryParams = $footPrint = [];
