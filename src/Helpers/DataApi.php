@@ -37,9 +37,9 @@ class DataApi
             'body' => null,
             'params' => [
                 'version' =>  'vLatest',
-                'layout' =>  isset($params['-lay']) ? urlencode($params['-lay']) : null,
-                'database' =>  isset($params['-db']) ? urlencode($params['-db']) : null,
-                'recordId' =>  isset($params['-recid']) ? urlencode($params['-recid']) : null,
+                'layout' =>  isset($params['-lay']) ? rawurlencode($params['-lay']) : null,
+                'database' =>  isset($params['-db']) ? rawurlencode($params['-db']) : null,
+                'recordId' =>  isset($params['-recid']) ? $params['-recid'] : null,
             ]
         ];
 
