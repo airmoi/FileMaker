@@ -1167,7 +1167,7 @@ class FileMaker
                 } elseif (is_array($value)) {
                     $value = json_encode($value);
                 }
-                $queryParams[] = urlencode($option) . ($value === true ? '' : '=' . urlencode($value));
+                $queryParams[] = rawurlencode($option) . ($value === true ? '' : '=' . rawurlencode($value));
                 $footPrint[] = $option . "=" . (preg_match('/\.value$/', $option) ? ":$option" : $value);
             }
             $uri .= "?" . implode('&', $queryParams);
