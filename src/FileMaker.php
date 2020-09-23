@@ -27,25 +27,25 @@ use ReflectionMethod;
  *
  * @author Romain Dunand <airmoi@gmail.com>
  *
- * @property string         $charset                Default to 'utf-8'
- * @property Object|null    $cache                  Default null
- * @property Object|null    sessionHandler          Default null
- * @property bool           $schemaCache            Default to true, enable cache to prevent unnecessary queries
- * @property int            $schemaCacheDuration    Default to 3600
- * @property string         $locale                 Default to 'en' (possible values : en, de, fr, it, ja, sv)
- * @property int            $logLevel               Default to 3 (PEAR_LOG_ERR)
- * @property string         $hostspec               Default to '127.0.0.1'
- * @property string         $database
- * @property string         $username
- * @property string         $password
- * @property string         $recordClass            Default to 'Object/Record'
- * @property bool           $prevalidate            Default to false
- * @property array          $curlOptions            Default to [CURLOPT_SSL_VERIFYPEER => false]
- * @property string         $dateFormat
- * @property bool           $useDateFormatInRequests    Whether to convert date input in query strings
- * @property bool           $useCookieSession       Default to false
- * @property bool           $emptyAsNull            Return null instead of empty strings, default to false
- * @property bool           $useDataApi             default false
+ * @property string $charset                Default to 'utf-8'
+ * @property Object|null $cache                  Default null
+ * @property Object|null sessionHandler          Default null
+ * @property bool $schemaCache            Default to true, enable cache to prevent unnecessary queries
+ * @property int $schemaCacheDuration    Default to 3600
+ * @property string $locale                 Default to 'en' (possible values : en, de, fr, it, ja, sv)
+ * @property int $logLevel               Default to 3 (PEAR_LOG_ERR)
+ * @property string $hostspec               Default to '127.0.0.1'
+ * @property string $database
+ * @property string $username
+ * @property string $password
+ * @property string $recordClass            Default to 'Object/Record'
+ * @property bool $prevalidate            Default to false
+ * @property array $curlOptions            Default to [CURLOPT_SSL_VERIFYPEER => false]
+ * @property string $dateFormat
+ * @property bool $useDateFormatInRequests    Whether to convert date input in query strings
+ * @property bool $useCookieSession       Default to false
+ * @property bool $emptyAsNull            Return null instead of empty strings, default to false
+ * @property bool $useDataApi             default false
  */
 class FileMaker
 {
@@ -199,8 +199,6 @@ class FileMaker
      * For example, to specify only the database name, username, and
      * password, but omit the hostspec, call the constructor as follows:
      *
-     * @example new FileMaker('DatabaseName', NULL, 'username', 'password');
-     *
      * @param string $database Name of the database to connect to.
      * @param string $hostspec Hostspec of web server in FileMaker Server
      *        deployment. Defaults to http://localhost, if set to NULL.
@@ -208,6 +206,8 @@ class FileMaker
      * @param string $password Password for account.
      * @param array $options An array of options.
      * @throws FileMakerException
+     * @example new FileMaker('DatabaseName', NULL, 'username', 'password');
+     *
      */
     public function __construct($database = null, $hostspec = null, $username = null, $password = null, $options = [])
     {
@@ -234,8 +234,9 @@ class FileMaker
      */
     public function __destruct()
     {
-        //If no session handler and CLI, destroy the session to prevent multiple ghost sessions
-        if ($this->useDataApi && !$this->sessionHandler || php_sapi_name() === 'cli') {
+        //Logout dataAPI session if the token cannot be saved to be reused in next query (cli mode or no active session)
+        //If a session handler is set, we assume the token has been saved (session may have been closed before destruct was called)
+        if ($this->token && $this->useDataApi && !$this->sessionHandler && !session_id() || php_sapi_name() === 'cli') {
             $this->dataApiLogout();
         }
     }
@@ -596,8 +597,8 @@ class FileMaker
 
         //Load a random record to get extra meta data
         if (!$layout->table && $loadExtended) {
-            $this->newFindAllCommand($layout->name)->setRange(0,1)->execute();
-            $layoutExtended = $this->cacheGet('layout-' . $layoutName );
+            $this->newFindAllCommand($layout->name)->setRange(0, 1)->execute();
+            $layoutExtended = $this->cacheGet('layout-' . $layoutName);
             $layout->name = $layoutExtended->name;
             $layout->database = $layoutExtended->database;
             $layout->table = $layoutExtended->table;
@@ -605,7 +606,7 @@ class FileMaker
 
         //Cache only if no recid provided
         if (!$recid) {
-            $this->cacheSet('layout-' . $layoutName , $layout);
+            $this->cacheSet('layout-' . $layoutName, $layout);
         }
         return $layout;
     }
@@ -714,8 +715,8 @@ class FileMaker
     public function listLayouts()
     {
         $request = $this->execute([
-                '-db'          => $this->getProperty('database'),
-                '-layoutnames' => true
+            '-db' => $this->getProperty('database'),
+            '-layoutnames' => true
         ]);
         if (FileMaker::isError($request)) {
             return $request;
@@ -887,17 +888,17 @@ class FileMaker
      * named 'Cover Image'. For a Object\Record object named $record,
      * URL-encode the path returned by the getField() method.  For example:
      *
+     * @param string $url URL of the container field contents to get.
+     *
+     * @return string|FileMakerException Raw field data.
+     * @throws FileMakerException if remote container field or curl not active.
+     * @example echo $fm->getContainerData($_GET['-url']);
+     *
      * @example <IMG src="img.php?-url=<?php echo urlencode($record->getField('Cover Image')); ?>">
      *
      * Then as shown below in a line from img.php, pass the URL into
      * getContainerData() for the FileMaker object named $fm:
      *
-     * @example echo $fm->getContainerData($_GET['-url']);
-     *
-     * @param string $url URL of the container field contents to get.
-     *
-     * @return string|FileMakerException Raw field data.
-     * @throws FileMakerException if remote container field or curl not active.
      */
     public function getContainerData($url)
     {
@@ -945,7 +946,7 @@ class FileMaker
                 curl_setopt($curl, CURLOPT_HTTPHEADER, ['X-FMI-PE-ExtendedPrivilege: IrG6U+Rx0F5bLIQCUb9gOw==']);
             }
         } else {
-            $cookiePath  = tempnam(sys_get_temp_dir(), 'fmAPICookie_'. mt_rand());
+            $cookiePath = tempnam(sys_get_temp_dir(), 'fmAPICookie_' . mt_rand());
             curl_setopt($curl, CURLOPT_COOKIEJAR, $cookiePath);
             curl_setopt($curl, CURLOPT_MAXREDIRS, 20);
             curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
@@ -1078,11 +1079,8 @@ class FileMaker
      * @return mixed|null
      * @throws FileMakerException
      */
-    public function dataApiLogin()
+    private function dataApiLogin()
     {
-        if ($this->token) {
-            return $this->token;
-        }
         $query = [
             'uri' => DataApi::ENDPOINT_BASE . DataApi::ENDPOINT_LOGIN,
             'queryParams' => null,
@@ -1100,7 +1098,7 @@ class FileMaker
                 ]
             ],
             'params' => [
-                'version' =>  'vLatest',
+                'version' => 'vLatest',
                 'database' => $this->database,
             ],
         ];
@@ -1130,7 +1128,7 @@ class FileMaker
             'method' => 'DELETE',
             'body' => null,
             'params' => [
-                'version' =>  'vLatest',
+                'version' => 'vLatest',
                 'database' => $this->database,
                 'sessionToken' => $this->getSessionBearer(),
             ],
@@ -1199,7 +1197,7 @@ class FileMaker
         );
         //$this->log('Query Footprint : ' .implode('&', $footPrint), FileMaker::LOG_DEBUG);
 
-        $profileKey = $this->lastRequestedUrl . (isset($body) ?  PHP_EOL . 'Body: ' . $body : '');
+        $profileKey = $this->lastRequestedUrl . (isset($body) ? PHP_EOL . 'Body: ' . $body : '');
         $this->beginProfile($profileKey);
         $response = curl_exec($curl);
         $this->endProfile($profileKey);
@@ -1222,12 +1220,22 @@ class FileMaker
      */
     private function getSessionBearer($renew = false)
     {
-        $key = md5($this->hostspec . $this->database . $this->username . $this->password);
-        if ($renew or !$bearer = $this->sessionGet('bearer-' . $key)) {
-            $bearer = $this->dataApiLogin();
-            $this->sessionSet('bearer-' . $key, $bearer);
+        //Clear token in case of renew (current token has expired)
+        if ($renew) {
+            $this->token = null;
         }
-        return $bearer;
+
+        //return token if we already have it
+        if ($this->token) {
+            return $this->token;
+        }
+
+        $key = md5($this->hostspec . $this->database . $this->username . $this->password);
+        if ($renew || !$this->token = $this->sessionGet('bearer-' . $key)) {
+            $this->token = $this->dataApiLogin();
+            $this->sessionSet('bearer-' . $key, $this->token);
+        }
+        return $this->token;
     }
 
     /**
@@ -1302,7 +1310,7 @@ class FileMaker
         $this->lastRequestedUrl = $host . '?' . implode('&', $restParams);
 
         $this->log("Perform request: " . $this->lastRequestedUrl, FileMaker::LOG_INFO);
-        $this->log('Query Footprint : ' .implode('&', $footPrint), FileMaker::LOG_DEBUG);
+        $this->log('Query Footprint : ' . implode('&', $footPrint), FileMaker::LOG_DEBUG);
 
         $this->beginProfile($this->lastRequestedUrl);
         $curlResponse = curl_exec($curl);
@@ -1329,11 +1337,11 @@ class FileMaker
      * field contents. For example, get the URL for a container field
      * named 'Cover Image'.  For example:
      *
-     * @example <IMG src="<?php echo $fm->getContainerDataURL($record->getField('Cover Image')); ?>">
-     *
      * @param string $url URL of the container field contents to get.
      *
      * @return string Fully qualified URL to container field contents
+     * @example <IMG src="<?php echo $fm->getContainerDataURL($record->getField('Cover Image')); ?>">
+     *
      */
     public function getContainerDataURL($url)
     {
@@ -1406,7 +1414,7 @@ class FileMaker
 
     /**
      *
-     * @param string $curlResponse  a curl response
+     * @param string $curlResponse a curl response
      * @return string curlResponse without xml header
      */
     private function eliminateXMLHeader($curlResponse)
@@ -1421,7 +1429,7 @@ class FileMaker
 
     /**
      *
-     * @param string $curlResponse  a curl response
+     * @param string $curlResponse a curl response
      * @return string cUrl Response without leading carriage return
      */
     private function eliminateContainerHeader($curlResponse)
