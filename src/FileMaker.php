@@ -926,11 +926,7 @@ class FileMaker
 
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($curl, CURLOPT_FAILONERROR, true);
-        $isHeadersSent = false;
-        if (!headers_sent()) {
-            $isHeadersSent = true;
-            curl_setopt($curl, CURLOPT_HEADER, true);
-        }
+        curl_setopt($curl, CURLOPT_HEADER, false);
 
         if (!$this->useDataApi) {
             $this->setCurlWPCSessionCookie($curl);
@@ -978,9 +974,6 @@ class FileMaker
         $this->log($curlResponse, FileMaker::LOG_DEBUG);
         if (!$this->useDataApi) {
             $this->setClientWPCSessionCookie($curlResponse);
-        }
-        if ($isHeadersSent) {
-            $curlResponse = $this->eliminateContainerHeader($curlResponse);
         }
 
         curl_close($curl);
