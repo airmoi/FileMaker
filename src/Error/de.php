@@ -216,5 +216,6 @@ return array(
     1504 => 'Der SMTP-Server verlangt eine verschlüsselte Verbindung.',
     1505 => 'Die angegebene Authentifizierung wird vom SMTP-Server nicht unterstützt.',
     1506 => 'E-Mail(s) konnte(n) nicht erfolgreich versendet werden.',
-    1507 => 'Anmeldung am SMTP-Server nicht möglich'
+    1507 => 'Anmeldung am SMTP-Server nicht möglich',
+    8003 => 'Datei ist blockiert durch anderen Anwender.',
 );
