@@ -216,5 +216,6 @@ return array(
     1504 => 'SMTP server requires the connection to be encrypted',
     1505 => 'Specified authentication is not supported by SMTP server',
     1506 => 'Email message(s) could not be sent successfully',
-    1507 => 'Unable to log in to the SMTP server'
+    1507 => 'Unable to log in to the SMTP server',
+    8003 => 'Record is in use by another user',
 );

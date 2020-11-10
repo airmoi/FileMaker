@@ -216,5 +216,6 @@ return array(
     1504 => 'SMTP-servern kräver att anslutningen är krypterad',
     1505 => 'Angiven verifiering stöds inte av SMTP-servern',
     1506 => 'E-post kunde inte skickas',
-    1507 => 'Det går inte att logga in på SMTP-servern'
+    1507 => 'Det går inte att logga in på SMTP-servern',
+    8003 => 'Posten används av en annan användare',
 );
