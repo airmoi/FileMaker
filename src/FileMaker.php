@@ -532,16 +532,17 @@ class FileMaker
      *
      * @param string $layout Layout that $recordId is in.
      * @param string $recordId ID of the record to get.
+     * @param boolean $getResult Return result instead of record
      *
      * @return Object\Record|FileMakerException
      * @throws FileMakerException
      */
-    public function getRecordById($layout, $recordId)
+    public function getRecordById($layout, $recordId, $getResult = false)
     {
         $request = $this->newFindCommand($layout);
         $request->setRecordId($recordId);
         $result = $request->execute();
-        if (FileMaker::isError($result)) {
+        if ($getResult || FileMaker::isError($result)) {
             return $result;
         }
 

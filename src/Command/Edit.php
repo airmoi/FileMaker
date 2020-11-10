@@ -143,8 +143,7 @@ class Edit extends Command
             if (FileMaker::isError($parseResult)) {
                 return $parseResult;
             }
-            $result = new Result($this->fm);
-            $result->records[] = $this->fm->getRecordById($this->layout, $this->recordId);
+            $result = $this->fm->getRecordById($this->layout, $this->recordId, true);
         }
         return $result;
     }
