@@ -216,5 +216,6 @@ return array(
     1504 => 'Il Server SMTP richiede che la connessione sia crittografata',
     1505 => 'Autenticazione specificata non supportata dal server SMTP',
     1506 => 'Impossibile inviare messaggio/i e-mail',
-    1507 => 'Impossibile accedere al server SMTP'
+    1507 => 'Impossibile accedere al server SMTP',
+    8003 => 'Record usato da un altro utente',
 );
