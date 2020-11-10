@@ -218,7 +218,9 @@ class DataApi
         }
         if (array_key_exists('-script.prefind', $params)) {
             $scripts['script.prerequest'] = $params['-script.prefind'];
-            $scripts['script.prerequest.param'] = @$params['-script.prefind.param'];
+            if (isset($params['-script.prefind.param'])) {
+              $scripts['script.prerequest.param'] = $params['-script.prefind.param'];
+            }
         }
         if (array_key_exists('-script.presort', $params)) {
             $scripts['script.presort'] = $params['-script.presort'];
