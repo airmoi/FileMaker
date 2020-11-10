@@ -216,5 +216,6 @@ return array(
     1504 => 'Le serveur SMTP requiert le cryptage de la connexion.',
     1505 => 'L\'authentification spécifiée n\'est pas prise en charge par le serveur SMTP',
     1506 => 'L\'envoi du ou des courriers électroniques a échoué',
-    1507 => 'Impossible de se connecter au serveur SMTP'
+    1507 => 'Impossible de se connecter au serveur SMTP',
+    8003 => 'L\'enregistrement est déjà utilisé par un autre utilisateur',
 );
