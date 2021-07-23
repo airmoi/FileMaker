@@ -293,7 +293,7 @@ class DataApi
             if (!empty($matches['global'])) {
                 #TODO Handle globals
             } else {
-                $fieldData[$field] = $value;
+                $fieldData[$field] = (string) $value;
             }
         }
         return $fieldData;
