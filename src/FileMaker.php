@@ -1212,7 +1212,7 @@ class FileMaker
      * @return bool|mixed|null
      * @throws FileMakerException
      */
-    private function getSessionBearer($renew = false)
+    public function getSessionBearer($renew = false)
     {
         //Clear token in case of renew (current token has expired)
         if ($renew) {
