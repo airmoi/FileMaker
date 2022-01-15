@@ -600,9 +600,15 @@ class FileMaker
         if (!$layout->table && $loadExtended) {
             $this->newFindAllCommand($layout->name)->setRange(0, 1)->execute();
             $layoutExtended = $this->cacheGet('layout-' . $layoutName);
-            $layout->name = $layoutExtended->name;
-            $layout->database = $layoutExtended->database;
-            $layout->table = $layoutExtended->table;
+
+            if(!$layoutExtended instanceof Layout) {
+                $this->log('Could not load extended properties for layout ' . $layoutName . ', this can happen when table is empty', self::LOG_ERR);
+                throw new FileMakerException($this, 'Could not load extended properties for layout ' . $layoutName, -1);
+            } else {
+                $layout->name = $layoutExtended->name;
+                $layout->database = $layoutExtended->database;
+                $layout->table = $layoutExtended->table;
+            }
         }
 
         //Cache only if no recid provided
@@ -834,7 +840,7 @@ class FileMaker
             if (!session_id() && headers_sent()) {
                 return null; //Can't open, session while headers aleady sents
             } elseif (!session_id()) {
-                session_start();
+                @session_start();
             }
             if (isset($_SESSION[$this->connexionId() . '-' . $key])) {
                 return $_SESSION[$this->connexionId() . '-' . $key];
@@ -1212,7 +1218,7 @@ class FileMaker
      * @return bool|mixed|null
      * @throws FileMakerException
      */
-    public function getSessionBearer($renew = false)
+    private function getSessionBearer($renew = false)
     {
         //Clear token in case of renew (current token has expired)
         if ($renew) {
