@@ -18,7 +18,7 @@ try {
     echo "------------------------------------------" . PHP_EOL;
     echo " Test FileMaker object's main methods" . PHP_EOL;
     echo "------------------------------------------" . PHP_EOL;
-    $fm = new FileMaker('filemaker-test', 'https://localhost.fmcloud.fm', 'filemaker', 'filemaker');
+    $fm = new FileMaker('filemaker-test', 'https://dev1.fmcloud.fm', 'filemaker', 'filemaker');
 
     $fm->useDataApi = true;
 
@@ -34,8 +34,9 @@ try {
     /* get layouts list */
     echo "Get layouts list...";
     $layouts = $fm->listLayouts();
-    if (sizeof($layouts) != 2) {
+    if (sizeof($layouts) != 1) {
         echo '<span style="color:red">FAIL</span> !' . PHP_EOL;
+        var_dump($layouts);
         exit;
     }
     echo implode(', ', $layouts) . '...<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
@@ -48,7 +49,7 @@ try {
     /**
      * Test perform script
      */
-    echo "Test perform function...";
+    echo "Test perform Script Command...";
     $command = $fm->newPerformScriptCommand($layouts[0], 'create sample data');
     $result = $command->execute();
     var_dump($result);
@@ -145,12 +146,12 @@ try {
     $find->setLogicalOperator(FileMaker::FIND_OR);
     echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
 
-    echo 'Test adding preSortScript... ';
-    $find->setPreSortScript('Set Order');
-    echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
-
     echo 'Test adding sort rule... ';
     $find->addSortRule('number_field', 1, FileMaker::SORT_DESCEND);
+    echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
+
+    echo 'Test adding preSortScript... ';
+    $find->setPreSortScript('Set Order');
     echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
 
     echo 'Test adding range... ';
@@ -158,8 +159,15 @@ try {
     echo implode(', ', $find->getRange()).'... <span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
 
     echo 'Test perform find... ';
-    $result = $find->execute();
-    echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
+    try {
+        $result = $find->execute();
+        echo '<span style="color:green">SUCCESS</span>' . PHP_EOL . PHP_EOL;
+    } catch (FileMakerException $e) {
+        echo '<span style="color:red">FAIL</span> ' . PHP_EOL;
+        echo $e->getCode() . " - " . $e->getMessage() . PHP_EOL;
+        exit;
+    }
+
 
     echo 'Check result consistency...'. PHP_EOL;
     echo 'Record count... ';
@@ -257,11 +265,16 @@ try {
    echo 'Get record container... ';
    $container = base64_encode($fm->getContainerData($record->getField('container_field')));
    echo "<img src='data:image/png;base64,$container' />";
-   echo (sizeof($container) > 0 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>'). PHP_EOL . PHP_EOL;
+   echo (strlen($container) > 0 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>'). PHP_EOL . PHP_EOL;
 
    echo 'Get simple field Value List... ';
-   $list = $record->getFieldValueListTwoFields('text_field');
-   echo (sizeof($list) == 5 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>'). PHP_EOL . PHP_EOL;
+    try {
+        $list = $record->getFieldValueListTwoFields('text_field');
+        echo (sizeof($list) == 5 ? '<span style="color:green">SUCCESS</span>' : '<span style="color:red">FAIL</span>'). PHP_EOL . PHP_EOL;
+    } catch (FileMakerException $e) {
+        echo '<span style="color:red">FAIL</span> ' . PHP_EOL;
+        echo $e->getCode() . ' - ' . $e->getMessage() . PHP_EOL;
+    }
 
    echo 'Get record related ValueList... ';
    $list = $record->getFieldValueListTwoFields('number_field', true);
