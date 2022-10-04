@@ -214,7 +214,9 @@ class DataApi
         $scripts = [];
         if (array_key_exists('-script', $params)) {
             $scripts['script'] = $params['-script'];
-            $scripts['script.param'] = @$params['-script.param'];
+            if (isset($params['-script.param'])) {
+                $scripts['script.param'] = $params['-script.param'];
+            }
         }
         if (array_key_exists('-script.prefind', $params)) {
             $scripts['script.prerequest'] = $params['-script.prefind'];
@@ -224,7 +226,9 @@ class DataApi
         }
         if (array_key_exists('-script.presort', $params)) {
             $scripts['script.presort'] = $params['-script.presort'];
-            $scripts['script.presort.param'] = @$params['-script.presort.param'];
+            if (isset($params['-script.presort.param'])) {
+                $scripts['script.presort.param'] = @$params['-script.presort.param'];
+            }
         }
         if ($encoded) {
             foreach($scripts as $key => $value) {
@@ -318,6 +322,11 @@ class DataApi
         return $fieldData;
     }
 
+    /**
+     * @param array $globals
+     * @param string $table
+     * @return array
+     */
     public static function appendTableToGlobals($globals, $table)
     {
         $globalResult = [];
