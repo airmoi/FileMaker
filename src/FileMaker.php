@@ -1009,10 +1009,11 @@ class FileMaker
         }
     }
 
+
     /**
      * Perform dataAPI query to FM Server
      *
-     * @param $params
+     * @param array $params
      *
      * @return string|FileMakerException the cUrl response
      *
@@ -1022,28 +1023,12 @@ class FileMaker
     public function executeDataApi(array $params)
     {
         $globals = DataApi::parseGlobalFields($params);
-        $globalQuery = [];
         if ($globals) {
             $layout = $this->getLayout($params['-lay']);
-            $globalOptions = array_merge(
-                DataApi::appendTableToGlobals($globals, $layout->table),
-                ['-setGlobals' => true, '-db' => $params['-db']]
-            );
-            $globalQuery = DataApi::prepareQuery($globalOptions);
-            $globalQuery['headers'][] = 'Authorization: bearer ' . $this->getSessionBearer();
-
-            $response = $this->runDataApiQuery($globalQuery);
-            //Token expired
-            if (DataApiResult::parseError($response)['code'] == 952) {
-                $this->getSessionBearer(true);
-                //replay query after token renew
-                return $this->executeDataApi($params);
-            }
-
-            $parser = new DataApiResult($this);
-            $parseResult = $parser->parse($response);
-            if (FileMaker::isError($parseResult)) {
-                return $parseResult;
+            $globalFields = DataApi::appendTableToGlobals($globals, $layout->table);
+            $result = $this->setGlobals($globalFields);
+            if (FileMaker::isError($result)) {
+                return $result;
             }
         }
         $query = DataApi::prepareQuery($params);
@@ -1063,18 +1048,47 @@ class FileMaker
 
         //Reset globals after query
         if ($globals) {
-            foreach ($globalQuery['body']['globalFields'] as $field => $value) {
-                $globalQuery['body']['globalFields'][$field] = '';
+            foreach ($globalFields as $field => $value) {
+                $globalFields[$field] = '';
             }
-            $responseEmpty = $this->runDataApiQuery($globalQuery);
-            $parser = new DataApiResult($this);
-            $parseResult = $parser->parse($responseEmpty);
-            if (FileMaker::isError($parseResult)) {
-                return $parseResult;
+            $result = $this->setGlobals($globalFields);
+            if (FileMaker::isError($result)) {
+                return $result;
             }
         }
 
         return $response;
+    }
+
+    /**
+     * Set global fields at user session level
+     * Unlike globals set during commands
+     * @param array $globals array of global fields to set (including table occurrence)
+     * @return FileMakerException|bool
+     * @throws FileMakerException
+     */
+    public function setGlobals($globals)
+    {
+        if (!$this->useDataApi) {
+            return $this->returnOrThrowException('setGlobal() is not supported by CWP');
+        }
+        $globalOptions = array_merge(
+            $globals,
+            ['-setGlobals' => true, '-db' => $this->database]
+        );
+        $globalQuery = DataApi::prepareQuery($globalOptions);
+        $globalQuery['headers'][] = 'Authorization: bearer ' . $this->getSessionBearer();
+
+        $response = $this->runDataApiQuery($globalQuery);
+
+        //handle Token expired
+        if (DataApiResult::parseError($response)['code'] == 952) {
+            $this->getSessionBearer(true);
+            //replay query after token renew
+            return $this->setGlobals($globals);
+        }
+        $parser = new DataApiResult($this);
+        return $parser->parse($response);
     }
 
     /**
