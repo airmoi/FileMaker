@@ -28,6 +28,10 @@ class DataApiResult
     private $layout = null;
     private $error = ['code' => null, 'message' => null];
 
+    private $fields = [];
+    private $valueLists;
+    private $valueListTwoFields;
+
     /**
      * FMResultSet constructor.
      * @param FileMaker $fm
@@ -305,5 +309,33 @@ class DataApiResult
             $fields[$matches['name']][$index] = $value;
         }
         return $fields;
+    }
+
+    /**
+     * Add extended infos to a Layout object
+     *
+     * @param Layout $layout
+     * @return FileMakerException|bool
+     * @throws FileMakerException
+     */
+    public function setExtendedInfo(Layout $layout)
+    {
+        if (!$this->isParsed) {
+            return $this->fm->returnOrThrowException('Attempt to set extended information before parsing data.');
+        }
+        $layout->valueLists = $this->valueLists;
+        $layout->valueListTwoFields = $this->valueListTwoFields;
+        foreach ($this->fields as $fieldName => $fieldInfos) {
+            try {
+                $field = $layout->getField($fieldName);
+                if (!FileMaker::isError($field)) {
+                    $field->styleType = $fieldInfos['styleType'];
+                    $field->valueList = $fieldInfos['valueList'] ? $fieldInfos['valueList'] : null;
+                }
+            } catch (\Exception $e) {
+                //Field may be missing when it is stored in a portal, omit error
+            }
+        }
+        return true;
     }
 }
