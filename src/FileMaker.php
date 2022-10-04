@@ -1047,7 +1047,9 @@ class FileMaker
             }
         }
         $query = DataApi::prepareQuery($params);
-        if (!isset($params['-dbnames'])) {
+        if (isset($params['-dbnames'])) {
+            $query['headers'][] = 'Authorization: basic ' . base64_encode($this->username . ':' . $this->password);
+        } else {
             $query['headers'][] = 'Authorization: bearer ' . $this->getSessionBearer();
         }
 
