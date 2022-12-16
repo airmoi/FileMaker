@@ -1602,24 +1602,24 @@ class FileMaker
             return $this->returnOrThrowException(
                 'cURL Communication Error: (' . $curlError . ') ' . curl_error($curl)
                 . ' - The Web Publishing Core and/or FileMaker Server services are not running.'
-            );
+            , -2);
         } elseif ($curlError === 22) {
             if (stristr("50", curl_error($curl))) {
                 return $this->returnOrThrowException(
                     'cURL Communication Error: (' . $curlError . ') ' . curl_error($curl)
                     . ' - The Web Publishing Core and/or FileMaker Server services are not running.'
-                );
+                , -2);
             } else {
                 return $this->returnOrThrowException(
                     'cURL Communication Error: (' . $curlError . ') ' . curl_error($curl)
                     . ' - This can be due to an invalid username or password, or if the FMPHP privilege is not '
                     . 'enabled for that user.'
-                );
+                    , -2);
             }
         }
         return $this->returnOrThrowException(
             'cURL Communication Error: (' . $curlError . ') ' . curl_error($curl)
-        );
+            , -2);
     }
 
     private function connexionId()

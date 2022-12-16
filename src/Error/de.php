@@ -14,6 +14,7 @@
  */
 
 return array(
+    -2 => 'Curl Fehler',
     -1 => 'Unbekannter Fehler',
     0 => 'Kein Fehler',
     1 => 'Aktion durch Benutzer abgebrochen',

@@ -14,6 +14,7 @@
  */
 
 return array(
+    -2 => 'Curl fel',
     -1 => 'Okänt fel',
     0 => 'Inget fel',
     1 => 'Användaren har avbrutit åtgärden',

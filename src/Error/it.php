@@ -14,6 +14,7 @@
  */
 
 return array(
+    -2 => 'Errore Curl',
     -1 => 'Errore sconosciuto',
     0 => 'Nessun errore',
     1 => 'Azione annullata dall\'utente',
