@@ -169,7 +169,7 @@ class DataApi
             if (substr($key, 0, 11) === '-sortfield.') {
                 $precedence = (int) substr($key, 11, strlen($key)-11);
                 $sort[$precedence] = [
-                    'fieldName' => $encoded ? rawurlencode($field) : $field,
+                    'fieldName' => $encoded ? rawurlencode((string)$field) : $field,
                     'sortOrder' => array_key_exists('-sortorder.' . $precedence, $params) ?
                         $params['-sortorder.' . $precedence]
                         : 'ascend',
@@ -232,7 +232,9 @@ class DataApi
         }
         if ($encoded) {
             foreach($scripts as $key => $value) {
-                $scripts[$key] = rawurldecode($value);
+                if ($value) {
+                    $scripts[$key] = rawurldecode((string)$value);
+                }
             }
         }
         return $scripts;

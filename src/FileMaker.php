@@ -1171,7 +1171,9 @@ class FileMaker
         $uri = str_replace('{host}', $this->hostspec, $uri);
 
         foreach ($query['params'] as $key => $value) {
-            $uri = str_replace('{' . $key . '}', rawurlencode($value), $uri);
+            if ($value) {
+                $uri = str_replace('{' . $key . '}', rawurlencode((string)$value), $uri);
+            }
         }
         $queryParams = $footPrint = [];
         if ($query['queryParams']) {
@@ -1181,7 +1183,7 @@ class FileMaker
                 } elseif (is_array($value)) {
                     $value = json_encode($value);
                 }
-                $queryParams[] = rawurlencode($option) . ($value === true ? '' : '=' . rawurlencode($value));
+                $queryParams[] = rawurlencode((string) $option) . ($value === true ? '' : '=' . rawurlencode((string) $value));
                 $footPrint[] = $option . "=" . (preg_match('/\.value$/', $option) ? ":$option" : $value);
             }
             $uri .= "?" . implode('&', $queryParams);
