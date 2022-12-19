@@ -22,10 +22,10 @@ use Exception;
 class DateFormat
 {
     public static $omitOperatorsPattern = [
-        '/^=*/' => null,
+        '/^=*/' => '',
         '/[#|@]+/' => "*",
         //'/#/' => "*",
-        '/~/' => null
+        '/~/' => ''
     ];
 
     public static $byPassOperators = ['!', '?', ];
