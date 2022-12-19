@@ -40,6 +40,9 @@ class FileMakerException extends Exception
         if ($code !== null && !$message) {
             $message = $this->getErrorString($code);
         }
+        if ($code === null) {
+            $code = -999;
+        }
 
         parent::__construct($message, $code, $previous);
     }
