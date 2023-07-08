@@ -836,7 +836,7 @@ class FileMaker
             if (($value !== true) && strtolower($this->getProperty('charset')) !== 'utf-8') {
                 $value = utf8_encode($value);
             }
-            $restParams[] = urlencode($option) . ($value === true ? '' : '=' . urlencode($value));
+            $restParams[] = urlencode($option) . ($value === true || $value == null ? '' : '=' . urlencode($value));
             $footPrint[] = $option . "=" . (preg_match('/\.value$/', $option) ? ":$option" : $value);
         }
 
