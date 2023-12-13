@@ -1140,7 +1140,7 @@ class FileMaker
      * @return null|FileMakerException $previous
      * @throws FileMakerException
      */
-    public function returnOrThrowException($message = null, $code = null, $previous = null)
+    public function returnOrThrowException($message = null, $code = 0, $previous = null)
     {
         $exception = new FileMakerException($this, $message, $code, $previous);
         if ($this->getProperty('errorHandling') == 'exception') {
