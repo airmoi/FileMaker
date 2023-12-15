@@ -32,10 +32,10 @@ class FileMakerException extends \Exception
      * @param integer $code Error code.
      * @param null|\Exception $previous
      */
-    public function __construct($fm, $message = null, $code = null, $previous = null)
+    public function __construct($fm, $message = null, $code = -1, $previous = null)
     {
         $this->fm = $fm;
-        if ($code !== null) {
+        if (empty($message)) {
             $message = $this->getErrorString($code);
         }
 
