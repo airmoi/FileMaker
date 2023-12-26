@@ -4,7 +4,7 @@
     "keywords": ["filemaker","PHP-API"],
     "license": "BSD-3-Clause",
     "require": {
-        "php": "^5.5|^7.0"
+        "php": "^5.5|^7.0|^8.0"
     },
     "authors": [
         {
