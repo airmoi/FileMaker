@@ -50,7 +50,7 @@ use ReflectionMethod;
  */
 class FileMaker
 {
-    private static $apiVersion = '3.0.0-alpha';
+    private static $apiVersion = '3.0.0-beta3';
     private static $minServerVersion = '18.0.0.0';
 
     /**
@@ -1031,13 +1031,13 @@ class FileMaker
         if (isset($params['-dbnames'])) {
             $query['headers'][] = 'Authorization: basic ' . base64_encode($this->username . ':' . $this->password);
         } else {
-            $query['headers'][] = 'Authorization: bearer ' . $this->getSessionBearer();
+            $query['headers'][] = 'Authorization: bearer ' . $this->getToken();
         }
 
         $response = $this->runDataApiQuery($query);
         //Token expired
         if (DataApiResult::parseError($response)['code'] == 952) {
-            $this->getSessionBearer(true);
+            $this->getToken(true);
             //replay query after token renew
             return $this->executeDataApi($params);
         }
@@ -1073,13 +1073,13 @@ class FileMaker
             ['-setGlobals' => true, '-db' => $this->database]
         );
         $globalQuery = DataApi::prepareQuery($globalOptions);
-        $globalQuery['headers'][] = 'Authorization: bearer ' . $this->getSessionBearer();
+        $globalQuery['headers'][] = 'Authorization: bearer ' . $this->getToken();
 
         $response = $this->runDataApiQuery($globalQuery);
 
         //handle Token expired
         if (DataApiResult::parseError($response)['code'] == 952) {
-            $this->getSessionBearer(true);
+            $this->getToken(true);
             //replay query after token renew
             return $this->setGlobals($globals);
         }
@@ -1142,7 +1142,7 @@ class FileMaker
             'params' => [
                 'version' => 'vLatest',
                 'database' => $this->database,
-                'sessionToken' => $this->getSessionBearer(),
+                'sessionToken' => $this->getToken(),
             ],
         ];
         $response = json_decode($this->runDataApiQuery($query), true);
@@ -1227,29 +1227,34 @@ class FileMaker
         return $response;
     }
 
+    public function setToken($value) {
+        $this->properties['token'] = $value;
+        $key = md5($this->hostspec . $this->database . $this->username . $this->password);
+        $this->sessionSet('bearer-' . $key, $value);
+    }
+
     /**
      * @param bool $renew
      * @return bool|mixed|null
      * @throws FileMakerException
      */
-    private function getSessionBearer($renew = false)
+    private function getToken($renew = false)
     {
         //Clear token in case of renew (current token has expired)
         if ($renew) {
-            $this->token = null;
+            $this->properties['token'] = null;
         }
 
         //return token if we already have it
-        if ($this->token) {
-            return $this->token;
+        if ($this->properties['token']) {
+            return $this->properties['token'];
         }
 
         $key = md5($this->hostspec . $this->database . $this->username . $this->password);
-        if ($renew || !$this->token = $this->sessionGet('bearer-' . $key)) {
-            $this->token = $this->dataApiLogin();
-            $this->sessionSet('bearer-' . $key, $this->token);
+        if ($renew || !$this->properties['token'] = $this->sessionGet('bearer-' . $key)) {
+            $this->properties['token'] = $this->dataApiLogin();
         }
-        return $this->token;
+        return $this->properties['token'];
     }
 
     /**
@@ -1468,7 +1473,14 @@ class FileMaker
      */
     public function __set($name, $value)
     {
-        if (array_key_exists($name, $this->properties)) {
+        $getter = 'set' . $name;
+        if (method_exists($this, $getter)) {
+            //test if it is a valid function (no args)
+            $reflection = new ReflectionMethod(__CLASS__, $getter);
+            if (sizeof($reflection->getParameters()) === 0 and $reflection->isPublic()) {
+                return $this->$getter($value);
+            }
+        } elseif (array_key_exists($name, $this->properties)) {
             $this->properties[$name] = $value;
         } else {
             return $this->returnOrThrowException('Attempt to set an unsupported property (' . $name . ')');
@@ -1488,14 +1500,14 @@ class FileMaker
     public function __get($name)
     {
         $getter = 'get' . $name;
-        if (array_key_exists($name, $this->properties)) {
-            return $this->properties[$name];
-        } elseif (method_exists($this, $getter)) {
+        if (method_exists($this, $getter)) {
             //test if it is a valid function (no args)
             $reflection = new ReflectionMethod(__CLASS__, $getter);
             if (sizeof($reflection->getParameters()) === 0 and $reflection->isPublic()) {
                 return $this->$getter();
             }
+        } elseif (array_key_exists($name, $this->properties)) {
+            return $this->properties[$name];
         }
 
         return $this->returnOrThrowException('Attempt to access an unsupported property (' . $name . ')');
