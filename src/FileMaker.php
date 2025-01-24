@@ -46,13 +46,13 @@ use ReflectionMethod;
  * @property bool $useCookieSession       Default to false
  * @property bool $emptyAsNull            Return null instead of empty strings, default to false
  * @property bool $useDataApi             default false
+ * @property string|null $token             default false
  */
 class FileMaker
 {
     private static $apiVersion = '3.0.0-alpha';
     private static $minServerVersion = '18.0.0.0';
 
-    private $token = null;
     /**
      *
      * @var array The FileMaker connection properties
@@ -81,7 +81,8 @@ class FileMaker
         'emptyAsNull' => false, //Returns null value instead of empty strings on empty field value
         'errorHandling' => 'exception', //Default to use old school FileMaker Errors trapping
         'enableProfiling' => false,
-        'useDataApi' => false
+        'useDataApi' => false,
+        'token' => null
     ];
 
     /**
@@ -332,11 +333,6 @@ class FileMaker
             return $this->returnOrThrowException('setCache() must be passed an class that implements set(strinq $key, mixed $value) and get(string $key) methods');
         }
         $this->sessionHandler = $handler;
-    }
-
-    public function getToken()
-    {
-        return $this->token;
     }
 
     /**
