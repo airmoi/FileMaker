@@ -1118,8 +1118,7 @@ class FileMaker
         if ($response['messages'][0]['code'] != 0) {
             return $this->returnOrThrowException($response['messages'][0]['message'], $response['messages'][0]['code']);
         }
-        $this->token = $response['response']['token'];
-        return $this->token;
+        return $response['response']['token'];
     }
 
     /**
