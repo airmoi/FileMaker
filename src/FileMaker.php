@@ -1498,14 +1498,15 @@ class FileMaker
      */
     public function __get($name)
     {
-        $getter = 'get' . $name;
+        $getter = 'get' . ucfirst($name);
         if (method_exists($this, $getter)) {
             //test if it is a valid function (no args)
             $reflection = new ReflectionMethod(__CLASS__, $getter);
             if (sizeof($reflection->getParameters()) === 0 and $reflection->isPublic()) {
                 return $this->$getter();
             }
-        } elseif (array_key_exists($name, $this->properties)) {
+        }
+        if (array_key_exists($name, $this->properties)) {
             return $this->properties[$name];
         }
 
