@@ -56,7 +56,7 @@ class FMPXMLLAYOUT
         xml_parser_set_option($xmlParser, XML_OPTION_CASE_FOLDING, false);
         xml_parser_set_option($xmlParser, XML_OPTION_TARGET_ENCODING, 'UTF-8');
         /** @psalm-suppress UndefinedFunction */
-        xml_set_element_handler($xmlParser, 'start', 'end');
+        xml_set_element_handler($xmlParser, '_start', '_end');
         /** @psalm-suppress UndefinedFunction */
         xml_set_character_data_handler($xmlParser, 'cdata');
         if (!@xml_parse($xmlParser, $xmlResponse)) {
@@ -111,7 +111,7 @@ class FMPXMLLAYOUT
      * @param string $type
      * @param array $datas
      */
-    private function start($parser, $type, $datas)
+    private function _start($parser, $type, $datas)
     {
         $datas = $this->fm->toOutputCharset($datas);
         switch ($type) {
@@ -141,7 +141,7 @@ class FMPXMLLAYOUT
      * @param resource $parser
      * @param string $type
      */
-    private function end($parser, $type)
+    private function _end($parser, $type)
     {
         switch ($type) {
             case 'FIELD':
