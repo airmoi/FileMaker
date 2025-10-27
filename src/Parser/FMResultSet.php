@@ -71,7 +71,7 @@ class FMResultSet
         xml_parser_set_option($xmlParser, XML_OPTION_CASE_FOLDING, false);
         xml_parser_set_option($xmlParser, XML_OPTION_TARGET_ENCODING, 'UTF-8');
         /** @psalm-suppress UndefinedFunction */
-        xml_set_element_handler($xmlParser, 'start', 'end');
+        xml_set_element_handler($xmlParser, '_start', '_end');
         /** @psalm-suppress UndefinedFunction */
         xml_set_character_data_handler($xmlParser, 'cdata');
         if (!@xml_parse($xmlParser, $xml)) {
@@ -266,7 +266,7 @@ class FMResultSet
      * @param array $datas
      * @return void
      */
-    private function start($parser, $tag, $datas)
+    private function _start($parser, $tag, $datas)
     {
         $datas = $this->fm->toOutputCharset($datas);
         switch ($tag) {
@@ -324,7 +324,7 @@ class FMResultSet
      * @param string $tag
      * @return void
      */
-    private function end($parser, $tag)
+    private function _end($parser, $tag)
     {
         switch ($tag) {
             case 'relatedset-definition':
