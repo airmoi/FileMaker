@@ -238,7 +238,11 @@ class FileMaker
         //Logout dataAPI session if the token cannot be saved to be reused in next query (cli mode or no active session)
         //If a session handler is set, we assume the token has been saved (session may have been closed before destruct was called)
         if ($this->token && $this->useDataApi && !$this->sessionHandler && !session_id() || php_sapi_name() === 'cli') {
-            $this->dataApiLogout();
+            try {
+                $this->dataApiLogout();
+            } catch (FileMakerException $e) {
+                // ignore error (token may have expired already)
+            }
         }
     }
 
