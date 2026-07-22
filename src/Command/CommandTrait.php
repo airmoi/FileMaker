@@ -10,6 +10,7 @@ namespace airmoi\FileMaker\Command;
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\Object\Field;
+use airmoi\FileMaker\Object\Layout;
 
 trait CommandTrait
 {
@@ -30,7 +31,7 @@ trait CommandTrait
     protected $layout;
 
     /**
-     * @return \airmoi\FileMaker\FileMakerException|\airmoi\FileMaker\Object\Layout
+     * @return FileMakerException|Layout
      * @throws FileMakerException
      */
     public function getLayout()

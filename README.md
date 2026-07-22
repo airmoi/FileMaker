@@ -13,11 +13,15 @@ This version of the PHP-API add the following feature to the offical API :
 * A method to get the url of your last CWP call: `$fm->getLastRequestedUrl()`
 * A method to check if a findRequest is empty: `$request->isEmpty()`
 * A method to get the value list associated to a field from a Record: `$record->getValueListTwoField('my_field')`
-* EXPERIMENTAL 'useDateFormatInRequests' allow you to use defined 'dateFormat' in request (support wildcards and range)
+* 'useDateFormatInRequests' allow you to use defined 'dateFormat' in request (support wildcards and range)
+* Use custom "logger" : your logger must implement a log($message, $level) method. Additionally, your logger may implement profileBegin($key)/profileEnd($key) methods to profile query performances.
+* Set a Cache object (must implement set($key, $value) and get($key) methods) to cache meta data such as layouts and scripts and reduce call
+* dataAPI support : set 'engine' property to "dataPI" to switch from CWP to dataAPI (see dataAPI support section).
+* Add a "session" Object to sessionHandler property to enable session level data storage (save dataAPI token to users session to reduce dataAPI login/logout). Your sessionHandler must implement set($key, $value) and get($key) methods
 
 ## Requirements
 
-* PHP >= 5.5
+* PHP >= 7.1
 * (optional) PHPUnit to run tests.
 
 ## Installation
@@ -29,7 +33,7 @@ You can use the `composer` package manager to install. Either run:
 
 or add:
 
-    "airmoi/filemaker": "^2.2"
+    "airmoi/filemaker": "^3.0"
 
 to your composer.json file
 
@@ -85,7 +89,9 @@ catch (FileMakerException $e) {
 }
 ```
 
-## Important notice
+## Important notices
+
+### Switch from original PHP-API
 
 The 2.1 release aims to improve compatibility with the original FileMaker PHP-API.
 However, you will need to changes few things in your code in order to use it
@@ -100,11 +106,26 @@ The major changes compared to the official package are :
 
 You can use the offical [PHP-API guide](https://fmhelp.filemaker.com/docs/14/fr/fms14_cwp_guide.pdf) provided by FileMaker® for everything else.
 
+### dataAPI support
+
+A hard work has been done to make dataAPI support as transparent as possible. The goal was to let you be able to switch from CWP to dataAPI by just switching a property.
+
+However, despite the dataAPI has roughly the same functionality, some of its behaviors differs from the CWP, which required some workarounds.
+1. Globals lives across a session and can only be defined using a dedicated method, to fix that and prevent unexpected behaviors, globals are defined before performing a query, then reset after the query was performed.
+2. Perform Script action returns the script result instead of a foundset (no workaround here, just to inform you that you'll get a script result instead of the resulting foundset).
+As a workaround, you may create a find query and use setScript($scriptName, $scriptParam) method to get the resulting foundset
+3. DataAPI requires to login using credentials, then perform queries using the resulting token.
+To keep a dataAPI session alive across a "user" session and reduce login/logout operations, you may use a sessionHandler. It will enable PHP-API to save the token into the user session and reuse it as long as it is valid. If no session handler is defined, dataAPI will automatically logout when FileMaker's object is destroyed (ie end of your script)
+4. When a token is expired, it will automatically be regenerated
+5. DataAPI's "Layout" method only returns fields and value lists of the layout. Other meta's such as layout OT, layout Base Table name (same for portals) are only returned with a found set (hope Claris will fix this in a next release). It means, in order to keep the "getLayout" method consistent, that its has to query a "random" record on the given layout to retrieve those meta, so don't be surpised if you use getLayout() to see 2 queries performed to dataAPI. If the table is empty, layout Object won't have those metas.
+6. DataAPI as a default pagination of 100 (while CWP does not have default pagination at all). To prevent truncated results, when no range limit is defined, the API will loop across pages to return the full foundset 
+
 ## TODO
 * Finish PHPunit test
 * Add functionnal tests
 * Improve parsers
-* Add new parsers
+* ~~Add new parsers~~
+* ~~Add support for dataAPI~~
 * Documentation
 
 ## License

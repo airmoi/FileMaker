@@ -10,6 +10,9 @@
 
 namespace airmoi\FileMaker\Helpers;
 
+use DateTime;
+use Exception;
+
 /**
  * Class DateTimeHelper
  * Provide methods to convert date input/output
@@ -19,10 +22,10 @@ namespace airmoi\FileMaker\Helpers;
 class DateFormat
 {
     public static $omitOperatorsPattern = [
-        '/^=*/' => null,
+        '/^=*/' => '',
         '/[#|@]+/' => "*",
         //'/#/' => "*",
-        '/~/' => null
+        '/~/' => ''
     ];
 
     public static $byPassOperators = ['!', '?', ];
@@ -31,7 +34,7 @@ class DateFormat
      * @param string $inputFormat
      * @param string $outputFormat
      * @return string
-     * @throws \Exception
+     * @throws Exception
      */
     public static function convert($value, $inputFormat = null, $outputFormat = null)
     {
@@ -42,18 +45,19 @@ class DateFormat
         //Parse value to detect incorrect date format
         $parsedDate = date_parse_from_format($inputFormat, $value);
         if ($parsedDate['error_count'] || $parsedDate['warning_count']) {
-            throw new \Exception('invalid date format');
+            throw new Exception('invalid date format');
         }
 
-        $date = \DateTime::createFromFormat($inputFormat, $value);
+        $date = DateTime::createFromFormat($inputFormat, $value);
 
         return $date->format($outputFormat);
     }
 
     /**
-     * @param $value
+     * @param string $value
      * @param string|null $inputFormat
      * @param string|null $outputFormat
+     *
      * @return string
      */
     public static function convertSearchCriteria($value, $inputFormat = null, $outputFormat = null)
@@ -67,19 +71,24 @@ class DateFormat
         }
 
         $value = self::sanitizeDateSearchString($value);
-
         $inputRegExp = '#' . self::dateFormatToRegex($inputFormat) . '#';
 
-        //$regex = "#[<|>|≤|≥|<=|>=]?($inputRegExp)\.{0}|\.{3}($inputRegExp)?#";
-        $value = preg_replace_callback(
-            $inputRegExp,
-            function ($matches) use ($inputFormat, $outputFormat) {
-                return self::convertWithWildCards($matches[0], $inputFormat, $outputFormat);
-            },
-            $value
-        );
+        //handle range operator
+        $values = explode("...", $value);
+        foreach ($values as $index => $date) {
+            //$regex = "#[<|>|≤|≥|<=|>=]?($inputRegExp)\.{0}|\.{3}($inputRegExp)?#";
+            $values[$index] = preg_replace_callback(
+                $inputRegExp,
+                function ($matches) use ($inputFormat, $outputFormat) {
+                    return self::convertWithWildCards($matches[0], $inputFormat, $outputFormat);
+                },
+                $date
+            );
+        }
 
-        return $value;
+
+
+        return implode("...", $values);
     }
 
     /**
@@ -95,19 +104,20 @@ class DateFormat
     }
 
     /**
-     * @param $format
+     * @param string $format
+     *
      * @return string
      */
     public static function dateFormatToRegex($format)
     {
         $keys = [
-            'Y' => ['year', '\d{4}|\*'],
-            'y' => ['year', '\d{2}|\*'],
-            'm' => ['month', '\d{2}|\*'],
+            'Y' => ['year', '\d{2,4}|\*'],
+            'y' => ['year', '\d{2,2}|\*'],
+            'm' => ['month', '\d{1,2}|\*'],
             'n' => ['month', '\d{1,2}|\*'],
             //'M' => ['month', '[A-Z][a-z]{3}'],
             //'F' => ['month', '[A-Z][a-z]{2,8}'],
-            'd' => ['day', '\d{2}|\*'],
+            'd' => ['day', '\d{1,2}|\*'],
             'j' => ['day', '\d{1,2}|\*'],
             //'D' => ['day', '[A-Z][a-z]{2}'],
             //'l' => ['day', '[A-Z][a-z]{6,9}'],
@@ -149,23 +159,23 @@ class DateFormat
         preg_match($inputRegex, $value, $parsedDate);
 
         $keys = [
-            'Y' => ['year', '%04d'],
-            'y' => ['year', '%02d'],
-            'm' => ['month', '%02d'],
-            'n' => ['month', '%02d'],
+            'Y' => ['year', '%d'],
+            'y' => ['year', '%d'],
+            'm' => ['month', '%d'],
+            'n' => ['month', '%d'],
             //'M' => [('month', '%3s'],
             //'F' => array('month', '%8s'],
-            'd' => ['day', '%02d'],
-            'j' => ['day', '%02d'],
+            'd' => ['day', '%d'],
+            'j' => ['day', '%d'],
             //'D' => ['day', '%2s'],
             //'l' => ['day', '%9s'],
             //'u' => ['hour', '%06d'],
-            'h' => ['hour', '%02d'],
-            'H' => ['hour', '%02d'],
-            'g' => ['hour', '%02d'],
-            'G' => ['hour', '%02d'],
-            'i' => ['minute', '%02d'],
-            's' => ['second', '%02d']
+            'h' => ['hour', '%d'],
+            'H' => ['hour', '%d'],
+            'g' => ['hour', '%d'],
+            'G' => ['hour', '%d'],
+            'i' => ['minute', '%d'],
+            's' => ['second', '%d']
         ];
 
         //convert to output format

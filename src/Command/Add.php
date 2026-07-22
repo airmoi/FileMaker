@@ -9,6 +9,9 @@ use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\FileMakerValidationException;
 use airmoi\FileMaker\Helpers\DateFormat;
+use airmoi\FileMaker\Object\Result;
+use airmoi\FileMaker\Parser\DataApiResult;
+use Exception;
 
 /**
  * Command class that adds a new record.
@@ -19,16 +22,18 @@ use airmoi\FileMaker\Helpers\DateFormat;
 class Add extends Command
 {
     protected $useRawData = false;
+
     /**
      * Add command constructor.
      *
-     * @ignore
      * @param FileMaker $fm FileMaker object the command was created by.
      * @param string $layout Layout to add a record to.
      * @param array $values Associative array of field name => value pairs. To set field repetitions,
      * use a numerically indexed array for the value of a field, with the numeric keys
      * corresponding to the repetition number to set.
      * @param bool $useRawData Prevent data conversion on setField
+     * @throws FileMakerException
+     * @ignore
      */
     public function __construct(FileMaker $fm, $layout, $values = [], $useRawData = false)
     {
@@ -47,11 +52,12 @@ class Add extends Command
 
     /**
      *
-     * @return \airmoi\FileMaker\Object\Result|FileMakerException|FileMakerValidationException
+     * @param null $result
+     * @return Result|FileMakerException|FileMakerValidationException
      * @throws FileMakerException
      * @throws FileMakerValidationException
      */
-    public function execute()
+    public function execute($result = null)
     {
         if ($this->fm->getProperty('prevalidate')) {
             $validation = $this->validate();
@@ -91,6 +97,28 @@ class Add extends Command
     }
 
     /**
+     * @param FileMakerException|string $response
+     * @param null $result
+     * @return FileMakerException|Result|bool
+     * @throws FileMakerException
+     */
+    protected function getResult($response, $result = null)
+    {
+        if (!$this->fm->useDataApi) {
+            $result = parent::getResult($response);
+        } else {
+            $parser      = new DataApiResult($this->fm);
+            $parseResult = $parser->parse($response);
+            if (FileMaker::isError($parseResult)) {
+                return $parseResult;
+            }
+            $result = new Result($this->fm);
+            $result->records[] = $this->fm->getRecordById($this->layout, $parser->parsedResult['recordId']);
+        }
+        return $result;
+    }
+
+    /**
      * Sets the new value for a field.
      *
      * @param string $field Name of field to set.
@@ -121,7 +149,7 @@ class Add extends Command
                 } else {
                     $value = DateFormat::convert($value, $dateFormat . ' H:i:s', 'm/d/Y H:i:s');
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 return $this->fm->returnOrThrowException(
                     $value . ' could not be converted to a valid timestamp for field '
                     . $field . ' (expected format '. $dateFormat .')'

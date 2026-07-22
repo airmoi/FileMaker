@@ -23,6 +23,8 @@ class Field
     public $global = false;
     public $maxRepeat = 1;
     public $validationMask = 0;
+    public $repetitionStart = 0;
+    public $repetitionEnd = 0;
     public $validationRules = [];
     public $result;
     public $type;
@@ -169,7 +171,7 @@ class Field
                             case 'timestamp':
                                 if ($this->checkTimeStampFormatFourDigitYear($value)) {
                                     preg_match(
-                                        '#^([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})[-,/,\\\\]([0-9]{4})#',
+                                        '#^([0-9]{1,2})[-,/\\\\]([0-9]{1,2})[-,/\\\\]([0-9]{4})#',
                                         $value,
                                         $matches
                                     );
@@ -189,7 +191,7 @@ class Field
                                 break;
                             default:
                                 preg_match(
-                                    '#([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})[-,/,\\\\]([0-9]{1,4})#',
+                                    '#([0-9]{1,2})[-,/\\\\]([0-9]{1,2})[-,/\\\\]([0-9]{1,4})#',
                                     $value,
                                     $matches
                                 );
@@ -307,7 +309,7 @@ class Field
      */
     public function hasValidationRule($validationRule)
     {
-         return $validationRule & $this->validationMask;
+         return isset($this->validationMask[$validationRule]);
     }
 
     /**
@@ -442,7 +444,7 @@ class Field
      */
     public function getStyleType()
     {
-        $extendedInfos = $this->layout->loadExtendedInfo();
+        $extendedInfos = $this->getLayout()->loadExtendedInfo();
         if (FileMaker::isError($extendedInfos)) {
             return $extendedInfos;
         }
@@ -457,7 +459,7 @@ class Field
     public function checkTimeStampFormatFourDigitYear($value)
     {
         return preg_match(
-            '#^[ ]*([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})[-,/,\\\\]([0-9]{4})[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#i',
+            '#^[ ]*([0-9]{1,2})[-,/\\\\]([0-9]{1,2})[-,/\\\\]([0-9]{4})[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#i',
             $value
         );
     }
@@ -472,7 +474,7 @@ class Field
     public function checkTimeStampFormat($value)
     {
         return preg_match(
-            '#^[ ]*([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})([-,/,\\\\]([0-9]{1,4}))?[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#i',
+            '#^[ ]*([0-9]{1,2})[-,/\\\\]([0-9]{1,2})([-,/\\\\]([0-9]{1,4}))?[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#i',
             $value
         );
     }
@@ -486,7 +488,7 @@ class Field
      */
     public function checkDateFormat($value)
     {
-        return preg_match('#^[ ]*([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})([-,/,\\\\]([0-9]{1,4}))?[ ]*$#', $value);
+        return preg_match('#^[ ]*([0-9]{1,2})[-,/\\\\]([0-9]{1,2})([-,/\\\\]([0-9]{1,4}))?[ ]*$#', $value);
     }
 
     /**
@@ -519,7 +521,7 @@ class Field
      */
     public function checkDateValidity($value, $rule, FileMakerValidationException $validationError)
     {
-        preg_match('#([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})([-,/,\\\\]([0-9]{1,4}))?#', $value, $matches);
+        preg_match('#([0-9]{1,2})[-,/\\\\]([0-9]{1,2})([-,/\\\\]([0-9]{1,4}))?#', $value, $matches);
         if ($matches[4]) {
             $year = $matches[4];
             $strlen = strlen($year);

@@ -5,6 +5,9 @@
  */
 namespace airmoi\FileMaker\Command;
 
+use airmoi\FileMaker\FileMakerException;
+use airmoi\FileMaker\Object\Result;
+
 /**
  * Command class that performs multiple find requests, also known as a compound
  * find set.
@@ -73,11 +76,13 @@ class CompoundFind extends Command
     }
 
     /**
+     * @param FileMakerException|Result|null $result
+     *@return Result|FileMakerException
      *
-     * @return \airmoi\FileMaker\Object\Result|\airmoi\FileMaker\FileMakerException
-     * @throws \airmoi\FileMaker\FileMakerException
+     * @throws FileMakerException
+     *
      */
-    public function execute()
+    public function execute($result = null)
     {
         $query = null;
         $requestCount = 1;
@@ -122,8 +127,25 @@ class CompoundFind extends Command
         }
         $params['-query'] = $query;
         $params['-findquery'] = true;
-        $result = $this->fm->execute($params);
-        return $this->getResult($result);
+        $rawResult = $this->fm->execute($params);
+
+        $result = $this->getResult($rawResult, $result);
+
+        //Handle auto pagination
+        if ($this->max
+            || $result->getFoundSetCount() == 0
+            || $result->getFoundSetCount() == $result->getFetchCount()
+        ) {
+            return $result;
+        }
+
+        $pages = $result->getFoundSetCount()/100;
+        for ($i = 1 ; $i < $pages; $i++) {
+            $this->setRange($i*100, 100);
+            $this->execute($result);
+        }
+        $result->fetchCount = $result->getFoundSetCount();
+        return $result;
     }
 
     /**
@@ -192,9 +214,10 @@ class CompoundFind extends Command
 
     /**
      * Build relatedSets Filter params
+     *
      * @param $params
      */
-    public function setRelatedSetsFiltersParams(&$params)
+    public function setRelatedSetsFiltersParams(array &$params)
     {
         if ($this->relatedsetsfilter) {
             $params['-relatedsets.filter'] = $this->relatedsetsfilter;
@@ -206,9 +229,10 @@ class CompoundFind extends Command
 
     /**
      * Build sort params
+     *
      * @param $params
      */
-    public function setSortParams(&$params)
+    public function setSortParams(array &$params)
     {
         foreach ($this->sortFields as $precedence => $fieldname) {
             $params['-sortfield.' . $precedence] = $fieldname;
@@ -220,9 +244,10 @@ class CompoundFind extends Command
 
     /**
      * Build range params
+     *
      * @param $params
      */
-    public function setRangeParams(&$params)
+    public function setRangeParams(array &$params)
     {
         if ($this->skip) {
             $params['-skip'] = $this->skip;

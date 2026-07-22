@@ -14,6 +14,7 @@
  */
 
 return array(
+    -2 => 'Curl Error',
     -1 => 'Unknown error',
     0 => 'No error',
     1 => 'User canceled action',

@@ -8,6 +8,7 @@ namespace airmoi\FileMaker\Command;
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\Object\Result;
+use airmoi\FileMaker\Parser\DataApiResult;
 
 /**
  * Command class that duplicates a single record.
@@ -36,10 +37,11 @@ class Duplicate extends Command
      * Return a Result object with the duplicated record
      * use Result->getFirstRecord() to get the record
      *
+     * @param null $result
      * @return Result|FileMakerException
      * @throws FileMakerException
      */
-    public function execute()
+    public function execute($result = null)
     {
         if (empty($this->recordId)) {
             return $this->fm->returnOrThrowException('Duplicate commands require a record id.');
@@ -49,5 +51,27 @@ class Duplicate extends Command
         $params['-recid'] = $this->recordId;
         $result = $this->fm->execute($params);
         return $this->getResult($result);
+    }
+
+    /**
+     * @param FileMakerException|string $response
+     * @param null $result
+     * @return FileMakerException|Result|bool
+     * @throws FileMakerException
+     */
+    protected function getResult($response, $result = null)
+    {
+        if (!$this->fm->useDataApi) {
+            $result = parent::getResult($response);
+        } else {
+            $parser      = new DataApiResult($this->fm);
+            $parseResult = $parser->parse($response);
+            if (FileMaker::isError($parseResult)) {
+                return $parseResult;
+            }
+            $result = new Result($this->fm);
+            $result->records[] = $this->fm->getRecordById($this->layout, $parser->parsedResult['recordId']);
+        }
+        return $result;
     }
 }

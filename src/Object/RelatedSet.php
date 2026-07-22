@@ -27,6 +27,8 @@ class RelatedSet
      */
     public $layout;
     public $name;
+    public $database;
+    public $table;
 
     public $fields = [];
 

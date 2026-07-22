@@ -7,6 +7,7 @@ namespace airmoi\FileMaker\Object;
 
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
+use airmoi\FileMaker\Parser\DataApiResult;
 use airmoi\FileMaker\Parser\FMPXMLLAYOUT;
 
 /**
@@ -31,7 +32,7 @@ class Layout
     public $valueListTwoFields = [];
     public $database;
     public $extended = false;
-    public $table = false;
+    public $table = null;
     /**
      * Layout object constructor.
      *
@@ -222,7 +223,7 @@ class Layout
         if (FileMaker::isError($extendedInfos)) {
             return $extendedInfos;
         }
-        return isset($this->valueLists[$valueList]) ?
+        return isset($this->valueListTwoFields[$valueList]) ?
                 $this->valueListTwoFields[$valueList] : [];
     }
 
@@ -282,6 +283,13 @@ class Layout
      */
     public function loadExtendedInfo($recid = null)
     {
+        if ($this->fm->useDataApi && $recid === null) {
+            return true;
+        } elseif ($this->fm->useDataApi) {
+            $layout = $this->fm->getLayout($this->getName(), $recid);
+            $this->valueLists = $layout->valueLists;
+            $this->valueListTwoFields = $layout->valueListTwoFields;
+        }
         if (!$this->extended || $recid != null) {
             if ($recid != null) {
                 $result = $this->fm->execute([
@@ -297,7 +305,11 @@ class Layout
                     '-view' => null
                 ], 'FMPXMLLAYOUT');
             }
-            $parser = new FMPXMLLAYOUT($this->fm);
+            if ($this->fm->useDataApi) {
+                $parser = new DataApiResult($this->fm);
+            } else {
+                $parser = new FMPXMLLAYOUT($this->fm);
+            }
             $parseResult = $parser->parse($result);
             if (FileMaker::isError($parseResult)) {
                 return $parseResult;

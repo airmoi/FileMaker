@@ -55,7 +55,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetName()
     {
-        $field = $this->record->layout->getField('text_field');
+        $field = $this->record->getLayout()->getField('text_field');
         $this->assertEquals('text_field', $field->getName());
     }
 
@@ -64,8 +64,8 @@ class FieldTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetLayout()
     {
-        $field = $this->record->layout->getField('text_field');
-        $this->assertEquals($this->record->layout, $field->getLayout());
+        $field = $this->record->getLayout()->getField('text_field');
+        $this->assertEquals($this->record->getLayout(), $field->getLayout());
     }
 
     /**
@@ -73,7 +73,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
      */
     public function testIsAutoEntered()
     {
-        $field = $this->record->layout->getField('id');
+        $field = $this->record->getLayout()->getField('id');
         $this->assertTrue($field->isAutoEntered());
     }
 
@@ -83,7 +83,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
     public function testIsGlobal()
     {
 
-        $field = $this->record->layout->getField('global_field');
+        $field = $this->record->getLayout()->getField('global_field');
         $this->assertTrue($field->isGlobal());
     }
 
@@ -92,7 +92,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetRepetitionCount()
     {
-        $field = $this->record->layout->getField('text_field');
+        $field = $this->record->getLayout()->getField('text_field');
         $this->assertEquals(4, $field->getRepetitionCount());
     }
 
@@ -227,7 +227,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetLocalValidationRules()
     {
-        $field = $this->record->layout->getField('text_field');
+        $field = $this->record->getLayout()->getField('text_field');
         $this->assertEquals(2, sizeof($field->getLocalValidationRules()));
     }
 
@@ -236,7 +236,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetMaxCharacters()
     {
-        $field = $this->record->layout->getField('text_field');
+        $field = $this->record->getLayout()->getField('text_field');
         $this->assertEquals(50, $field->getMaxCharacters());
     }
 
@@ -245,7 +245,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetValidationRules()
     {
-        $field = $this->record->layout->getField('text_field');
+        $field = $this->record->getLayout()->getField('text_field');
         $this->assertEquals(2, sizeof($field->getValidationRules()));
     }
 
@@ -254,7 +254,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetValidationMask()
     {
-        $field = $this->record->layout->getField('text_field');
+        $field = $this->record->getLayout()->getField('text_field');
         $this->assertEquals(3, $field->getValidationMask());
     }
 
@@ -263,7 +263,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
      */
     public function testHasValidationRule()
     {
-        $field = $this->record->layout->getField('text_field');
+        $field = $this->record->getLayout()->getField('text_field');
         $this->assertEquals(true, $field->hasValidationRule(FileMaker::RULE_NOTEMPTY));
         $this->assertEquals(true, $field->hasValidationRule(FileMaker::RULE_MAXCHARACTERS));
     }
@@ -273,7 +273,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
      */
     public function testDescribeValidationRule()
     {
-        $field = $this->record->layout->getField('text_field');
+        $field = $this->record->getLayout()->getField('text_field');
         $this->assertEquals(null, $field->describeValidationRule(FileMaker::RULE_NOTEMPTY));
     }
 
@@ -306,7 +306,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetResult()
     {
-        $field = $this->record->layout->getField('text_field');
+        $field = $this->record->getLayout()->getField('text_field');
         $this->assertEquals('text', $field->getResult());
     }
 
@@ -315,13 +315,13 @@ class FieldTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetType()
     {
-        $field = $this->record->layout->getField('text_field');
+        $field = $this->record->getLayout()->getField('text_field');
         $this->assertEquals('normal', $field->getType());
 
-        $field = $this->record->layout->getField('calculation_field');
+        $field = $this->record->getLayout()->getField('calculation_field');
         $this->assertEquals('calculation', $field->getType());
 
-        $field = $this->record->layout->getField('summary_field');
+        $field = $this->record->getLayout()->getField('summary_field');
         $this->assertEquals('summary', $field->getType());
     }
 
@@ -330,7 +330,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetValueList()
     {
-        $field = $this->record->layout->getField('text_field');
+        $field = $this->record->getLayout()->getField('text_field');
         $this->assertEquals(['Hello',  'World'], $field->getValueList());
     }
 
@@ -339,7 +339,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetStyleType()
     {
-        $field = $this->record->layout->getField('text_field');
+        $field = $this->record->getLayout()->getField('text_field');
         $this->assertEquals('POPUPLIST', $field->getStyleType());
     }
 
@@ -348,7 +348,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
      */
     public function testCheckTimeStampFormatFourDigitYear()
     {
-        $field = $this->record->layout->getField('timestamp_field');
+        $field = $this->record->getLayout()->getField('timestamp_field');
         //Valid values
         $validValues = [
             "06/12/2004 00:00:00",
@@ -382,7 +382,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
      */
     public function testCheckTimeStampFormat()
     {
-        $field = $this->record->layout->getField('timestamp_field');
+        $field = $this->record->getLayout()->getField('timestamp_field');
         //Valid values
         $validValues = [
             "06/12/04 00:00:00",
@@ -416,7 +416,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
      */
     public function testCheckDateFormat()
     {
-        $field = $this->record->layout->getField('timestamp_field');
+        $field = $this->record->getLayout()->getField('timestamp_field');
         //Valid values
         $validValues = [
             "06/12/04",
@@ -448,7 +448,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
      */
     public function testCheckTimeFormat()
     {
-        $field = $this->record->layout->getField('time_field');
+        $field = $this->record->getLayout()->getField('time_field');
         //Valid values
         $validValues = [
             "04:30",
@@ -482,7 +482,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
      */
     public function testCheckNumericOnly()
     {
-        $field = $this->record->layout->getField('number_field');
+        $field = $this->record->getLayout()->getField('number_field');
         //Valid values
         $validValues = [
             1,
@@ -516,7 +516,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
      */
     public function testCheckDateValidity()
     {
-        $field = $this->record->layout->getField('timestamp_field');
+        $field = $this->record->getLayout()->getField('timestamp_field');
         //Valid values
         $validValues = [
             "06/12/00",
@@ -550,7 +550,7 @@ class FieldTest extends \PHPUnit_Framework_TestCase
      */
     public function testCheckTimeValidity()
     {
-        $field = $this->record->layout->getField('time_field');
+        $field = $this->record->getLayout()->getField('time_field');
         //Valid values
         $validValues = [
             "04:30" => false,

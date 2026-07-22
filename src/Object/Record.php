@@ -9,6 +9,8 @@ use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\FileMakerValidationException;
 use airmoi\FileMaker\Helpers\DateFormat;
+use DateTime;
+use Exception;
 
 /**
  * Default Record class that represents each record of a result set.
@@ -70,9 +72,13 @@ class Record
      * Returns the layout this record is associated with.
      *
      * @return Layout This record's layout.
+     * @throws FileMakerException
      */
     public function getLayout()
     {
+        if (is_string($this->layout)) {
+            $this->layout = $this->fm->getLayout($this->layout);
+        }
         return $this->layout;
     }
 
@@ -84,10 +90,11 @@ class Record
      * parent object's {@link Result::getLayout()} method.
      *
      * @return array List of field names as strings.
+     * @throws FileMakerException
      */
     public function getFields()
     {
-        return $this->layout->listFields();
+        return $this->getLayout()->listFields();
     }
 
     /**
@@ -124,7 +131,7 @@ class Record
             return null;
         }
 
-        $format = $this->layout->getField($field)->result;
+        $format = $this->getLayout()->getField($field)->result;
         $value = $this->fields[$field][$repetition];
 
         if (empty($value) && $this->fm->getProperty('emptyAsNull')) {
@@ -141,7 +148,7 @@ class Record
                 } else {
                     return DateFormat::convert($value, 'm/d/Y H:i:s', $dateFormat . ' H:i:s');
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 return $this->fm->returnOrThrowException(
                     $field . ' could not be converted to a valid timestamp ('. $value .')'
                 );
@@ -156,8 +163,9 @@ class Record
      * Returns the two field value list associated with the given field in Record's layout.
      *
      * @param string $fieldName Field's Name
-     * @return array|\airmoi\FileMaker\FileMakerException
+     * @return array|FileMakerException
      * @see Layout::getValueListTwoFields
+     * @throws FileMakerException
      */
     public function getFieldValueListTwoFields($fieldName)
     {
@@ -170,18 +178,18 @@ class Record
         }
 
         //Force load extendedInfos as Field's valueList property is not set until extended infos are retrieved
-        $extendedInfos = $this->layout->loadExtendedInfo($this->recordId);
+        $extendedInfos = $this->getLayout()->loadExtendedInfo($this->recordId);
         if (FileMaker::isError($extendedInfos)) {
             return $extendedInfos;
         }
 
-        $field = $this->layout->getField($fieldName);
+        $field = $this->getLayout()->getField($fieldName);
         if (FileMaker::isError($field)) {
             return [];
         }
         //Get the value list if field has one
         if ($field->valueList !== null) {
-            return $this->layout->getValueListTwoFields($this->layout->fields[$fieldName]->valueList, $this->recordId);
+            return $this->getLayout()->getValueListTwoFields($this->getLayout()->fields[$fieldName]->valueList, $this->recordId);
         }
         return [];
     }
@@ -191,12 +199,13 @@ class Record
      *
      * This method does not convert special characters in the field value to
      * HTML entities.
-     * @deprecated since version 2.0 use getField($field, $repetition = 0, $unencoded = true) instead
      * @param string $field Name of field.
      * @param integer $repetition Field repetition number to get.
      *        Defaults to the first repetition.
      *
      * @return string Unencoded field value.
+     * @throws FileMakerException
+     * @deprecated since version 2.0 use getField($field, $repetition = 0, $unencoded = true) instead
      */
     public function getFieldUnencoded($field, $repetition = 0)
     {
@@ -224,13 +233,13 @@ class Record
     public function getFieldAsTimestamp($field, $repetition = 0)
     {
         $value      = $this->getField($field, $repetition);
-        $fieldType  = $this->layout->getField($field);
+        $fieldType  = $this->getLayout()->getField($field);
 
         $dateFormat = $this->fm->getProperty('dateFormat') !== null ? $this->fm->getProperty('dateFormat') : 'm/d/Y';
         switch ($fieldType->getResult()) {
             case 'date':
                 // e. g. "12/24/2016"
-                if (!$dateTime = \DateTime::createFromFormat($dateFormat . ' H:i:s', $value . ' 00:00:00')) {
+                if (!$dateTime = DateTime::createFromFormat($dateFormat . ' H:i:s', $value . ' 00:00:00')) {
                     return $this->fm->returnOrThrowException(
                         'Failed to parse "' . $value . '" as a FileMaker date value.'
                     );
@@ -238,7 +247,7 @@ class Record
                 break;
             case 'time':
                 // e. g. "12:00:00"
-                if (!$dateTime = \DateTime::createFromFormat('Y-m-d H:i:s', '1970-01-01 ' . $value)) {
+                if (!$dateTime = DateTime::createFromFormat('Y-m-d H:i:s', '1970-01-01 ' . $value)) {
                     return $this->fm->returnOrThrowException(
                         'Failed to parse "' . $value . '" as a FileMaker time value.'
                     );
@@ -246,7 +255,7 @@ class Record
                 break;
             case 'timestamp':
                 // e. g. "12/24/2016 12:00:00"
-                if (!$dateTime = \DateTime::createFromFormat($dateFormat . ' H:i:s', $value)) {
+                if (!$dateTime = DateTime::createFromFormat($dateFormat . ' H:i:s', $value)) {
                     return $this->fm->returnOrThrowException(
                         'Failed to parse "' . $value . '" as a FileMaker timestamp value.'
                     );
@@ -279,11 +288,11 @@ class Record
             $field = $this->relatedSetName. '::' . $field;
         }
 
-        if (!array_key_exists($field, $this->layout->fields)) {
+        if (!array_key_exists($field, $this->getLayout()->fields)) {
             return $this->fm->returnOrThrowException('Field "'.$field.'" is missing');
         }
 
-        $fieldFormat = $this->layout->getField($field)->result;
+        $fieldFormat = $this->getLayout()->getField($field)->result;
         $dateFormat = $this->fm->getProperty('dateFormat');
         if ( $dateFormat !== null  && ($fieldFormat == 'date' || $fieldFormat == 'timestamp')) {
             try {
@@ -292,7 +301,7 @@ class Record
                 } else {
                     $convertedValue = DateFormat::convert($value, $dateFormat . ' H:i:s', 'm/d/Y H:i:s');
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 return $this->fm->returnOrThrowException(
                     $value . ' could not be converted to a valid timestamp for field '
                     . $field . ' (expected format '. $dateFormat .')'
@@ -329,7 +338,7 @@ class Record
      */
     public function setFieldFromTimestamp($field, $timestamp, $repetition = 0)
     {
-        $fieldType = $this->layout->getField($field);
+        $fieldType = $this->getLayout()->getField($field);
         if (FileMaker::isError($fieldType)) {
             return $fieldType;
         }
@@ -392,12 +401,12 @@ class Record
      *
      * @param string $relatedSet Name of the portal to create a new record in.
      *
-     * @return Record A new, blank record.
+     * @return FileMakerException|Record
      * @throws FileMakerException
      */
     public function newRelatedRecord($relatedSet)
     {
-        $relatedSetInfos = $this->layout->getRelatedSet($relatedSet);
+        $relatedSetInfos = $this->getLayout()->getRelatedSet($relatedSet);
         if (FileMaker::isError($relatedSetInfos)) {
             return $relatedSetInfos;
         }
@@ -446,8 +455,8 @@ class Record
      * @param string $fieldName Name of field to pre-validate. If empty,
      *        pre-validates the entire record.
      *
-     * @return boolean|\airmoi\FileMaker\FileMakerValidationException TRUE, if pre-validation passes for $value.
-     * @throws \airmoi\FileMaker\FileMakerValidationException
+     * @return boolean|FileMakerValidationException TRUE, if pre-validation passes for $value.
+     * @throws FileMakerValidationException|FileMakerException
      */
     public function validate($fieldName = null)
     {
@@ -459,7 +468,7 @@ class Record
 
         $validationErrors = new FileMakerValidationException($this->fm);
         foreach($fields as $fieldName) {
-            $field = $this->layout->getField($fieldName);
+            $field = $this->getLayout()->getField($fieldName);
             if (!isset($this->fields[$fieldName]) || !count($this->fields[$fieldName])) {
                 $values = [0 => null];
             } else {
@@ -530,12 +539,12 @@ class Record
             return $this->fm->returnOrThrowException('You cannot delete a record that does not exist on the server.');
         }
         if ($this->parent) {
-            $editCommand = $this->fm->newEditCommand($this->parent->layout->getName(), $this->parent->recordId, []);
-            $editCommand->setDeleteRelated($this->layout->getName() . "." . $this->recordId);
+            $editCommand = $this->fm->newEditCommand($this->parent->getLayout()->getName(), $this->parent->recordId, []);
+            $editCommand->setDeleteRelated($this->getLayout()->getName() . "." . $this->recordId);
 
             return $editCommand->execute();
         } else {
-            $layoutName = $this->layout->getName();
+            $layoutName = $this->getLayout()->getName();
 
             $editCommand = $this->fm->newDeleteCommand($layoutName, $this->recordId);
             return $editCommand->execute();
@@ -576,7 +585,7 @@ class Record
      */
     private function commitAdd()
     {
-        $addCommand = $this->fm->newAddCommand($this->layout->getName(), $this->fields);
+        $addCommand = $this->fm->newAddCommand($this->getLayout()->getName(), $this->fields);
         $result = $addCommand->execute();
         if (FileMaker::isError($result)) {
             return $result;
@@ -600,7 +609,7 @@ class Record
                 }
             }
         }
-        $command = $this->fm->newEditCommand($this->layout->getName(), $this->recordId, $editedFields, true);
+        $command = $this->fm->newEditCommand($this->getLayout()->getName(), $this->recordId, $editedFields, true);
         $result = $command->execute();
         if (FileMaker::isError($result)) {
             return $result;
@@ -620,14 +629,14 @@ class Record
         foreach ($this->fields as $fieldName => $repetitions) {
             $childs[$fieldName . '.0'] = $repetitions;
         }
-        $command = $this->fm->newEditCommand($this->parent->layout->getName(), $this->parent->getRecordId(), $childs, true);
+        $command = $this->fm->newEditCommand($this->parent->getLayout()->getName(), $this->parent->getRecordId(), $childs, true, $this->relatedSetName);
         $result = $command->execute();
         if (FileMaker::isError($result)) {
             return $result;
         }
         $records = $result->getRecords();
         $record = $records[0];
-        $relatedSet = $record->getRelatedSet($this->layout->getName());
+        $relatedSet = $record->getRelatedSet($this->getLayout()->getName());
         if (FileMaker::isError($relatedSet)) {
             return $relatedSet;
         }
@@ -635,7 +644,7 @@ class Record
         /*
          * Add record to parents relatedSet
          */
-        $this->parent->relatedSets[$this->layout->getName()][] = $this;
+        $this->parent->relatedSets[$this->getLayout()->getName()][] = $this;
         return $this->updateFrom($lastRecord);
     }
 
@@ -655,10 +664,11 @@ class Record
             }
         }
         $editCommand = $this->fm->newEditCommand(
-            $this->parent->layout->getName(),
+            $this->parent->getLayout()->getName(),
             $this->parent->getRecordId(),
             $modifiedFields,
-            true
+            true,
+            $this->relatedSetName
         );
         $result = $editCommand->execute();
         if (FileMaker::isError($result)) {
@@ -666,7 +676,7 @@ class Record
         }
         $records = $result->getRecords();
         $firstRecord = $records[0];
-        $relatedSet = $firstRecord->getRelatedSet($this->layout->getName());
+        $relatedSet = $firstRecord->getRelatedSet($this->getLayout()->getName());
         if (FileMaker::isError($relatedSet)) {
             return $relatedSet;
         }

@@ -5,6 +5,7 @@
  */
 namespace airmoi\FileMaker\Command;
 
+use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\Object\Result;
 
 /**
@@ -17,9 +18,11 @@ class FindAny extends Find
 {
     /**
      *
+     * @param null $result
      * @return Result
+     * @throws FileMakerException
      */
-    public function execute()
+    public function execute($result = null)
     {
         $params             = $this->getCommandParams();
         $params['-findany'] = true;
