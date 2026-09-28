@@ -983,7 +983,7 @@ class FileMaker
             $this->setClientWPCSessionCookie($curlResponse);
         }
 
-        curl_close($curl);
+        //curl_close($curl);
         return $curlResponse;
     }
 
@@ -1225,7 +1225,7 @@ class FileMaker
             return $this->handleCurlError($curlError, $curl);
         }
 
-        curl_close($curl);
+        //curl_close($curl);
 
         return $response;
     }
@@ -1342,7 +1342,7 @@ class FileMaker
             return $this->handleCurlError($curlError, $curl);
         }
 
-        curl_close($curl);
+        //curl_close($curl);
 
         $this->setClientWPCSessionCookie($curlResponse);
         if ($curlHeadersSent) {
