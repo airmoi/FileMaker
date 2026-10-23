@@ -574,8 +574,8 @@ class FileMaker
      */
     public function getLayout($layoutName, $recid = null, $loadExtended = true)
     {
-        if ($recid === null && $layout = $this->cacheGet('layout-' . $layoutName)) {
-            return $layout;
+        if ($recid === null && ($layout = $this->cacheGet('layout-' . $layoutName)) instanceof Layout) {
+            return $layout->fm === $this ? $layout : $layout->withFileMaker($this);
         }
 
         $request = $this->execute([
@@ -1809,6 +1809,9 @@ class FileMaker
 
     private function connexionId()
     {
-        return md5($this->hostspec . "#" . $this->database . "#" . $this->username);
+        return md5(
+            $this->properties['hostspec'] . "#" . $this->properties['database'] . "#" . $this->properties['username']
+            . "#" . ($this->properties['useDataApi'] ? 'dataApi' : 'cwp')
+        );
     }
 }

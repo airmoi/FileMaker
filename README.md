@@ -157,6 +157,8 @@ Passwords and Data API tokens are masked in logged requests.
 * Data API: fix authorization headers (#54)
 * Data API: tokens are now saved and reused, unsaved tokens are released on destruct (fixes error 812 "Exceeded host's capacity"), add `logout()` (#56)
 * `setSessionHandler()` and `setCache()` were not applied
+* Cached layouts are bound to the requesting FileMaker instance and cached per engine (records could be committed through another instance/engine), credentials are no longer serialized into external caches
+* Fix `Field::hasValidationRule()` always returning false
 * Explicit error messages when FileMaker Server does not return XML or redirects the request (#50)
 * Logging: passwords and tokens are masked, logLevel is compared as integer (#42)
 * Fix double date conversion when committing a new record with a custom 'dateFormat' (#35)
