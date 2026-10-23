@@ -32,3 +32,6 @@ phpunit.phar
 
 # phpunit cache
 /.phpunit.cache
+
+# test database, versioned zipped (tests/php-api-test.fmp12.zip)
+/tests/*.fmp12

@@ -619,7 +619,7 @@ class FileMakerTest extends \PHPUnit\Framework\TestCase
         $record = $this->fm->newFindAnyCommand('sample')->execute()->getFirstRecord();
 
         $url = $this->fm->getContainerDataURL($record->getField('container_field'));
-        $this->assertStringEndsWith('/fmi/xml/cnt/fms.png?-db=filemaker-test&-lay=sample&-recid=' . $record->getRecordId() . '&-field=container_field(1)', $url);
+        $this->assertStringEndsWith('/fmi/xml/cnt/fms.png?-db=' . $GLOBALS['DB_FILE'] . '&-lay=sample&-recid=' . $record->getRecordId() . '&-field=container_field(1)', $url);
     }
 
     /**

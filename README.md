@@ -172,7 +172,7 @@ Passwords and Data API tokens are masked in logged requests.
 composer install
 vendor/bin/phpunit --testsuite unit          # offline tests
 cp phpunit.sample.xml phpunit.xml            # set your FileMaker Server credentials
-vendor/bin/phpunit --testsuite integration   # requires tests/filemaker-test.fmp12 hosted on FileMaker Server
+vendor/bin/phpunit --testsuite integration   # requires tests/php-api-test.fmp12 (unzip tests/php-api-test.fmp12.zip) hosted on FileMaker Server
 ```
 
 ## TODO
