@@ -52,10 +52,24 @@ class FakeFileMaker extends FileMaker
     public function runDataApiQuery(array $query)
     {
         $this->dataApiRequests[] = $query;
+        if (!$this->dataApiResponses && $query['method'] === 'DELETE' && str_ends_with($query['uri'], '/sessions/{sessionToken}')) {
+            return Fixtures::dataApi();
+        }
         if (!$this->dataApiResponses) {
             throw new \LogicException('No Data API response queued for ' . $query['uri']);
         }
         return array_shift($this->dataApiResponses);
+    }
+
+    /**
+     * Recorded Data API logout requests
+     */
+    public function logoutRequests(): array
+    {
+        return array_values(array_filter(
+            $this->dataApiRequests,
+            fn($query) => $query['method'] === 'DELETE' && str_ends_with($query['uri'], '/sessions/{sessionToken}')
+        ));
     }
 
     /**

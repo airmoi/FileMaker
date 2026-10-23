@@ -1031,9 +1031,9 @@ class FileMaker
         }
         $query = DataApi::prepareQuery($params);
         if (isset($params['-dbnames'])) {
-            $query['headers'][] = 'Authorization: basic ' . base64_encode($this->username . ':' . $this->password);
+            $query['headers'][] = 'Authorization: Basic ' . base64_encode($this->username . ':' . $this->password);
         } else {
-            $query['headers'][] = 'Authorization: bearer ' . $this->getToken();
+            $query['headers'][] = 'Authorization: Bearer ' . $this->getToken();
         }
 
         $response = $this->runDataApiQuery($query);
@@ -1075,7 +1075,7 @@ class FileMaker
             ['-setGlobals' => true, '-db' => $this->database]
         );
         $globalQuery = DataApi::prepareQuery($globalOptions);
-        $globalQuery['headers'][] = 'Authorization: bearer ' . $this->getToken();
+        $globalQuery['headers'][] = 'Authorization: Bearer ' . $this->getToken();
 
         $response = $this->runDataApiQuery($globalQuery);
 
@@ -1099,7 +1099,7 @@ class FileMaker
             'uri' => DataApi::ENDPOINT_BASE . DataApi::ENDPOINT_LOGIN,
             'queryParams' => null,
             'headers' => [
-                'Authorization: basic ' . base64_encode($this->username . ':' . $this->password)
+                'Authorization: Basic ' . base64_encode($this->username . ':' . $this->password)
             ],
             'method' => 'POST',
             'body' => [
@@ -1136,7 +1136,7 @@ class FileMaker
             'uri' => DataApi::ENDPOINT_BASE . DataApi::ENDPOINT_LOGOUT,
             'queryParams' => null,
             'headers' => [
-                //'Authorization: basic ' . base64_encode($this->username . ':' . $this->password)
+                //'Authorization: Basic ' . base64_encode($this->username . ':' . $this->password)
             ],
             'method' => 'DELETE',
             'body' => null,
