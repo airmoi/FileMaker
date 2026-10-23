@@ -35,4 +35,28 @@ class ValidationTest extends TestCase
         $this->assertSame(0, $field->checkTimeStampFormatFourDigitYear(null));
         $this->assertSame(1, $field->checkDateFormat('12/25/2023'));
     }
+
+    public function testHasValidationRule(): void
+    {
+        $fm = new FakeFileMaker('test');
+        $fm->queueCwp(\airmoi\FileMaker\Tests\Support\Fixtures::fmResultSet([
+            'text_field' => ['not-empty' => 'yes', 'max-characters' => '50'],
+            'note' => [],
+        ]));
+        $layout = $fm->getLayout('sample');
+
+        $field = $layout->getField('text_field');
+        $this->assertTrue($field->hasValidationRule(FileMaker::RULE_NOTEMPTY));
+        $this->assertTrue($field->hasValidationRule(FileMaker::RULE_MAXCHARACTERS));
+        $this->assertFalse($field->hasValidationRule(FileMaker::RULE_NUMERICONLY));
+        $this->assertSame(50, $field->getMaxCharacters());
+        $this->assertFalse($layout->getField('note')->hasValidationRule(FileMaker::RULE_NOTEMPTY));
+    }
+
+    public function testErrorStringWithNullCode(): void
+    {
+        $exception = new \airmoi\FileMaker\FileMakerException(new FakeFileMaker('test'), 'message');
+        $this->assertSame('Unknown error', $exception->getErrorString(null));
+        $this->assertSame('No error', $exception->getErrorString(0));
+    }
 }

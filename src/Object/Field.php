@@ -309,7 +309,7 @@ class Field
      */
     public function hasValidationRule($validationRule)
     {
-         return isset($this->validationMask[$validationRule]);
+        return isset($this->validationRules[$validationRule]);
     }
 
     /**
