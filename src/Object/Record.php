@@ -585,7 +585,8 @@ class Record
      */
     private function commitAdd()
     {
-        $addCommand = $this->fm->newAddCommand($this->getLayout()->getName(), $this->fields);
+        // Values have already been converted by setField()
+        $addCommand = $this->fm->newAddCommand($this->getLayout()->getName(), $this->fields, true);
         $result = $addCommand->execute();
         if (FileMaker::isError($result)) {
             return $result;

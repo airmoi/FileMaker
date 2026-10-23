@@ -25,6 +25,15 @@ class FakeFileMaker extends FileMaker
     /** @var string|null Response returned when the CWP queue is empty */
     public ?string $defaultCwpResponse = null;
 
+    public function __construct($database = null, $hostspec = null, $username = null, $password = null, $options = [])
+    {
+        // Layout and script caches are static, reset them to isolate tests
+        foreach (['internalCache', 'scripts'] as $cache) {
+            (new \ReflectionProperty(FileMaker::class, $cache))->setValue(null, []);
+        }
+        parent::__construct($database, $hostspec, $username, $password, $options);
+    }
+
     public function queueCwp(string ...$responses): static
     {
         array_push($this->cwpResponses, ...$responses);
