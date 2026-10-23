@@ -171,6 +171,9 @@ class Command
                 } else {
                     $values = $this->fields[$fieldName];
                 }
+                if ($field->canSkipValidation($values)) {
+                    continue;
+                }
                 foreach ($values as $value) {
                     try {
                         $field->validate($value);
@@ -191,6 +194,9 @@ class Command
                 $values = [0 => null];
             } else {
                 $values = $this->fields[$fieldName];
+            }
+            if ($field->canSkipValidation($values)) {
+                $values = [];
             }
             foreach ($values as $value) {
                 try {

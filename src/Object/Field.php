@@ -575,6 +575,27 @@ class Field
     }
 
     /**
+     * Whether prevalidation can be skipped for the given values: the field is auto-entered,
+     * no value is provided and the "skipAutoEnteredValidation" property is enabled.
+     * FileMaker Server will populate the field on record creation.
+     *
+     * @param array $values field values by repetition
+     * @return bool
+     */
+    public function canSkipValidation(array $values)
+    {
+        if (!$this->autoEntered || !$this->layout->fm->getProperty('skipAutoEnteredValidation')) {
+            return false;
+        }
+        foreach ($values as $value) {
+            if (!self::isEmpty($value)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * @param string $value check if value is a non empty string("", null, true, false, [])
      *
      * @return bool

@@ -474,6 +474,9 @@ class Record
             } else {
                 $values = $this->fields[$fieldName];
             }
+            if ($field->canSkipValidation($values)) {
+                continue;
+            }
             foreach ($values as $value) {
                 try {
                     $field->validate($value);

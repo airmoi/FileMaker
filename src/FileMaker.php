@@ -40,6 +40,7 @@ use ReflectionMethod;
  * @property string $password
  * @property string $recordClass            Default to 'Object/Record'
  * @property bool $prevalidate            Default to false
+ * @property bool $skipAutoEnteredValidation Default to false, prevalidation ignores empty auto-entered fields
  * @property array $curlOptions            Default to [CURLOPT_SSL_VERIFYPEER => false]
  * @property string $dateFormat
  * @property bool $useDateFormatInRequests    Whether to convert date input in query strings
@@ -74,6 +75,7 @@ class FileMaker
         'password' => '',
         'recordClass' => Object\Record::class,
         'prevalidate' => false,
+        'skipAutoEnteredValidation' => false, //Prevalidation ignores empty auto-entered fields (ie: serial primary keys)
         'curlOptions' => [CURLOPT_SSL_VERIFYPEER => false],
         'dateFormat' => null,
         'useDateFormatInRequests' => false,
