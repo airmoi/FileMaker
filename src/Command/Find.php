@@ -6,6 +6,8 @@
 namespace airmoi\FileMaker\Command;
 
 use airmoi\FileMaker\FileMaker;
+use airmoi\FileMaker\FileMakerException;
+use airmoi\FileMaker\Object\Result;
 
 /**
  * Command class that finds records using the specified criteria.
@@ -63,10 +65,14 @@ class Find extends Command
 
     /**
      * Execute the command
-     * @return \airmoi\FileMaker\FileMakerException|\airmoi\FileMaker\Object\Result|string
-     * @throws \airmoi\FileMaker\FileMakerException
+     *
+     * @param FileMakerException|Result|null $result
+     *@return FileMakerException|Result|string
+     *
+     * @throws FileMakerException
+     *
      */
-    public function execute()
+    public function execute($result = null)
     {
         $params = $this->getCommandParams();
         $this->setSortParams($params);
@@ -86,11 +92,29 @@ class Find extends Command
         foreach ($this->findCriteria as $field => $value) {
             $params[$field] = $value;
         }
-        $result = $this->fm->execute($params);
-        if (FileMaker::isError($result)) {
+        $rawResult = $this->fm->execute($params);
+        if (FileMaker::isError($rawResult)) {
+            return $rawResult;
+        }
+
+        //Handle auto pagination
+        $result = $this->getResult($rawResult, $result);
+
+        if ($this->recordId
+            || $this->max
+            || $result->getFoundSetCount() == 0
+            || $result->getFoundSetCount() == $result->getFetchCount()
+        ) {
             return $result;
         }
-        return $this->getResult($result);
+
+        $pages = $result->getFoundSetCount()/100;
+        for ($i = 1 ; $i < $pages; $i++) {
+            $this->setRange($i*100, 100);
+            $this->execute($result);
+        }
+        $result->fetchCount = $result->getFoundSetCount();
+        return $result;
     }
 
     /**

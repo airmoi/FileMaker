@@ -8,6 +8,8 @@ namespace airmoi\FileMaker\Command;
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\FileMakerValidationException;
+use airmoi\FileMaker\Object\Layout;
+use airmoi\FileMaker\Parser\DataApiResult;
 use airmoi\FileMaker\Parser\FMResultSet;
 use airmoi\FileMaker\Object\Result;
 
@@ -134,7 +136,8 @@ class Command
      * If you pass the optional $fieldName argument, only that field is
      * pre-validated. Otherwise, the command is pre-validated as if execute()
      * were called with "Enable record data pre-validation" selected in
-     * FileMaker Server Admin Console. If pre-validation passes, validate()
+     * FileMaker Server Admin Console. Edit commands only pre-validate the
+     * fields they modify. If pre-validation passes, validate()
      * returns TRUE. If pre-validation fails, then validate() throws a
      * \airmoi\FileMaker\FileMakerValidationException object containing details about what failed
      * to pre-validate.
@@ -142,7 +145,7 @@ class Command
      * @param string $fieldName Name of field to pre-validate. If empty,
      *                          pre-validates the entire command.
      *
-     * @return bool|FileMakerValidationException TRUE, if pre-validation passes.
+     * @return FileMakerException|FileMakerValidationException|Layout|bool
      * @throws FileMakerException
      * @throws FileMakerValidationException
      */
@@ -159,10 +162,17 @@ class Command
         $validationErrors = new FileMakerValidationException($this->fm);
         if ($fieldName === null) {
             foreach ($layout->getFields() as $fieldName => $field) {
+                // Fields that are not modified keep their current value, don't validate them
+                if ($this instanceof Edit && !array_key_exists($fieldName, $this->fields)) {
+                    continue;
+                }
                 if (!isset($this->fields[$fieldName]) || !count($this->fields[$fieldName])) {
                     $values = [0 => null];
                 } else {
                     $values = $this->fields[$fieldName];
+                }
+                if ($field->canSkipValidation($values)) {
+                    continue;
                 }
                 foreach ($values as $value) {
                     try {
@@ -184,6 +194,9 @@ class Command
                 $values = [0 => null];
             } else {
                 $values = $this->fields[$fieldName];
+            }
+            if ($field->canSkipValidation($values)) {
+                $values = [];
             }
             foreach ($values as $value) {
                 try {
@@ -207,7 +220,7 @@ class Command
     /**
      * Executes the command.
      *
-     * @return Result Result object.
+     * @return void Result object.
      */
     public function execute()
     {
@@ -254,20 +267,24 @@ class Command
     }
 
     /**
+     * @param FileMakerException|string $response
+     * @param FileMakerException|Result|null $result
      *
-     * @param string $xml
      * @return Result|FileMakerException
+     *
      * @throws FileMakerException
      */
-    protected function getResult($xml)
+    protected function getResult($response, $result = null)
     {
-        $parser      = new FMResultSet($this->fm);
-        $parseResult = $parser->parse($xml);
+        $parser      = !$this->fm->useDataApi ? new FMResultSet($this->fm) : new DataApiResult($this->fm);
+        $parseResult = $parser->parse($response);
         if (FileMaker::isError($parseResult)) {
             return $parseResult;
         }
 
-        $result      = new Result($this->fm);
+        if (!$result) {
+            $result      = new Result($this->fm);
+        }
         $parseResult = $parser->setResult($result, $this->recordClass);
         if (FileMaker::isError($parseResult)) {
             return $parseResult;

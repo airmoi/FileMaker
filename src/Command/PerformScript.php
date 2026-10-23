@@ -6,7 +6,10 @@
 namespace airmoi\FileMaker\Command;
 
 use airmoi\FileMaker\FileMaker;
+use airmoi\FileMaker\FileMakerException;
+use airmoi\FileMaker\Object\Record;
 use airmoi\FileMaker\Object\Result;
+use airmoi\FileMaker\Parser\DataApiResult;
 
 /**
  * Command class that performs a ScriptMaker script.
@@ -26,7 +29,7 @@ class PerformScript extends Command
      * PerformScript command constructor.
      *
      * @ignore
-     * @param \airmoi\FileMaker\FileMaker $fm FileMaker object the command was created by.
+     * @param FileMaker $fm FileMaker object the command was created by.
      * @param string $layout Layout to use for script context.
      * @param string $scriptName Name of the script to run.
      * @param string $scriptParameters Any parameters to pass to the script.
@@ -72,14 +75,40 @@ class PerformScript extends Command
 
     /**
      *
+     * @param null $result
      * @return Result
+     * @throws FileMakerException
      */
-    public function execute()
+    public function execute($result = null)
     {
         $params             = $this->getCommandParams();
-        $params['-findany'] = true;
-        $this->setRangeParams($params);
+        if (!$this->fm->useDataApi) {
+            $params['-findany'] = true;
+            $this->setRangeParams($params);
+        } else {
+            $params['-performscript'] = true;
+        }
         return $this->getResult($this->fm->execute($params));
+    }
+
+    /**
+     * @param FileMakerException|string $response
+     * @param null $result
+     * @return FileMakerException|Record[]|Result|bool
+     * @throws FileMakerException
+     */
+    public function getResult($response, $result = null)
+    {
+        if (!$this->fm->useDataApi) {
+            return parent::getResult($response);
+        } else {
+            $parser      = new DataApiResult($this->fm);
+            $parseResult = $parser->parse($response);
+            if (FileMaker::isError($parseResult)) {
+                return $parseResult;
+            }
+            return $parser->parsedResult;
+        }
     }
 
     /**

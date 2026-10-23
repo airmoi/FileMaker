@@ -27,6 +27,8 @@ class RelatedSet
      */
     public $layout;
     public $name;
+    public $database;
+    public $table;
 
     public $fields = [];
 
@@ -39,6 +41,29 @@ class RelatedSet
     {
         $this->layout = $layout;
         $this->fm = $layout->fm;
+    }
+
+    /**
+     * The FileMaker instance (holding credentials) is not serialized when layouts are cached
+     *
+     * @return array
+     */
+    public function __serialize(): array
+    {
+        $data = get_object_vars($this);
+        unset($data['fm']);
+        return $data;
+    }
+
+    /**
+     * @param array $data
+     */
+    public function __unserialize(array $data): void
+    {
+        foreach ($data as $property => $value) {
+            $this->$property = $value;
+        }
+        $this->fm = $this->layout->fm ?? null;
     }
 
     /**

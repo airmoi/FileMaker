@@ -7,6 +7,8 @@ namespace airmoi\FileMaker\Command;
 
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
+use airmoi\FileMaker\Object\Result;
+use airmoi\FileMaker\Parser\DataApiResult;
 
 /**
  * Command class that deletes a single record.
@@ -34,10 +36,11 @@ class Delete extends Command
 
     /**
      *
-     * @return \airmoi\FileMaker\Object\Result|FileMakerException
+     * @param null $result
+     * @return Result|FileMakerException
      * @throws FileMakerException
      */
-    public function execute()
+    public function execute($result = null)
     {
         if (empty($this->recordId)) {
             return $this->fm->returnOrThrowException('Delete commands require a record id.');
@@ -47,5 +50,28 @@ class Delete extends Command
         $params['-recid'] = $this->recordId;
         $result = $this->fm->execute($params);
         return $this->getResult($result);
+    }
+
+    /**
+     * @param FileMakerException|string $response
+     * @param null $result
+     * @return FileMakerException|Result|bool
+     * @throws FileMakerException
+     */
+    protected function getResult($response, $result = null)
+    {
+        if (!$this->fm->useDataApi) {
+            $result = parent::getResult($response);
+        } else {
+            $parser      = new DataApiResult($this->fm);
+            $parseResult = $parser->parse($response);
+            if (FileMaker::isError($parseResult)) {
+                return $parseResult;
+            }
+            $result = new Result($this->fm);
+            /*$result->records[] = $this->fm->getRecordById($this->layout, $this->recordId);
+            $result = new Result($this->fm);*/
+        }
+        return $result;
     }
 }

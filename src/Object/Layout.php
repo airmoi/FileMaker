@@ -7,6 +7,7 @@ namespace airmoi\FileMaker\Object;
 
 use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
+use airmoi\FileMaker\Parser\DataApiResult;
 use airmoi\FileMaker\Parser\FMPXMLLAYOUT;
 
 /**
@@ -31,7 +32,7 @@ class Layout
     public $valueListTwoFields = [];
     public $database;
     public $extended = false;
-    public $table = false;
+    public $table = null;
     /**
      * Layout object constructor.
      *
@@ -41,6 +42,66 @@ class Layout
     public function __construct(FileMaker $fm)
     {
         $this->fm = $fm;
+    }
+
+    /**
+     * Returns a copy of this layout bound to the given FileMaker instance.
+     * Layouts are cached and may be shared across FileMaker instances, records created
+     * from a layout must use the instance (connection settings) that requested it.
+     *
+     * @param FileMaker $fm
+     * @return Layout
+     */
+    public function withFileMaker(FileMaker $fm)
+    {
+        $layout = clone $this;
+        $layout->fm = $fm;
+
+        $fieldMap = [];
+        $layout->fields = [];
+        foreach ($this->fields as $name => $field) {
+            $layout->fields[$name] = $fieldMap[spl_object_id($field)] = clone $field;
+            $layout->fields[$name]->layout = $layout;
+        }
+
+        $layout->relatedSets = [];
+        foreach ($this->relatedSets as $name => $relatedSet) {
+            $copy = clone $relatedSet;
+            $copy->layout = $layout;
+            $copy->fm = $fm;
+            $copy->fields = [];
+            foreach ($relatedSet->fields as $fieldName => $field) {
+                $fieldCopy = $fieldMap[spl_object_id($field)] ?? clone $field;
+                if ($fieldCopy->layout === $this || $fieldCopy->layout === null) {
+                    $fieldCopy->layout = $layout;
+                }
+                $copy->fields[$fieldName] = $fieldCopy;
+            }
+            $layout->relatedSets[$name] = $copy;
+        }
+        return $layout;
+    }
+
+    /**
+     * The FileMaker instance (holding credentials) is not serialized when layouts are cached
+     *
+     * @return array
+     */
+    public function __serialize(): array
+    {
+        $data = get_object_vars($this);
+        unset($data['fm']);
+        return $data;
+    }
+
+    /**
+     * @param array $data
+     */
+    public function __unserialize(array $data): void
+    {
+        foreach ($data as $property => $value) {
+            $this->$property = $value;
+        }
     }
 
     /**
@@ -222,7 +283,7 @@ class Layout
         if (FileMaker::isError($extendedInfos)) {
             return $extendedInfos;
         }
-        return isset($this->valueLists[$valueList]) ?
+        return isset($this->valueListTwoFields[$valueList]) ?
                 $this->valueListTwoFields[$valueList] : [];
     }
 
@@ -282,6 +343,13 @@ class Layout
      */
     public function loadExtendedInfo($recid = null)
     {
+        if ($this->fm->useDataApi && $recid === null) {
+            return true;
+        } elseif ($this->fm->useDataApi) {
+            $layout = $this->fm->getLayout($this->getName(), $recid);
+            $this->valueLists = $layout->valueLists;
+            $this->valueListTwoFields = $layout->valueListTwoFields;
+        }
         if (!$this->extended || $recid != null) {
             if ($recid != null) {
                 $result = $this->fm->execute([
@@ -297,7 +365,11 @@ class Layout
                     '-view' => null
                 ], 'FMPXMLLAYOUT');
             }
-            $parser = new FMPXMLLAYOUT($this->fm);
+            if ($this->fm->useDataApi) {
+                $parser = new DataApiResult($this->fm);
+            } else {
+                $parser = new FMPXMLLAYOUT($this->fm);
+            }
             $parseResult = $parser->parse($result);
             if (FileMaker::isError($parseResult)) {
                 return $parseResult;
@@ -307,7 +379,7 @@ class Layout
             $this->extended = true;
 
             if ($recid === null){
-                $this->fm->cacheSet($this->getName(), $this);
+                $this->fm->cacheSet('layout-' . $this->getName(), $this);
             }
         }
         return $this->extended;

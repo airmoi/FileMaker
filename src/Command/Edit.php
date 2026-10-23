@@ -9,6 +9,9 @@ use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\FileMakerValidationException;
 use airmoi\FileMaker\Helpers\DateFormat;
+use airmoi\FileMaker\Object\Result;
+use airmoi\FileMaker\Parser\DataApiResult;
+use Exception;
 
 /**
  * Command class that edits a single record.
@@ -23,11 +26,11 @@ class Edit extends Command
     protected $modificationId = null;
     protected $deleteRelated;
     protected $useRawData = false;
+    protected $relatedSetName = null;
 
     /**
      * Edit command constructor.
      *
-     * @ignore
      * @param FileMaker $fm FileMaker object the command was created by.
      * @param string $layout Layout the record is part of.
      * @param string $recordId ID of the record to edit.
@@ -36,13 +39,17 @@ class Edit extends Command
      *        the value of a field, with the numeric keys corresponding to the
      *        repetition number to set.
      * @param bool $useRawData Prevent data conversion on setField
+     * @param null $relatedSetName
+     * @throws FileMakerException
+     * @ignore
      */
-    public function __construct(FileMaker $fm, $layout, $recordId, $updatedValues = [], $useRawData = false)
+    public function __construct(FileMaker $fm, $layout, $recordId, $updatedValues = [], $useRawData = false, $relatedSetName = null)
     {
         parent::__construct($fm, $layout);
         $this->recordId = $recordId;
         $this->deleteRelated = null;
         $this->useRawData = $useRawData;
+        $this->relatedSetName = $relatedSetName;
         foreach ($updatedValues as $fieldname => $value) {
             if (!is_array($value)) {
                 $this->setField($fieldname, $value, 0);
@@ -56,11 +63,12 @@ class Edit extends Command
 
     /**
      *
-     * @return \airmoi\FileMaker\Object\Result|FileMakerException|FileMakerValidationException
+     * @param null $result
+     * @return Result|FileMakerException|FileMakerValidationException
      * @throws FileMakerException
      * @throws FileMakerValidationException
      */
-    public function execute()
+    public function execute($result = null)
     {
         $params = $this->getCommandParams();
         if (empty($this->recordId)) {
@@ -85,6 +93,9 @@ class Edit extends Command
         }
 
         $params['-edit'] = true;
+        if ($this->fm->useDataApi) {
+            $params['-relatedSet'] = $this->relatedSetName;
+        }
         if ($this->deleteRelated === null) {
             foreach ($this->fields as $fieldname => $values) {
                 $suffix = '';
@@ -116,6 +127,26 @@ class Edit extends Command
         return $this->getResult($result);
     }
 
+    /**
+     * @param FileMakerException|string $response
+     * @param null $result
+     * @return FileMakerException|Result|bool
+     * @throws FileMakerException
+     */
+    protected function getResult($response, $result = null)
+    {
+        if (!$this->fm->useDataApi) {
+            $result = parent::getResult($response);
+        } else {
+            $parser      = new DataApiResult($this->fm);
+            $parseResult = $parser->parse($response);
+            if (FileMaker::isError($parseResult)) {
+                return $parseResult;
+            }
+            $result = $this->fm->getRecordById($this->layout, $this->recordId, true);
+        }
+        return $result;
+    }
     /**
      * Sets the new value for a field.
      *
@@ -154,7 +185,7 @@ class Edit extends Command
                 } else {
                     $value = DateFormat::convert($value, $dateFormat . ' H:i:s', 'm/d/Y H:i:s');
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 return $this->fm->returnOrThrowException(
                     $value . ' could not be converted to a valid timestamp for field '
                     . $field . ' (expected format '. $dateFormat .')'

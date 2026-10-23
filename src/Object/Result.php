@@ -6,6 +6,7 @@
 namespace airmoi\FileMaker\Object;
 
 use airmoi\FileMaker\FileMaker;
+use airmoi\FileMaker\FileMakerException;
 
 /**
  * Result set description class. Contains all the information about a set of
@@ -24,7 +25,7 @@ class Result
      * @var Layout
      */
     public $layout;
-    public $records;
+    public $records = [];
     public $tableCount;
     public $foundSetCount;
     public $fetchCount;
@@ -45,9 +46,13 @@ class Result
      * result set.
      *
      * @return Layout Layout object.
+     * @throws FileMakerException
      */
     public function getLayout()
     {
+        if (is_string($this->layout)) {
+            $this->layout = $this->fm->getLayout($this->layout);
+        }
         return $this->layout;
     }
 
@@ -75,10 +80,11 @@ class Result
      * {@link getLayout()} method.
      *
      * @return array List of field names as strings.
+     * @throws FileMakerException
      */
     public function getFields()
     {
-        return $this->layout->listFields();
+        return $this->getLayout()->listFields();
     }
 
     /**

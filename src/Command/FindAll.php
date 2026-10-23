@@ -5,6 +5,7 @@
  */
 namespace airmoi\FileMaker\Command;
 
+use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\Object\Result;
 
 /**
@@ -16,16 +17,35 @@ use airmoi\FileMaker\Object\Result;
 class FindAll extends Find
 {
     /**
+     * @param Result|FileMakerException|null $result
+     *@return Result|FileMakerException
      *
-     * @return Result|\airmoi\FileMaker\FileMakerException
-     * @throws \airmoi\FileMaker\FileMakerException
+     * @throws FileMakerException
+     *
      */
-    public function execute()
+    public function execute($result = null)
     {
         $params             = $this->getCommandParams();
         $params['-findall'] = true;
         $this->setSortParams($params);
         $this->setRangeParams($params);
-        return $this->getResult($this->fm->execute($params));
+
+        $result = $this->getResult($this->fm->execute($params), $result);
+
+        //Handle auto pagination
+        if ($this->max
+            || $result->getFoundSetCount() == 0
+            || $result->getFoundSetCount() == $result->getFetchCount()
+        ) {
+            return $result;
+        }
+
+        $pages = $result->getFoundSetCount()/100;
+        for ($i = 1 ; $i < $pages; $i++) {
+            $this->setRange($i*100, 100);
+            $this->execute($result);
+        }
+        $result->fetchCount = $result->getFoundSetCount();
+        return $result;
     }
 }

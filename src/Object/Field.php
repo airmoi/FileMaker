@@ -23,6 +23,8 @@ class Field
     public $global = false;
     public $maxRepeat = 1;
     public $validationMask = 0;
+    public $repetitionStart = 0;
+    public $repetitionEnd = 0;
     public $validationRules = [];
     public $result;
     public $type;
@@ -169,7 +171,7 @@ class Field
                             case 'timestamp':
                                 if ($this->checkTimeStampFormatFourDigitYear($value)) {
                                     preg_match(
-                                        '#^([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})[-,/,\\\\]([0-9]{4})#',
+                                        '#^([0-9]{1,2})[-,/\\\\]([0-9]{1,2})[-,/\\\\]([0-9]{4})#',
                                         $value,
                                         $matches
                                     );
@@ -189,7 +191,7 @@ class Field
                                 break;
                             default:
                                 preg_match(
-                                    '#([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})[-,/,\\\\]([0-9]{1,4})#',
+                                    '#([0-9]{1,2})[-,/\\\\]([0-9]{1,2})[-,/\\\\]([0-9]{1,4})#',
                                     $value,
                                     $matches
                                 );
@@ -307,7 +309,7 @@ class Field
      */
     public function hasValidationRule($validationRule)
     {
-         return $validationRule & $this->validationMask;
+        return isset($this->validationRules[$validationRule]);
     }
 
     /**
@@ -442,7 +444,7 @@ class Field
      */
     public function getStyleType()
     {
-        $extendedInfos = $this->layout->loadExtendedInfo();
+        $extendedInfos = $this->getLayout()->loadExtendedInfo();
         if (FileMaker::isError($extendedInfos)) {
             return $extendedInfos;
         }
@@ -457,8 +459,8 @@ class Field
     public function checkTimeStampFormatFourDigitYear($value)
     {
         return preg_match(
-            '#^[ ]*([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})[-,/,\\\\]([0-9]{4})[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#i',
-            $value
+            '#^[ ]*([0-9]{1,2})[-,/\\\\]([0-9]{1,2})[-,/\\\\]([0-9]{4})[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#i',
+            (string) $value
         );
     }
 
@@ -472,8 +474,8 @@ class Field
     public function checkTimeStampFormat($value)
     {
         return preg_match(
-            '#^[ ]*([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})([-,/,\\\\]([0-9]{1,4}))?[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#i',
-            $value
+            '#^[ ]*([0-9]{1,2})[-,/\\\\]([0-9]{1,2})([-,/\\\\]([0-9]{1,4}))?[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#i',
+            (string) $value
         );
     }
 
@@ -486,7 +488,7 @@ class Field
      */
     public function checkDateFormat($value)
     {
-        return preg_match('#^[ ]*([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})([-,/,\\\\]([0-9]{1,4}))?[ ]*$#', $value);
+        return preg_match('#^[ ]*([0-9]{1,2})[-,/\\\\]([0-9]{1,2})([-,/\\\\]([0-9]{1,4}))?[ ]*$#', (string) $value);
     }
 
     /**
@@ -498,7 +500,7 @@ class Field
      */
     public function checkTimeFormat($value)
     {
-        return preg_match('#^[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#i', $value);
+        return preg_match('#^[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#i', (string) $value);
     }
 
     /**
@@ -519,7 +521,7 @@ class Field
      */
     public function checkDateValidity($value, $rule, FileMakerValidationException $validationError)
     {
-        preg_match('#([0-9]{1,2})[-,/,\\\\]([0-9]{1,2})([-,/,\\\\]([0-9]{1,4}))?#', $value, $matches);
+        preg_match('#([0-9]{1,2})[-,/\\\\]([0-9]{1,2})([-,/\\\\]([0-9]{1,4}))?#', $value, $matches);
         if ($matches[4]) {
             $year = $matches[4];
             $strlen = strlen($year);
@@ -570,6 +572,27 @@ class Field
                 $validationError->addError($this, $rule, $value);
             }
         }
+    }
+
+    /**
+     * Whether prevalidation can be skipped for the given values: the field is auto-entered,
+     * no value is provided and the "skipAutoEnteredValidation" property is enabled.
+     * FileMaker Server will populate the field on record creation.
+     *
+     * @param array $values field values by repetition
+     * @return bool
+     */
+    public function canSkipValidation(array $values)
+    {
+        if (!$this->autoEntered || !$this->layout->fm->getProperty('skipAutoEnteredValidation')) {
+            return false;
+        }
+        foreach ($values as $value) {
+            if (!self::isEmpty($value)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
