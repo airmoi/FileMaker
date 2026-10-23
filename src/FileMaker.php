@@ -982,8 +982,6 @@ class FileMaker
         if (!$this->useDataApi) {
             $this->setClientWPCSessionCookie($curlResponse);
         }
-
-        curl_close($curl);
         return $curlResponse;
     }
 
@@ -1225,8 +1223,6 @@ class FileMaker
             return $this->handleCurlError($curlError, $curl);
         }
 
-        curl_close($curl);
-
         return $response;
     }
 
@@ -1341,8 +1337,6 @@ class FileMaker
         if ($curlError = curl_errno($curl)) {
             return $this->handleCurlError($curlError, $curl);
         }
-
-        curl_close($curl);
 
         $this->setClientWPCSessionCookie($curlResponse);
         if ($curlHeadersSent) {
@@ -1604,7 +1598,7 @@ class FileMaker
     /**
      * Convert curl errors to FileMakerException
      * @param int $curlError
-     * @param resource $curl
+     * @param \CurlHandle $curl
      * @return FileMakerException
      * @throws FileMakerException
      */

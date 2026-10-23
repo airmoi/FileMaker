@@ -52,13 +52,10 @@ class FMPXMLLAYOUT
             return $this->fm->returnOrThrowException('Did not receive an XML document from the server.');
         }
         $xmlParser = xml_parser_create();
-        xml_set_object($xmlParser, $this);
         xml_parser_set_option($xmlParser, XML_OPTION_CASE_FOLDING, false);
         xml_parser_set_option($xmlParser, XML_OPTION_TARGET_ENCODING, 'UTF-8');
-        /** @psalm-suppress UndefinedFunction */
-        xml_set_element_handler($xmlParser, '_start', '_end');
-        /** @psalm-suppress UndefinedFunction */
-        xml_set_character_data_handler($xmlParser, 'cdata');
+        xml_set_element_handler($xmlParser, $this->_start(...), $this->_end(...));
+        xml_set_character_data_handler($xmlParser, $this->cdata(...));
         if (!@xml_parse($xmlParser, $xmlResponse)) {
             return $this->fm->returnOrThrowException(
                 sprintf(
@@ -68,7 +65,6 @@ class FMPXMLLAYOUT
                 )
             );
         }
-        xml_parser_free($xmlParser);
         if (!empty($this->errorCode)) {
             return $this->fm->returnOrThrowException(null, $this->errorCode);
         }
