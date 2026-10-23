@@ -781,7 +781,7 @@ class FileMaker
         }
 
         $logLevel = $this->getProperty('logLevel');
-        if ($logLevel === null || $level > $logLevel) {
+        if ($logLevel === null || $logLevel === false || (int) $level > (int) $logLevel) {
             return;
         }
         $this->logger->log($message, $level);
@@ -987,7 +987,7 @@ class FileMaker
         if ($curlError = curl_errno($curl)) {
             return $this->handleCurlError($curlError, $curl);
         }
-        $this->log($curlResponse, FileMaker::LOG_DEBUG);
+        $this->log('Received ' . strlen((string) $curlResponse) . ' bytes of container data', FileMaker::LOG_DEBUG);
         if (!$this->useDataApi) {
             $this->setClientWPCSessionCookie($responseHeaders);
         }
@@ -1246,15 +1246,11 @@ class FileMaker
             curl_setopt($curl, CURLOPT_POSTFIELDS, $body);
         }
 
-        $this->lastRequestedUrl = $uri;
+        $this->lastRequestedUrl = $this->maskDataApiUri($uri, $query['params']);
+        $profileKey = $this->describeDataApiRequest($uri, $query);
 
-        $this->log("Perform request: " . $this->lastRequestedUrl
-            . (isset($body) ? PHP_EOL . 'Body: ' . $body : '')
-            , FileMaker::LOG_INFO
-        );
-        //$this->log('Query Footprint : ' .implode('&', $footPrint), FileMaker::LOG_DEBUG);
+        $this->log("Perform request: " . $profileKey, FileMaker::LOG_INFO);
 
-        $profileKey = $this->lastRequestedUrl . (isset($body) ? PHP_EOL . 'Body: ' . $body : '');
         $this->beginProfile($profileKey);
         $response = curl_exec($curl);
         $this->endProfile($profileKey);
@@ -1363,6 +1359,43 @@ class FileMaker
             $this->properties['hostspec'] . $this->properties['database']
             . $this->properties['username'] . $this->properties['password']
         );
+    }
+
+    /**
+     * Loggable description of a Data API request, credentials and tokens are masked
+     *
+     * @param string $uri
+     * @param array $query
+     * @return string
+     */
+    protected function describeDataApiRequest($uri, array $query)
+    {
+        $description = $this->maskDataApiUri($uri, $query['params']);
+        if (!empty($query['body'])) {
+            $body = $query['body'];
+            if (isset($body['fmDataSource']) && is_array($body['fmDataSource'])) {
+                foreach ($body['fmDataSource'] as $index => $dataSource) {
+                    if (isset($dataSource['password'])) {
+                        $body['fmDataSource'][$index]['password'] = '***';
+                    }
+                }
+            }
+            $description .= PHP_EOL . 'Body: ' . json_encode($body);
+        }
+        return $description;
+    }
+
+    /**
+     * @param string $uri
+     * @param array $params
+     * @return string
+     */
+    private function maskDataApiUri($uri, array $params)
+    {
+        if (!empty($params['sessionToken'])) {
+            $uri = str_replace(rawurlencode((string) $params['sessionToken']), '***', $uri);
+        }
+        return $uri;
     }
 
     /**
