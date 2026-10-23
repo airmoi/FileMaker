@@ -35,3 +35,5 @@ phpunit.phar
 
 # test database, versioned zipped (tests/php-api-test.fmp12.zip)
 /tests/*.fmp12
+
+tests/Recover.log
