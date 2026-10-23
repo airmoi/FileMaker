@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  *
  */
-class DateFormatTest extends TestCase
+class DateFormatFunctionalTest extends TestCase
 {
     /**
      * @var FileMaker
@@ -28,7 +28,7 @@ class DateFormatTest extends TestCase
      * Sets up the fixture, for example, opens a network connection.
      * This method is called before a test is executed.
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->fm = new FileMaker(
             $GLOBALS['DB_FILE'],
@@ -48,7 +48,7 @@ class DateFormatTest extends TestCase
      * Tears down the fixture, for example, closes a network connection.
      * This method is called after a test is executed.
      */
-    protected function tearDown()
+    protected function tearDown(): void
     {
     }
 

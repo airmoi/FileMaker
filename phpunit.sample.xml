@@ -1,26 +1,32 @@
-<?xml version="1.0" encoding="utf-8"?>
-<phpunit bootstrap="./tests/bootstrap.php"
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Copy this file to phpunit.xml and adjust the connection settings to run the
+    integration suite against a FileMaker Server hosting tests/filemaker-test.fmp12:
+
+        vendor/bin/phpunit --testsuite integration
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="tests/bootstrap.php"
          colors="true"
-         convertErrorsToExceptions="true"
-         convertNoticesToExceptions="true"
-         convertWarningsToExceptions="true"
-         stopOnFailure="false">
+         failOnDeprecation="true"
+         failOnNotice="true"
+         failOnWarning="true"
+         displayDetailsOnTestsThatTriggerDeprecations="true"
+         cacheDirectory=".phpunit.cache">
     <testsuites>
-        <testsuite name="FileMaker test suite">
-            <file>tests/src/FileMakerTest.php</file>
+        <testsuite name="unit">
+            <directory>tests/unit</directory>
         </testsuite>
-        <testsuite name="FileMakerException test suite">
-            <file>tests/src/FileMakerExceptionTest.php</file>
-        </testsuite>
-        <testsuite name="FileMakerValidationException test suite">
-            <file>tests/src/FileMakerValidationExceptionTest.php</file>
+        <testsuite name="integration">
+            <directory>tests/integration</directory>
         </testsuite>
     </testsuites>
-    <filter>
-        <whitelist>
-            <directory suffix=".php">src/</directory>
-        </whitelist>
-    </filter>
+    <source>
+        <include>
+            <directory suffix=".php">src</directory>
+        </include>
+    </source>
     <php>
         <var name="DB_HOST" value="localhost" />
         <var name="DB_USER" value="filemaker" />
