@@ -91,6 +91,11 @@ class FileMaker
     private $logger = null;
 
     /**
+     * @var bool Whether the current Data API token has been saved for reuse (session or session handler)
+     */
+    private $tokenPersisted = false;
+
+    /**
      * @var array[] a pseudo cache for scripts list to prevent unnecessary call's to Custom Web Publishing engine
      */
     private static $scripts = [];
@@ -235,14 +240,16 @@ class FileMaker
      */
     public function __destruct()
     {
-        //Logout dataAPI session if the token cannot be saved to be reused in next query (cli mode or no active session)
-        //If a session handler is set, we assume the token has been saved (session may have been closed before destruct was called)
-        if ($this->token && $this->useDataApi && !$this->sessionHandler && !session_id() || php_sapi_name() === 'cli') {
-            try {
-                $this->dataApiLogout();
-            } catch (FileMakerException $e) {
-                // ignore error (token may have expired already)
-            }
+        // Logout the Data API session unless its token has been saved to be reused by next requests
+        // (session handler or active PHP session). Read properties directly: magic accessors may
+        // rely on objects already destroyed during shutdown.
+        if (!$this->properties['useDataApi'] || empty($this->properties['token']) || $this->tokenPersisted) {
+            return;
+        }
+        try {
+            $this->dataApiLogout();
+        } catch (\Throwable $e) {
+            // ignore error (token may have expired already)
         }
     }
 
@@ -319,7 +326,7 @@ class FileMaker
         if (!method_exists($cache, 'set') || !method_exists($cache, 'get')) {
             return $this->returnOrThrowException('setCache() must be passed an class that implements set(strinq $key, mixed $value, int $duration) and get(strinq $key) methods');
         }
-        $this->cache = $cache;
+        $this->properties['cache'] = $cache;
     }
 
     /**
@@ -334,9 +341,9 @@ class FileMaker
     public function setSessionHandler($handler)
     {
         if (!method_exists($handler, 'set') || !method_exists($handler, 'get')) {
-            return $this->returnOrThrowException('setCache() must be passed an class that implements set(strinq $key, mixed $value) and get(string $key) methods');
+            return $this->returnOrThrowException('setSessionHandler() must be passed an class that implements set(strinq $key, mixed $value) and get(string $key) methods');
         }
-        $this->sessionHandler = $handler;
+        $this->properties['sessionHandler'] = $handler;
     }
 
     /**
@@ -1033,7 +1040,11 @@ class FileMaker
         if (isset($params['-dbnames'])) {
             $query['headers'][] = 'Authorization: Basic ' . base64_encode($this->username . ':' . $this->password);
         } else {
-            $query['headers'][] = 'Authorization: Bearer ' . $this->getToken();
+            $token = $this->getToken();
+            if (FileMaker::isError($token)) {
+                return $token;
+            }
+            $query['headers'][] = 'Authorization: Bearer ' . $token;
         }
 
         $response = $this->runDataApiQuery($query);
@@ -1075,7 +1086,11 @@ class FileMaker
             ['-setGlobals' => true, '-db' => $this->database]
         );
         $globalQuery = DataApi::prepareQuery($globalOptions);
-        $globalQuery['headers'][] = 'Authorization: Bearer ' . $this->getToken();
+        $token = $this->getToken();
+        if (FileMaker::isError($token)) {
+            return $token;
+        }
+        $globalQuery['headers'][] = 'Authorization: Bearer ' . $token;
 
         $response = $this->runDataApiQuery($globalQuery);
 
@@ -1116,7 +1131,14 @@ class FileMaker
                 'database' => $this->database,
             ],
         ];
-        $response = json_decode($this->runDataApiQuery($query), true);
+        $response = $this->runDataApiQuery($query);
+        if (FileMaker::isError($response)) {
+            return $response;
+        }
+        $response = json_decode($response, true);
+        if (!isset($response['messages'][0]['code'])) {
+            return $this->returnOrThrowException('Invalid Data API login response');
+        }
         if ($response['messages'][0]['code'] != 0) {
             return $this->returnOrThrowException($response['messages'][0]['message'], $response['messages'][0]['code']);
         }
@@ -1124,34 +1146,52 @@ class FileMaker
     }
 
     /**
+     * Close the Data API session and forget the current token
+     *
      * @return FileMakerException|bool|null
      * @throws FileMakerException
      */
     public function dataApiLogout()
     {
-        if (!$this->token) {
+        $token = $this->properties['token'];
+        if (!$token) {
             return true;
         }
         $query = [
             'uri' => DataApi::ENDPOINT_BASE . DataApi::ENDPOINT_LOGOUT,
             'queryParams' => null,
-            'headers' => [
-                //'Authorization: Basic ' . base64_encode($this->username . ':' . $this->password)
-            ],
+            'headers' => [],
             'method' => 'DELETE',
             'body' => null,
             'params' => [
                 'version' => 'vLatest',
-                'database' => $this->database,
-                'sessionToken' => $this->getToken(),
+                'database' => $this->properties['database'],
+                'sessionToken' => $token,
             ],
         ];
-        $response = json_decode($this->runDataApiQuery($query), true);
-        if (@$response['messages'][0]['code'] != 0) {
+        $response = $this->runDataApiQuery($query);
+        // The token is unusable once logout has been requested (or failed because it expired)
+        $this->clearToken();
+        if (FileMaker::isError($response)) {
+            return $response;
+        }
+        $response = json_decode($response, true);
+        if (isset($response['messages'][0]['code']) && $response['messages'][0]['code'] != 0) {
             return $this->returnOrThrowException($response['messages'][0]['message'], $response['messages'][0]['code']);
         }
-        $this->token = null;
         return true;
+    }
+
+    /**
+     * Close the Data API session (if any).
+     * Use it when a token saved in the user's session is no longer needed (ie: user logout)
+     *
+     * @return FileMakerException|bool|null
+     * @throws FileMakerException
+     */
+    public function logout()
+    {
+        return $this->dataApiLogout();
     }
 
     /**
@@ -1226,22 +1266,42 @@ class FileMaker
         return $response;
     }
 
-    public function setToken($value) {
+    /**
+     * Set the Data API token, and save it for reuse when a session handler or a PHP session is available
+     *
+     * @param string|null $value
+     */
+    public function setToken($value)
+    {
+        if (!$value) {
+            $this->clearToken();
+            return;
+        }
         $this->properties['token'] = $value;
-        $key = md5($this->hostspec . $this->database . $this->username . $this->password);
-        $this->sessionSet('bearer-' . $key, $value);
+        $this->tokenPersisted = $this->canPersistToken()
+            && $this->sessionSet($this->tokenSessionKey(), $value) === true;
+    }
+
+    /**
+     * Whether the current Data API token has been saved to be reused by next requests
+     *
+     * @return bool
+     */
+    public function isTokenPersisted()
+    {
+        return $this->tokenPersisted;
     }
 
     /**
      * @param bool $renew
-     * @return bool|mixed|null
+     * @return FileMakerException|string
      * @throws FileMakerException
      */
     private function getToken($renew = false)
     {
         //Clear token in case of renew (current token has expired)
         if ($renew) {
-            $this->properties['token'] = null;
+            $this->clearToken();
         }
 
         //return token if we already have it
@@ -1249,11 +1309,58 @@ class FileMaker
             return $this->properties['token'];
         }
 
-        $key = md5($this->hostspec . $this->database . $this->username . $this->password);
-        if ($renew || !$this->properties['token'] = $this->sessionGet('bearer-' . $key)) {
-            $this->properties['token'] = $this->dataApiLogin();
+        if ($this->canPersistToken() && $token = $this->sessionGet($this->tokenSessionKey())) {
+            $this->properties['token'] = $token;
+            $this->tokenPersisted = true;
+            return $token;
         }
-        return $this->properties['token'];
+
+        $token = $this->dataApiLogin();
+        if (FileMaker::isError($token)) {
+            return $token;
+        }
+        $this->setToken($token);
+        return $token;
+    }
+
+    /**
+     * Forget the current token, including the saved one
+     */
+    private function clearToken()
+    {
+        if ($this->tokenPersisted) {
+            $this->sessionSet($this->tokenSessionKey(), null);
+        }
+        $this->properties['token'] = null;
+        $this->tokenPersisted = false;
+    }
+
+    /**
+     * A token can be reused by next requests when saved using a session handler,
+     * or in a PHP session (not available in CLI)
+     *
+     * @return bool
+     */
+    private function canPersistToken()
+    {
+        if ($this->properties['sessionHandler'] !== null) {
+            return true;
+        }
+        if (PHP_SAPI === 'cli' || session_status() === PHP_SESSION_DISABLED) {
+            return false;
+        }
+        return session_status() === PHP_SESSION_ACTIVE || !headers_sent();
+    }
+
+    /**
+     * @return string
+     */
+    private function tokenSessionKey()
+    {
+        return 'bearer-' . md5(
+            $this->properties['hostspec'] . $this->properties['database']
+            . $this->properties['username'] . $this->properties['password']
+        );
     }
 
     /**
@@ -1483,14 +1590,15 @@ class FileMaker
      */
     public function __set($name, $value)
     {
-        $getter = 'set' . $name;
-        if (method_exists($this, $getter)) {
-            //test if it is a valid function (no args)
-            $reflection = new ReflectionMethod(__CLASS__, $getter);
-            if (sizeof($reflection->getParameters()) === 0 and $reflection->isPublic()) {
-                return $this->$getter($value);
+        $setter = 'set' . ucfirst($name);
+        if (method_exists($this, $setter)) {
+            //test if it is a valid setter (single arg)
+            $reflection = new ReflectionMethod($this, $setter);
+            if ($reflection->getNumberOfRequiredParameters() === 1 && $reflection->isPublic()) {
+                return $this->$setter($value);
             }
-        } elseif (array_key_exists($name, $this->properties)) {
+        }
+        if (array_key_exists($name, $this->properties)) {
             $this->properties[$name] = $value;
         } else {
             return $this->returnOrThrowException('Attempt to set an unsupported property (' . $name . ')');
