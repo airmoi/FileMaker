@@ -460,7 +460,7 @@ class Field
     {
         return preg_match(
             '#^[ ]*([0-9]{1,2})[-,/\\\\]([0-9]{1,2})[-,/\\\\]([0-9]{4})[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#i',
-            $value
+            (string) $value
         );
     }
 
@@ -475,7 +475,7 @@ class Field
     {
         return preg_match(
             '#^[ ]*([0-9]{1,2})[-,/\\\\]([0-9]{1,2})([-,/\\\\]([0-9]{1,4}))?[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#i',
-            $value
+            (string) $value
         );
     }
 
@@ -488,7 +488,7 @@ class Field
      */
     public function checkDateFormat($value)
     {
-        return preg_match('#^[ ]*([0-9]{1,2})[-,/\\\\]([0-9]{1,2})([-,/\\\\]([0-9]{1,4}))?[ ]*$#', $value);
+        return preg_match('#^[ ]*([0-9]{1,2})[-,/\\\\]([0-9]{1,2})([-,/\\\\]([0-9]{1,4}))?[ ]*$#', (string) $value);
     }
 
     /**
@@ -500,7 +500,7 @@ class Field
      */
     public function checkTimeFormat($value)
     {
-        return preg_match('#^[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#i', $value);
+        return preg_match('#^[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#i', (string) $value);
     }
 
     /**
