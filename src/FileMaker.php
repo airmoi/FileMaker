@@ -1175,10 +1175,10 @@ class FileMaker
         $queryParams = $footPrint = [];
         if ($query['queryParams']) {
             foreach ($query['queryParams'] as $option => $value) {
-                if (($value !== true) && strtolower($this->getProperty('charset')) !== 'utf-8') {
-                    $value = utf8_encode($value);
-                } elseif (is_array($value)) {
+                if (is_array($value)) {
                     $value = json_encode($value);
+                } elseif ($value !== true) {
+                    $value = $this->toInputCharset($value);
                 }
                 $queryParams[] = rawurlencode((string) $option) . ($value === true ? '' : '=' . rawurlencode((string) $value));
                 $footPrint[] = $option . "=" . (preg_match('/\.value$/', $option) ? ":$option" : $value);
@@ -1269,8 +1269,8 @@ class FileMaker
     {
         $restParams = $footPrint = [];
         foreach ($params as $option => $value) {
-            if (($value !== true) && strtolower($this->getProperty('charset')) !== 'utf-8') {
-                $value = utf8_encode((string) $value);
+            if ($value !== true) {
+                $value = $this->toInputCharset($value);
             }
             $restParams[] = urlencode((string) $option) . ($value === true ? '' : '=' . urlencode((string) $value));
             $footPrint[] = $option . "=" . (preg_match('/\.value$/', $option) ? ":$option" : $value);
@@ -1530,7 +1530,22 @@ class FileMaker
         if (!is_string($value)) {
             return $value;
         }
-        return utf8_decode($value);
+        return mb_convert_encoding($value, 'ISO-8859-1', 'UTF-8');
+    }
+
+    /**
+     * Convert a value from the configured charset to UTF-8 before sending it to the server
+     *
+     * @param mixed $value
+     * @return string
+     */
+    public function toInputCharset($value)
+    {
+        $value = (string) $value;
+        if (strtolower($this->getProperty('charset')) === 'utf-8') {
+            return $value;
+        }
+        return mb_convert_encoding($value, 'UTF-8', 'ISO-8859-1');
     }
 
     /**
