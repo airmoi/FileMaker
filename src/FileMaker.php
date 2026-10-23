@@ -941,6 +941,8 @@ class FileMaker
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($curl, CURLOPT_FAILONERROR, true);
         curl_setopt($curl, CURLOPT_HEADER, false);
+        $responseHeaders = '';
+        $this->captureResponseHeaders($curl, $responseHeaders);
 
         if (!$this->useDataApi) {
             $this->setCurlWPCSessionCookie($curl);
@@ -987,7 +989,7 @@ class FileMaker
         }
         $this->log($curlResponse, FileMaker::LOG_DEBUG);
         if (!$this->useDataApi) {
-            $this->setClientWPCSessionCookie($curlResponse);
+            $this->setClientWPCSessionCookie($responseHeaders);
         }
         return $curlResponse;
     }
@@ -1387,11 +1389,8 @@ class FileMaker
         curl_setopt($curl, CURLOPT_POST, true);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($curl, CURLOPT_FAILONERROR, true);
-        $curlHeadersSent = false;
-        if (!headers_sent()) {
-            $curlHeadersSent = true;
-            curl_setopt($curl, CURLOPT_HEADER, true);
-        }
+        $responseHeaders = '';
+        $this->captureResponseHeaders($curl, $responseHeaders);
         $this->setCurlWPCSessionCookie($curl);
 
         if ($this->getProperty('username')) {
@@ -1438,13 +1437,68 @@ class FileMaker
             return $this->handleCurlError($curlError, $curl);
         }
 
-        $this->setClientWPCSessionCookie($curlResponse);
-        if ($curlHeadersSent) {
-            $curlResponse = $this->eliminateXMLHeader($curlResponse);
-        }
-        //$this->log($curlResponse, FileMaker::LOG_DEBUG);
+        $this->setClientWPCSessionCookie($responseHeaders);
 
-        return $curlResponse;
+        return $this->checkCwpResponse(
+            $curlResponse,
+            (int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE),
+            (string) curl_getinfo($curl, CURLINFO_CONTENT_TYPE),
+            $responseHeaders
+        );
+    }
+
+    /**
+     * Ensure the XML Web Publishing Engine returned an XML document,
+     * otherwise return an explicit error instead of an obscure XML parser error
+     *
+     * @param string $body response body
+     * @param int $httpCode
+     * @param string $contentType
+     * @param string $headers raw response headers
+     * @return string|FileMakerException the XML document
+     * @throws FileMakerException
+     */
+    protected function checkCwpResponse($body, $httpCode, $contentType = '', $headers = '')
+    {
+        $body = (string) $body;
+        if ($httpCode >= 300 && $httpCode < 400) {
+            $location = preg_match_all('/^Location:\s*(\S+)/mi', $headers, $matches) ? end($matches[1]) : 'unknown location';
+            return $this->returnOrThrowException(
+                'FileMaker Server redirected the request (HTTP ' . $httpCode . ') to ' . $location
+                . ' - Update the hostspec property accordingly (ie: use https:// if the server enforces HTTPS).',
+                -1
+            );
+        }
+
+        // Strip UTF-8 BOM and leading whitespaces which would make the XML document invalid
+        $xml = ltrim(preg_replace('/^\xEF\xBB\xBF/', '', $body));
+        if (!preg_match('/^<(\?xml|fmresultset|FMPXMLLAYOUT|FMPXMLRESULT)\b/i', $xml)) {
+            $excerpt = trim(preg_replace('/\s+/', ' ', strip_tags(substr($xml, 0, 500))));
+            return $this->returnOrThrowException(
+                'FileMaker Server did not return an XML document (HTTP ' . $httpCode
+                . ($contentType ? ', ' . $contentType : '') . ')'
+                . ($excerpt !== '' ? ': "' . mb_strimwidth($excerpt, 0, 120, '...') . '"' : '')
+                . ' - Make sure XML Web Publishing is enabled on FileMaker Server and that the hostspec is correct'
+                . ' (' . rtrim((string) $this->getProperty('hostspec'), '/') . '/fmi/xml/fmresultset.xml must return an XML document),'
+                . ' or switch to the Data API (useDataApi property).',
+                -1
+            );
+        }
+        return $xml;
+    }
+
+    /**
+     * Collect raw response headers of a cURL request into $headers
+     *
+     * @param \CurlHandle $curl
+     * @param string $headers
+     */
+    private function captureResponseHeaders($curl, &$headers)
+    {
+        curl_setopt($curl, CURLOPT_HEADERFUNCTION, function ($curl, $header) use (&$headers) {
+            $headers .= $header;
+            return strlen($header);
+        });
     }
 
     /**
@@ -1518,64 +1572,18 @@ class FileMaker
 
     /**
      * Pass WPC session cookie to client for later auth
-     * @param string $curlResponse a curl response
+     * @param string $responseHeaders raw response headers
      */
-    private function setClientWPCSessionCookie($curlResponse)
+    private function setClientWPCSessionCookie($responseHeaders)
     {
-        if (!$this->getProperty('useCookieSession')) {
+        if (!$this->getProperty('useCookieSession') || headers_sent()) {
             return;
         }
-        $found = preg_match('/WPCSessionID="([^;]*)";/m', $curlResponse, $matches);
+        $found = preg_match('/WPCSessionID="([^;]*)";/m', $responseHeaders, $matches);
         /* Update WPCSession Cookie if needed */
         if ($found && @$_COOKIE['WPCSessionID'] !== $matches[1]) {
             setcookie("WPCSessionID", $matches[1]);
             $_COOKIE['WPCSessionID'] = $matches[1];
-        }
-    }
-
-    /**
-     *
-     * @param string $curlResponse a curl response
-     * @return int content length, -1 if not provided by headers
-     */
-    private function getContentLength($curlResponse)
-    {
-        $found = preg_match('/Content-Length: (\d+)/', $curlResponse, $matches);
-        if ($found) {
-            return $matches[1];
-        } else {
-            return -1;
-        }
-    }
-
-    /**
-     *
-     * @param string $curlResponse a curl response
-     * @return string curlResponse without xml header
-     */
-    private function eliminateXMLHeader($curlResponse)
-    {
-        $isXml = strpos($curlResponse, "<?xml");
-        if ($isXml !== false) {
-            return substr($curlResponse, $isXml);
-        } else {
-            return $curlResponse;
-        }
-    }
-
-    /**
-     *
-     * @param string $curlResponse a curl response
-     * @return string cUrl Response without leading carriage return
-     */
-    private function eliminateContainerHeader($curlResponse)
-    {
-        $len = strlen("\r\n\r\n");
-        $pos = strrpos($curlResponse, "\r\n\r\n");
-        if ($pos !== false) {
-            return substr($curlResponse, $pos + $len);
-        } else {
-            return $curlResponse;
         }
     }
 
