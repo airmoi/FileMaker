@@ -45,6 +45,66 @@ class Layout
     }
 
     /**
+     * Returns a copy of this layout bound to the given FileMaker instance.
+     * Layouts are cached and may be shared across FileMaker instances, records created
+     * from a layout must use the instance (connection settings) that requested it.
+     *
+     * @param FileMaker $fm
+     * @return Layout
+     */
+    public function withFileMaker(FileMaker $fm)
+    {
+        $layout = clone $this;
+        $layout->fm = $fm;
+
+        $fieldMap = [];
+        $layout->fields = [];
+        foreach ($this->fields as $name => $field) {
+            $layout->fields[$name] = $fieldMap[spl_object_id($field)] = clone $field;
+            $layout->fields[$name]->layout = $layout;
+        }
+
+        $layout->relatedSets = [];
+        foreach ($this->relatedSets as $name => $relatedSet) {
+            $copy = clone $relatedSet;
+            $copy->layout = $layout;
+            $copy->fm = $fm;
+            $copy->fields = [];
+            foreach ($relatedSet->fields as $fieldName => $field) {
+                $fieldCopy = $fieldMap[spl_object_id($field)] ?? clone $field;
+                if ($fieldCopy->layout === $this || $fieldCopy->layout === null) {
+                    $fieldCopy->layout = $layout;
+                }
+                $copy->fields[$fieldName] = $fieldCopy;
+            }
+            $layout->relatedSets[$name] = $copy;
+        }
+        return $layout;
+    }
+
+    /**
+     * The FileMaker instance (holding credentials) is not serialized when layouts are cached
+     *
+     * @return array
+     */
+    public function __serialize(): array
+    {
+        $data = get_object_vars($this);
+        unset($data['fm']);
+        return $data;
+    }
+
+    /**
+     * @param array $data
+     */
+    public function __unserialize(array $data): void
+    {
+        foreach ($data as $property => $value) {
+            $this->$property = $value;
+        }
+    }
+
+    /**
      * Returns the name of this layout.
      *
      * @return string Layout name.
@@ -319,7 +379,7 @@ class Layout
             $this->extended = true;
 
             if ($recid === null){
-                $this->fm->cacheSet($this->getName(), $this);
+                $this->fm->cacheSet('layout-' . $this->getName(), $this);
             }
         }
         return $this->extended;

@@ -75,7 +75,7 @@ class FileMakerException extends Exception
             self::$strings[$lang] = require($path);
         }
 
-        if (isset(self::$strings[$lang][$code])) {
+        if ($code !== null && isset(self::$strings[$lang][$code])) {
             return self::$strings[$lang][$code];
         }
 

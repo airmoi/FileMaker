@@ -18,7 +18,7 @@ try {
     echo "------------------------------------------" . PHP_EOL;
     echo " Test FileMaker object's main methods" . PHP_EOL;
     echo "------------------------------------------" . PHP_EOL;
-    $fm = new FileMaker('filemaker-test', 'https://dev1.fmcloud.fm', 'filemaker', 'filemaker');
+    $fm = new FileMaker('php-api-test', 'https://dev1.fmcloud.fm', 'filemaker', 'filemaker');
 
     $fm->useDataApi = true;
 

@@ -309,7 +309,7 @@ class Field
      */
     public function hasValidationRule($validationRule)
     {
-         return isset($this->validationMask[$validationRule]);
+        return isset($this->validationRules[$validationRule]);
     }
 
     /**
@@ -460,7 +460,7 @@ class Field
     {
         return preg_match(
             '#^[ ]*([0-9]{1,2})[-,/\\\\]([0-9]{1,2})[-,/\\\\]([0-9]{4})[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#i',
-            $value
+            (string) $value
         );
     }
 
@@ -475,7 +475,7 @@ class Field
     {
         return preg_match(
             '#^[ ]*([0-9]{1,2})[-,/\\\\]([0-9]{1,2})([-,/\\\\]([0-9]{1,4}))?[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#i',
-            $value
+            (string) $value
         );
     }
 
@@ -488,7 +488,7 @@ class Field
      */
     public function checkDateFormat($value)
     {
-        return preg_match('#^[ ]*([0-9]{1,2})[-,/\\\\]([0-9]{1,2})([-,/\\\\]([0-9]{1,4}))?[ ]*$#', $value);
+        return preg_match('#^[ ]*([0-9]{1,2})[-,/\\\\]([0-9]{1,2})([-,/\\\\]([0-9]{1,4}))?[ ]*$#', (string) $value);
     }
 
     /**
@@ -500,7 +500,7 @@ class Field
      */
     public function checkTimeFormat($value)
     {
-        return preg_match('#^[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#i', $value);
+        return preg_match('#^[ ]*([0-9]{1,2})[:]([0-9]{1,2})([:][0-9]{1,2})?([ ]*((AM|PM)|(am|pm)))?[ ]*$#i', (string) $value);
     }
 
     /**
@@ -572,6 +572,27 @@ class Field
                 $validationError->addError($this, $rule, $value);
             }
         }
+    }
+
+    /**
+     * Whether prevalidation can be skipped for the given values: the field is auto-entered,
+     * no value is provided and the "skipAutoEnteredValidation" property is enabled.
+     * FileMaker Server will populate the field on record creation.
+     *
+     * @param array $values field values by repetition
+     * @return bool
+     */
+    public function canSkipValidation(array $values)
+    {
+        if (!$this->autoEntered || !$this->layout->fm->getProperty('skipAutoEnteredValidation')) {
+            return false;
+        }
+        foreach ($values as $value) {
+            if (!self::isEmpty($value)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

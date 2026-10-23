@@ -160,22 +160,22 @@ class DateFormat
 
         $keys = [
             'Y' => ['year', '%d'],
-            'y' => ['year', '%d'],
-            'm' => ['month', '%d'],
+            'y' => ['year', '%02d'],
+            'm' => ['month', '%02d'],
             'n' => ['month', '%d'],
             //'M' => [('month', '%3s'],
             //'F' => array('month', '%8s'],
-            'd' => ['day', '%d'],
+            'd' => ['day', '%02d'],
             'j' => ['day', '%d'],
             //'D' => ['day', '%2s'],
             //'l' => ['day', '%9s'],
             //'u' => ['hour', '%06d'],
-            'h' => ['hour', '%d'],
-            'H' => ['hour', '%d'],
+            'h' => ['hour', '%02d'],
+            'H' => ['hour', '%02d'],
             'g' => ['hour', '%d'],
             'G' => ['hour', '%d'],
-            'i' => ['minute', '%d'],
-            's' => ['second', '%d']
+            'i' => ['minute', '%02d'],
+            's' => ['second', '%02d']
         ];
 
         //convert to output format

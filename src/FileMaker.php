@@ -40,6 +40,7 @@ use ReflectionMethod;
  * @property string $password
  * @property string $recordClass            Default to 'Object/Record'
  * @property bool $prevalidate            Default to false
+ * @property bool $skipAutoEnteredValidation Default to false, prevalidation ignores empty auto-entered fields
  * @property array $curlOptions            Default to [CURLOPT_SSL_VERIFYPEER => false]
  * @property string $dateFormat
  * @property bool $useDateFormatInRequests    Whether to convert date input in query strings
@@ -50,7 +51,7 @@ use ReflectionMethod;
  */
 class FileMaker
 {
-    private static $apiVersion = '3.0.0-beta3';
+    private static $apiVersion = '3.1.0';
     private static $minServerVersion = '18.0.0.0';
 
     /**
@@ -74,6 +75,7 @@ class FileMaker
         'password' => '',
         'recordClass' => Object\Record::class,
         'prevalidate' => false,
+        'skipAutoEnteredValidation' => false, //Prevalidation ignores empty auto-entered fields (ie: serial primary keys)
         'curlOptions' => [CURLOPT_SSL_VERIFYPEER => false],
         'dateFormat' => null,
         'useDateFormatInRequests' => false,
@@ -89,6 +91,11 @@ class FileMaker
      * @var Object Log object
      */
     private $logger = null;
+
+    /**
+     * @var bool Whether the current Data API token has been saved for reuse (session or session handler)
+     */
+    private $tokenPersisted = false;
 
     /**
      * @var array[] a pseudo cache for scripts list to prevent unnecessary call's to Custom Web Publishing engine
@@ -235,14 +242,16 @@ class FileMaker
      */
     public function __destruct()
     {
-        //Logout dataAPI session if the token cannot be saved to be reused in next query (cli mode or no active session)
-        //If a session handler is set, we assume the token has been saved (session may have been closed before destruct was called)
-        if ($this->token && $this->useDataApi && !$this->sessionHandler && !session_id() || php_sapi_name() === 'cli') {
-            try {
-                $this->dataApiLogout();
-            } catch (FileMakerException $e) {
-                // ignore error (token may have expired already)
-            }
+        // Logout the Data API session unless its token has been saved to be reused by next requests
+        // (session handler or active PHP session). Read properties directly: magic accessors may
+        // rely on objects already destroyed during shutdown.
+        if (!$this->properties['useDataApi'] || empty($this->properties['token']) || $this->tokenPersisted) {
+            return;
+        }
+        try {
+            $this->dataApiLogout();
+        } catch (\Throwable $e) {
+            // ignore error (token may have expired already)
         }
     }
 
@@ -319,7 +328,7 @@ class FileMaker
         if (!method_exists($cache, 'set') || !method_exists($cache, 'get')) {
             return $this->returnOrThrowException('setCache() must be passed an class that implements set(strinq $key, mixed $value, int $duration) and get(strinq $key) methods');
         }
-        $this->cache = $cache;
+        $this->properties['cache'] = $cache;
     }
 
     /**
@@ -334,9 +343,9 @@ class FileMaker
     public function setSessionHandler($handler)
     {
         if (!method_exists($handler, 'set') || !method_exists($handler, 'get')) {
-            return $this->returnOrThrowException('setCache() must be passed an class that implements set(strinq $key, mixed $value) and get(string $key) methods');
+            return $this->returnOrThrowException('setSessionHandler() must be passed an class that implements set(strinq $key, mixed $value) and get(string $key) methods');
         }
-        $this->sessionHandler = $handler;
+        $this->properties['sessionHandler'] = $handler;
     }
 
     /**
@@ -565,8 +574,8 @@ class FileMaker
      */
     public function getLayout($layoutName, $recid = null, $loadExtended = true)
     {
-        if ($recid === null && $layout = $this->cacheGet('layout-' . $layoutName)) {
-            return $layout;
+        if ($recid === null && ($layout = $this->cacheGet('layout-' . $layoutName)) instanceof Layout) {
+            return $layout->fm === $this ? $layout : $layout->withFileMaker($this);
         }
 
         $request = $this->execute([
@@ -774,7 +783,7 @@ class FileMaker
         }
 
         $logLevel = $this->getProperty('logLevel');
-        if ($logLevel === null || $level > $logLevel) {
+        if ($logLevel === null || $logLevel === false || (int) $level > (int) $logLevel) {
             return;
         }
         $this->logger->log($message, $level);
@@ -934,6 +943,8 @@ class FileMaker
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($curl, CURLOPT_FAILONERROR, true);
         curl_setopt($curl, CURLOPT_HEADER, false);
+        $responseHeaders = '';
+        $this->captureResponseHeaders($curl, $responseHeaders);
 
         if (!$this->useDataApi) {
             $this->setCurlWPCSessionCookie($curl);
@@ -978,12 +989,10 @@ class FileMaker
         if ($curlError = curl_errno($curl)) {
             return $this->handleCurlError($curlError, $curl);
         }
-        $this->log($curlResponse, FileMaker::LOG_DEBUG);
+        $this->log('Received ' . strlen((string) $curlResponse) . ' bytes of container data', FileMaker::LOG_DEBUG);
         if (!$this->useDataApi) {
-            $this->setClientWPCSessionCookie($curlResponse);
+            $this->setClientWPCSessionCookie($responseHeaders);
         }
-
-        curl_close($curl);
         return $curlResponse;
     }
 
@@ -1033,9 +1042,13 @@ class FileMaker
         }
         $query = DataApi::prepareQuery($params);
         if (isset($params['-dbnames'])) {
-            $query['headers'][] = 'Authorization: basic ' . base64_encode($this->username . ':' . $this->password);
+            $query['headers'][] = 'Authorization: Basic ' . base64_encode($this->username . ':' . $this->password);
         } else {
-            $query['headers'][] = 'Authorization: bearer ' . $this->getToken();
+            $token = $this->getToken();
+            if (FileMaker::isError($token)) {
+                return $token;
+            }
+            $query['headers'][] = 'Authorization: Bearer ' . $token;
         }
 
         $response = $this->runDataApiQuery($query);
@@ -1077,7 +1090,11 @@ class FileMaker
             ['-setGlobals' => true, '-db' => $this->database]
         );
         $globalQuery = DataApi::prepareQuery($globalOptions);
-        $globalQuery['headers'][] = 'Authorization: bearer ' . $this->getToken();
+        $token = $this->getToken();
+        if (FileMaker::isError($token)) {
+            return $token;
+        }
+        $globalQuery['headers'][] = 'Authorization: Bearer ' . $token;
 
         $response = $this->runDataApiQuery($globalQuery);
 
@@ -1101,7 +1118,7 @@ class FileMaker
             'uri' => DataApi::ENDPOINT_BASE . DataApi::ENDPOINT_LOGIN,
             'queryParams' => null,
             'headers' => [
-                'Authorization: basic ' . base64_encode($this->username . ':' . $this->password)
+                'Authorization: Basic ' . base64_encode($this->username . ':' . $this->password)
             ],
             'method' => 'POST',
             'body' => [
@@ -1118,7 +1135,14 @@ class FileMaker
                 'database' => $this->database,
             ],
         ];
-        $response = json_decode($this->runDataApiQuery($query), true);
+        $response = $this->runDataApiQuery($query);
+        if (FileMaker::isError($response)) {
+            return $response;
+        }
+        $response = json_decode($response, true);
+        if (!isset($response['messages'][0]['code'])) {
+            return $this->returnOrThrowException('Invalid Data API login response');
+        }
         if ($response['messages'][0]['code'] != 0) {
             return $this->returnOrThrowException($response['messages'][0]['message'], $response['messages'][0]['code']);
         }
@@ -1126,34 +1150,52 @@ class FileMaker
     }
 
     /**
+     * Close the Data API session and forget the current token
+     *
      * @return FileMakerException|bool|null
      * @throws FileMakerException
      */
     public function dataApiLogout()
     {
-        if (!$this->token) {
+        $token = $this->properties['token'];
+        if (!$token) {
             return true;
         }
         $query = [
             'uri' => DataApi::ENDPOINT_BASE . DataApi::ENDPOINT_LOGOUT,
             'queryParams' => null,
-            'headers' => [
-                //'Authorization: basic ' . base64_encode($this->username . ':' . $this->password)
-            ],
+            'headers' => [],
             'method' => 'DELETE',
             'body' => null,
             'params' => [
                 'version' => 'vLatest',
-                'database' => $this->database,
-                'sessionToken' => $this->getToken(),
+                'database' => $this->properties['database'],
+                'sessionToken' => $token,
             ],
         ];
-        $response = json_decode($this->runDataApiQuery($query), true);
-        if (@$response['messages'][0]['code'] != 0) {
+        $response = $this->runDataApiQuery($query);
+        // The token is unusable once logout has been requested (or failed because it expired)
+        $this->clearToken();
+        if (FileMaker::isError($response)) {
+            return $response;
+        }
+        $response = json_decode($response, true);
+        if (isset($response['messages'][0]['code']) && $response['messages'][0]['code'] != 0) {
             return $this->returnOrThrowException($response['messages'][0]['message'], $response['messages'][0]['code']);
         }
-        $this->token = null;
         return true;
+    }
+
+    /**
+     * Close the Data API session (if any).
+     * Use it when a token saved in the user's session is no longer needed (ie: user logout)
+     *
+     * @return FileMakerException|bool|null
+     * @throws FileMakerException
+     */
+    public function logout()
+    {
+        return $this->dataApiLogout();
     }
 
     /**
@@ -1177,10 +1219,10 @@ class FileMaker
         $queryParams = $footPrint = [];
         if ($query['queryParams']) {
             foreach ($query['queryParams'] as $option => $value) {
-                if (($value !== true) && strtolower($this->getProperty('charset')) !== 'utf-8') {
-                    $value = utf8_encode($value);
-                } elseif (is_array($value)) {
+                if (is_array($value)) {
                     $value = json_encode($value);
+                } elseif ($value !== true) {
+                    $value = $this->toInputCharset($value);
                 }
                 $queryParams[] = rawurlencode((string) $option) . ($value === true ? '' : '=' . rawurlencode((string) $value));
                 $footPrint[] = $option . "=" . (preg_match('/\.value$/', $option) ? ":$option" : $value);
@@ -1206,15 +1248,11 @@ class FileMaker
             curl_setopt($curl, CURLOPT_POSTFIELDS, $body);
         }
 
-        $this->lastRequestedUrl = $uri;
+        $this->lastRequestedUrl = $this->maskDataApiUri($uri, $query['params']);
+        $profileKey = $this->describeDataApiRequest($uri, $query);
 
-        $this->log("Perform request: " . $this->lastRequestedUrl
-            . (isset($body) ? PHP_EOL . 'Body: ' . $body : '')
-            , FileMaker::LOG_INFO
-        );
-        //$this->log('Query Footprint : ' .implode('&', $footPrint), FileMaker::LOG_DEBUG);
+        $this->log("Perform request: " . $profileKey, FileMaker::LOG_INFO);
 
-        $profileKey = $this->lastRequestedUrl . (isset($body) ? PHP_EOL . 'Body: ' . $body : '');
         $this->beginProfile($profileKey);
         $response = curl_exec($curl);
         $this->endProfile($profileKey);
@@ -1225,27 +1263,45 @@ class FileMaker
             return $this->handleCurlError($curlError, $curl);
         }
 
-        curl_close($curl);
-
         return $response;
     }
 
-    public function setToken($value) {
+    /**
+     * Set the Data API token, and save it for reuse when a session handler or a PHP session is available
+     *
+     * @param string|null $value
+     */
+    public function setToken($value)
+    {
+        if (!$value) {
+            $this->clearToken();
+            return;
+        }
         $this->properties['token'] = $value;
-        $key = md5($this->hostspec . $this->database . $this->username . $this->password);
-        $this->sessionSet('bearer-' . $key, $value);
+        $this->tokenPersisted = $this->canPersistToken()
+            && $this->sessionSet($this->tokenSessionKey(), $value) === true;
+    }
+
+    /**
+     * Whether the current Data API token has been saved to be reused by next requests
+     *
+     * @return bool
+     */
+    public function isTokenPersisted()
+    {
+        return $this->tokenPersisted;
     }
 
     /**
      * @param bool $renew
-     * @return bool|mixed|null
+     * @return FileMakerException|string
      * @throws FileMakerException
      */
     private function getToken($renew = false)
     {
         //Clear token in case of renew (current token has expired)
         if ($renew) {
-            $this->properties['token'] = null;
+            $this->clearToken();
         }
 
         //return token if we already have it
@@ -1253,11 +1309,95 @@ class FileMaker
             return $this->properties['token'];
         }
 
-        $key = md5($this->hostspec . $this->database . $this->username . $this->password);
-        if ($renew || !$this->properties['token'] = $this->sessionGet('bearer-' . $key)) {
-            $this->properties['token'] = $this->dataApiLogin();
+        if ($this->canPersistToken() && $token = $this->sessionGet($this->tokenSessionKey())) {
+            $this->properties['token'] = $token;
+            $this->tokenPersisted = true;
+            return $token;
         }
-        return $this->properties['token'];
+
+        $token = $this->dataApiLogin();
+        if (FileMaker::isError($token)) {
+            return $token;
+        }
+        $this->setToken($token);
+        return $token;
+    }
+
+    /**
+     * Forget the current token, including the saved one
+     */
+    private function clearToken()
+    {
+        if ($this->tokenPersisted) {
+            $this->sessionSet($this->tokenSessionKey(), null);
+        }
+        $this->properties['token'] = null;
+        $this->tokenPersisted = false;
+    }
+
+    /**
+     * A token can be reused by next requests when saved using a session handler,
+     * or in a PHP session (not available in CLI)
+     *
+     * @return bool
+     */
+    private function canPersistToken()
+    {
+        if ($this->properties['sessionHandler'] !== null) {
+            return true;
+        }
+        if (PHP_SAPI === 'cli' || session_status() === PHP_SESSION_DISABLED) {
+            return false;
+        }
+        return session_status() === PHP_SESSION_ACTIVE || !headers_sent();
+    }
+
+    /**
+     * @return string
+     */
+    private function tokenSessionKey()
+    {
+        return 'bearer-' . md5(
+            $this->properties['hostspec'] . $this->properties['database']
+            . $this->properties['username'] . $this->properties['password']
+        );
+    }
+
+    /**
+     * Loggable description of a Data API request, credentials and tokens are masked
+     *
+     * @param string $uri
+     * @param array $query
+     * @return string
+     */
+    protected function describeDataApiRequest($uri, array $query)
+    {
+        $description = $this->maskDataApiUri($uri, $query['params']);
+        if (!empty($query['body'])) {
+            $body = $query['body'];
+            if (isset($body['fmDataSource']) && is_array($body['fmDataSource'])) {
+                foreach ($body['fmDataSource'] as $index => $dataSource) {
+                    if (isset($dataSource['password'])) {
+                        $body['fmDataSource'][$index]['password'] = '***';
+                    }
+                }
+            }
+            $description .= PHP_EOL . 'Body: ' . json_encode($body);
+        }
+        return $description;
+    }
+
+    /**
+     * @param string $uri
+     * @param array $params
+     * @return string
+     */
+    private function maskDataApiUri($uri, array $params)
+    {
+        if (!empty($params['sessionToken'])) {
+            $uri = str_replace(rawurlencode((string) $params['sessionToken']), '***', $uri);
+        }
+        return $uri;
     }
 
     /**
@@ -1271,14 +1411,7 @@ class FileMaker
      */
     public function executeCWP($params, $grammar = 'fmresultset')
     {
-        $restParams = $footPrint = [];
-        foreach ($params as $option => $value) {
-            if (($value !== true) && strtolower($this->getProperty('charset')) !== 'utf-8') {
-                $value = utf8_encode((string) $value);
-            }
-            $restParams[] = urlencode((string) $option) . ($value === true ? '' : '=' . urlencode((string) $value));
-            $footPrint[] = $option . "=" . (preg_match('/\.value$/', $option) ? ":$option" : $value);
-        }
+        [$restParams, $footPrint] = $this->buildCwpQuery($params);
 
         $host = $this->getProperty('hostspec');
         if (substr($host, -1, 1) !== '/') {
@@ -1291,11 +1424,8 @@ class FileMaker
         curl_setopt($curl, CURLOPT_POST, true);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($curl, CURLOPT_FAILONERROR, true);
-        $curlHeadersSent = false;
-        if (!headers_sent()) {
-            $curlHeadersSent = true;
-            curl_setopt($curl, CURLOPT_HEADER, true);
-        }
+        $responseHeaders = '';
+        $this->captureResponseHeaders($curl, $responseHeaders);
         $this->setCurlWPCSessionCookie($curl);
 
         if ($this->getProperty('username')) {
@@ -1342,15 +1472,88 @@ class FileMaker
             return $this->handleCurlError($curlError, $curl);
         }
 
-        curl_close($curl);
+        $this->setClientWPCSessionCookie($responseHeaders);
 
-        $this->setClientWPCSessionCookie($curlResponse);
-        if ($curlHeadersSent) {
-            $curlResponse = $this->eliminateXMLHeader($curlResponse);
+        return $this->checkCwpResponse(
+            $curlResponse,
+            (int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE),
+            (string) curl_getinfo($curl, CURLINFO_CONTENT_TYPE),
+            $responseHeaders
+        );
+    }
+
+    /**
+     * Ensure the XML Web Publishing Engine returned an XML document,
+     * otherwise return an explicit error instead of an obscure XML parser error
+     *
+     * @param string $body response body
+     * @param int $httpCode
+     * @param string $contentType
+     * @param string $headers raw response headers
+     * @return string|FileMakerException the XML document
+     * @throws FileMakerException
+     */
+    protected function checkCwpResponse($body, $httpCode, $contentType = '', $headers = '')
+    {
+        $body = (string) $body;
+        if ($httpCode >= 300 && $httpCode < 400) {
+            $location = preg_match_all('/^Location:\s*(\S+)/mi', $headers, $matches) ? end($matches[1]) : 'unknown location';
+            return $this->returnOrThrowException(
+                'FileMaker Server redirected the request (HTTP ' . $httpCode . ') to ' . $location
+                . ' - Update the hostspec property accordingly (ie: use https:// if the server enforces HTTPS).',
+                -1
+            );
         }
-        //$this->log($curlResponse, FileMaker::LOG_DEBUG);
 
-        return $curlResponse;
+        // Strip UTF-8 BOM and leading whitespaces which would make the XML document invalid
+        $xml = ltrim(preg_replace('/^\xEF\xBB\xBF/', '', $body));
+        if (!preg_match('/^<(\?xml|fmresultset|FMPXMLLAYOUT|FMPXMLRESULT)\b/i', $xml)) {
+            $excerpt = trim(preg_replace('/\s+/', ' ', strip_tags(substr($xml, 0, 500))));
+            return $this->returnOrThrowException(
+                'FileMaker Server did not return an XML document (HTTP ' . $httpCode
+                . ($contentType ? ', ' . $contentType : '') . ')'
+                . ($excerpt !== '' ? ': "' . mb_strimwidth($excerpt, 0, 120, '...') . '"' : '')
+                . ' - Make sure XML Web Publishing is enabled on FileMaker Server and that the hostspec is correct'
+                . ' (' . rtrim((string) $this->getProperty('hostspec'), '/') . '/fmi/xml/fmresultset.xml must return an XML document),'
+                . ' or switch to the Data API (useDataApi property).',
+                -1
+            );
+        }
+        return $xml;
+    }
+
+    /**
+     * Collect raw response headers of a cURL request into $headers
+     *
+     * @param \CurlHandle $curl
+     * @param string $headers
+     */
+    private function captureResponseHeaders($curl, &$headers)
+    {
+        curl_setopt($curl, CURLOPT_HEADERFUNCTION, function ($curl, $header) use (&$headers) {
+            $headers .= $header;
+            return strlen($header);
+        });
+    }
+
+    /**
+     * Build the url encoded parameters sent to the XML Web Publishing Engine
+     *
+     * @param array $params
+     * @return array{0: string[], 1: string[]} encoded parameters and their loggable footprint
+     */
+    protected function buildCwpQuery(array $params)
+    {
+        $restParams = $footPrint = [];
+        foreach ($params as $option => $value) {
+            $option = (string) $option;
+            if ($value !== true) {
+                $value = $this->toInputCharset($value);
+            }
+            $restParams[] = urlencode($option) . ($value === true ? '' : '=' . urlencode($value));
+            $footPrint[] = $option . ($value === true ? '' : '=' . (preg_match('/\.value$/', $option) ? ":$option" : $value));
+        }
+        return [$restParams, $footPrint];
     }
 
     /**
@@ -1404,64 +1607,18 @@ class FileMaker
 
     /**
      * Pass WPC session cookie to client for later auth
-     * @param string $curlResponse a curl response
+     * @param string $responseHeaders raw response headers
      */
-    private function setClientWPCSessionCookie($curlResponse)
+    private function setClientWPCSessionCookie($responseHeaders)
     {
-        if (!$this->getProperty('useCookieSession')) {
+        if (!$this->getProperty('useCookieSession') || headers_sent()) {
             return;
         }
-        $found = preg_match('/WPCSessionID="([^;]*)";/m', $curlResponse, $matches);
+        $found = preg_match('/WPCSessionID="([^;]*)";/m', $responseHeaders, $matches);
         /* Update WPCSession Cookie if needed */
         if ($found && @$_COOKIE['WPCSessionID'] !== $matches[1]) {
             setcookie("WPCSessionID", $matches[1]);
             $_COOKIE['WPCSessionID'] = $matches[1];
-        }
-    }
-
-    /**
-     *
-     * @param string $curlResponse a curl response
-     * @return int content length, -1 if not provided by headers
-     */
-    private function getContentLength($curlResponse)
-    {
-        $found = preg_match('/Content-Length: (\d+)/', $curlResponse, $matches);
-        if ($found) {
-            return $matches[1];
-        } else {
-            return -1;
-        }
-    }
-
-    /**
-     *
-     * @param string $curlResponse a curl response
-     * @return string curlResponse without xml header
-     */
-    private function eliminateXMLHeader($curlResponse)
-    {
-        $isXml = strpos($curlResponse, "<?xml");
-        if ($isXml !== false) {
-            return substr($curlResponse, $isXml);
-        } else {
-            return $curlResponse;
-        }
-    }
-
-    /**
-     *
-     * @param string $curlResponse a curl response
-     * @return string cUrl Response without leading carriage return
-     */
-    private function eliminateContainerHeader($curlResponse)
-    {
-        $len = strlen("\r\n\r\n");
-        $pos = strrpos($curlResponse, "\r\n\r\n");
-        if ($pos !== false) {
-            return substr($curlResponse, $pos + $len);
-        } else {
-            return $curlResponse;
         }
     }
 
@@ -1476,14 +1633,15 @@ class FileMaker
      */
     public function __set($name, $value)
     {
-        $getter = 'set' . $name;
-        if (method_exists($this, $getter)) {
-            //test if it is a valid function (no args)
-            $reflection = new ReflectionMethod(__CLASS__, $getter);
-            if (sizeof($reflection->getParameters()) === 0 and $reflection->isPublic()) {
-                return $this->$getter($value);
+        $setter = 'set' . ucfirst($name);
+        if (method_exists($this, $setter)) {
+            //test if it is a valid setter (single arg)
+            $reflection = new ReflectionMethod($this, $setter);
+            if ($reflection->getNumberOfRequiredParameters() === 1 && $reflection->isPublic()) {
+                return $this->$setter($value);
             }
-        } elseif (array_key_exists($name, $this->properties)) {
+        }
+        if (array_key_exists($name, $this->properties)) {
             $this->properties[$name] = $value;
         } else {
             return $this->returnOrThrowException('Attempt to set an unsupported property (' . $name . ')');
@@ -1536,7 +1694,22 @@ class FileMaker
         if (!is_string($value)) {
             return $value;
         }
-        return utf8_decode($value);
+        return mb_convert_encoding($value, 'ISO-8859-1', 'UTF-8');
+    }
+
+    /**
+     * Convert a value from the configured charset to UTF-8 before sending it to the server
+     *
+     * @param mixed $value
+     * @return string
+     */
+    public function toInputCharset($value)
+    {
+        $value = (string) $value;
+        if (strtolower($this->getProperty('charset')) === 'utf-8') {
+            return $value;
+        }
+        return mb_convert_encoding($value, 'UTF-8', 'ISO-8859-1');
     }
 
     /**
@@ -1604,7 +1777,7 @@ class FileMaker
     /**
      * Convert curl errors to FileMakerException
      * @param int $curlError
-     * @param resource $curl
+     * @param \CurlHandle $curl
      * @return FileMakerException
      * @throws FileMakerException
      */
@@ -1636,6 +1809,9 @@ class FileMaker
 
     private function connexionId()
     {
-        return md5($this->hostspec . "#" . $this->database . "#" . $this->username);
+        return md5(
+            $this->properties['hostspec'] . "#" . $this->properties['database'] . "#" . $this->properties['username']
+            . "#" . ($this->properties['useDataApi'] ? 'dataApi' : 'cwp')
+        );
     }
 }

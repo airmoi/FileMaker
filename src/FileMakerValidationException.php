@@ -39,9 +39,7 @@ class FileMakerValidationException extends FileMakerException
 
         $message = self::getValidationErrorString($field, $rule, $value);
         $this->errors[] = [$field, $rule, $value, $message];
-        $messages = empty($this->getMessage()) ? [] : explode("\n", $this->getMessage());
-        $messages[] = $message;
-        $this->message = implode("\n", $messages);
+        $this->message = implode("\n", array_column($this->errors, 3));
     }
 
     /**
