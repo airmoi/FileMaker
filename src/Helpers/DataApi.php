@@ -83,6 +83,7 @@ class DataApi
         } elseif (array_key_exists('-new', $params)) {
             $query['uri'] .= self::ENDPOINT_RECORDS;
             $query['method'] = 'POST';
+            $query['body'] = [];
             if ($fieldData = self::parseFields($params)) {
                 $query['body']['fieldData'] = $fieldData;
             }

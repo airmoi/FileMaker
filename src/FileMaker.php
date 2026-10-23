@@ -1267,14 +1267,7 @@ class FileMaker
      */
     public function executeCWP($params, $grammar = 'fmresultset')
     {
-        $restParams = $footPrint = [];
-        foreach ($params as $option => $value) {
-            if ($value !== true) {
-                $value = $this->toInputCharset($value);
-            }
-            $restParams[] = urlencode((string) $option) . ($value === true ? '' : '=' . urlencode((string) $value));
-            $footPrint[] = $option . "=" . (preg_match('/\.value$/', $option) ? ":$option" : $value);
-        }
+        [$restParams, $footPrint] = $this->buildCwpQuery($params);
 
         $host = $this->getProperty('hostspec');
         if (substr($host, -1, 1) !== '/') {
@@ -1345,6 +1338,26 @@ class FileMaker
         //$this->log($curlResponse, FileMaker::LOG_DEBUG);
 
         return $curlResponse;
+    }
+
+    /**
+     * Build the url encoded parameters sent to the XML Web Publishing Engine
+     *
+     * @param array $params
+     * @return array{0: string[], 1: string[]} encoded parameters and their loggable footprint
+     */
+    protected function buildCwpQuery(array $params)
+    {
+        $restParams = $footPrint = [];
+        foreach ($params as $option => $value) {
+            $option = (string) $option;
+            if ($value !== true) {
+                $value = $this->toInputCharset($value);
+            }
+            $restParams[] = urlencode($option) . ($value === true ? '' : '=' . urlencode($value));
+            $footPrint[] = $option . ($value === true ? '' : '=' . (preg_match('/\.value$/', $option) ? ":$option" : $value));
+        }
+        return [$restParams, $footPrint];
     }
 
     /**
