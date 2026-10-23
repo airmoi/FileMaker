@@ -15,6 +15,16 @@ class FileMakerValidationExceptionTest extends \PHPUnit\Framework\TestCase
      */
     protected $object;
 
+    /**
+     * @var FileMaker
+     */
+    protected $fm;
+
+    /**
+     * @var array
+     */
+    protected $locales;
+
 
     /**
      * Sets up the fixture, for example, opens a network connection.
@@ -23,7 +33,7 @@ class FileMakerValidationExceptionTest extends \PHPUnit\Framework\TestCase
     protected function setUp(): void
     {
         $this->fm = new FileMaker($GLOBALS['DB_FILE'], $GLOBALS['DB_HOST'], $GLOBALS['DB_USER'], $GLOBALS['DB_PASSWD']);
-        $this->locales = require(dirname(__FILE__) . '/../../../src/Error/en.php');
+        $this->locales = require(dirname(__DIR__, 2) . '/src/Error/en.php');
     }
 
     /**

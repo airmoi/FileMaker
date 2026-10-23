@@ -32,6 +32,14 @@ class FileMakerTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * @return string 'cwp' or 'dataAPI' depending on USE_DATA_API setting
+     */
+    private static function engine(): string
+    {
+        return filter_var($GLOBALS['USE_DATA_API'] ?? false, FILTER_VALIDATE_BOOLEAN) ? 'dataAPI' : 'cwp';
+    }
+
+    /**
      * Sets up the fixture, for example, opens a network connection.
      * This method is called before a test is executed.
      */
@@ -311,7 +319,7 @@ class FileMakerTest extends \PHPUnit\Framework\TestCase
         } else {
             $this->assertInstanceOf(\FileMaker_Result::class, $result);
         }
-        if ($GLOBALS['ENGINE'] == 'cwp') {
+        if (self::engine() == 'cwp') {
             $this->assertEquals($datas['tableCount'], (int)$result->getTableRecordCount());
         } else {
             //No response returned from data API
@@ -343,7 +351,7 @@ class FileMakerTest extends \PHPUnit\Framework\TestCase
         }
 
         $result = $command->execute();
-        if (!$GLOBALS['OFFICIAL_API'] && $GLOBALS['ENGINE'] == 'cwp') {
+        if (!$GLOBALS['OFFICIAL_API'] && self::engine() == 'cwp') {
             $this->assertInstanceOf(Object\Result::class, $result);
         } elseif (!$GLOBALS['OFFICIAL_API']) {
             $this->assertArrayHasKey('scriptError', $result);
@@ -357,7 +365,7 @@ class FileMakerTest extends \PHPUnit\Framework\TestCase
 
 
         $command = $this->fm->newPerformScriptCommand('sample', 'create sample data', 50);
-        if (!$GLOBALS['OFFICIAL_API'] && $GLOBALS['OFFICIAL_API'] == 'cwp' ) {
+        if (!$GLOBALS['OFFICIAL_API'] && self::engine() == 'cwp') {
             $command->setRange(5, 25);
             $result = $command->execute();
             $this->assertInstanceOf(Object\Result::class, $result);
@@ -378,7 +386,7 @@ class FileMakerTest extends \PHPUnit\Framework\TestCase
      */
     public function testNewFindAnyCommand()
     {
-        if ($GLOBALS['ENGINE'] = 'dataAPI') {
+        if (self::engine() == 'dataAPI') {
             $this->markTestSkipped('Find Any command not supported by dataAPI');
             return;
         }
@@ -604,7 +612,7 @@ class FileMakerTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetContainerDataURL()
     {
-        if ($GLOBALS['ENGINE'] == 'dataAPI') {
+        if (self::engine() == 'dataAPI') {
             $this->markTestSkipped('DataAPI already provide full conatiner URL');
             return;
         }

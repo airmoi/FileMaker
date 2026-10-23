@@ -3,7 +3,7 @@
     Copy this file to phpunit.xml and adjust the connection settings to run the
     integration suite against a FileMaker Server hosting tests/filemaker-test.fmp12:
 
-        vendor/bin/phpunit --testsuite integration
+        vendor/bin/phpunit (testsuite: integration)
 -->
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
