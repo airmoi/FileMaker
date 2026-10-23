@@ -50,7 +50,7 @@ use ReflectionMethod;
  */
 class FileMaker
 {
-    private static $apiVersion = '3.0.0-beta3';
+    private static $apiVersion = '3.1.0';
     private static $minServerVersion = '18.0.0.0';
 
     /**
