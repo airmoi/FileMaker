@@ -175,6 +175,17 @@ cp phpunit.sample.xml phpunit.xml            # set your FileMaker Server credent
 vendor/bin/phpunit --testsuite integration   # requires tests/php-api-test.fmp12 (unzip tests/php-api-test.fmp12.zip) hosted on FileMaker Server
 ```
 
+Integration settings can also be provided through environment variables, which take precedence over `phpunit.xml`:
+`FM_HOST`, `FM_DATABASE`, `FM_USER`, `FM_PASSWORD` and `FM_USE_DATA_API` (`true` to run the suite against the Data API).
+
+### Continuous integration
+
+The GitHub Actions workflow (`.github/workflows/tests.yml`) runs on pull requests and pushes to master:
+* unit tests on PHP 8.2 to 8.5
+* integration tests on PHP 8.2 and 8.5, for both CWP and Data API, against a hosted copy of `tests/php-api-test.fmp12.zip`.
+  Configure the `FM_HOST` (ie: `https://your.server`) and `FM_DATABASE` repository variables, and the `FM_USER` and `FM_PASSWORD` repository secrets.
+  Integration jobs run one at a time as they share the same database, and are skipped for pull requests from forks (secrets are not available).
+
 ## TODO
 * Finish PHPunit test
 * Add functionnal tests
