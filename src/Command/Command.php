@@ -136,7 +136,8 @@ class Command
      * If you pass the optional $fieldName argument, only that field is
      * pre-validated. Otherwise, the command is pre-validated as if execute()
      * were called with "Enable record data pre-validation" selected in
-     * FileMaker Server Admin Console. If pre-validation passes, validate()
+     * FileMaker Server Admin Console. Edit commands only pre-validate the
+     * fields they modify. If pre-validation passes, validate()
      * returns TRUE. If pre-validation fails, then validate() throws a
      * \airmoi\FileMaker\FileMakerValidationException object containing details about what failed
      * to pre-validate.
@@ -161,6 +162,10 @@ class Command
         $validationErrors = new FileMakerValidationException($this->fm);
         if ($fieldName === null) {
             foreach ($layout->getFields() as $fieldName => $field) {
+                // Fields that are not modified keep their current value, don't validate them
+                if ($this instanceof Edit && !array_key_exists($fieldName, $this->fields)) {
+                    continue;
+                }
                 if (!isset($this->fields[$fieldName]) || !count($this->fields[$fieldName])) {
                     $values = [0 => null];
                 } else {
