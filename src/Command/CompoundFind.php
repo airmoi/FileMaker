@@ -5,6 +5,7 @@
  */
 namespace airmoi\FileMaker\Command;
 
+use airmoi\FileMaker\FileMaker;
 use airmoi\FileMaker\FileMakerException;
 use airmoi\FileMaker\Object\Result;
 
@@ -128,8 +129,14 @@ class CompoundFind extends Command
         $params['-query'] = $query;
         $params['-findquery'] = true;
         $rawResult = $this->fm->execute($params);
+        if (FileMaker::isError($rawResult)) {
+            return $rawResult;
+        }
 
         $result = $this->getResult($rawResult, $result);
+        if (FileMaker::isError($result)) {
+            return $result;
+        }
 
         //Handle auto pagination
         if ($this->max
