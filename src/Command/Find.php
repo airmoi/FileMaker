@@ -99,6 +99,9 @@ class Find extends Command
 
         //Handle auto pagination
         $result = $this->getResult($rawResult, $result);
+        if (FileMaker::isError($result)) {
+            return $result;
+        }
 
         if ($this->recordId
             || $this->max
